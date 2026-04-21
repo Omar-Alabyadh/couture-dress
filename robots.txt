@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://couture.netlify.app/sitemap.xml
+Sitemap: https://www.couture-dress.com/sitemap.xml
