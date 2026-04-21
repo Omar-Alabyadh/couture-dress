@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://nouran-couture.netlify.app/sitemap.xml

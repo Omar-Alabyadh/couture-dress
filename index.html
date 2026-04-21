@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Title & Description -->
+    <title>نوران للأزياء | NOURAN COUTURE – بنغازي بلعون</title>
+    <meta
+      name="description"
+      content="نوران للأزياء – NOURAN COUTURE متجر أزياء نسائية في بنغازي/بلعون. فساتين، عبايات، كاجوال وإكسسوارات. تواصلي معنا عبر واتساب."
+    />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#0b0b0f" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/logo-square.png" />
+
+    <!-- Open Graph (WhatsApp / Facebook) -->
+    <meta property="og:title" content="نوران للأزياء | NOURAN COUTURE" />
+    <meta
+      property="og:description"
+      content="أزياء نسائية راقية في بنغازي/بلعون. تشكيلة مختارة وجودة ممتازة."
+    />
+    <meta
+      property="og:image"
+      content="https://nouran-couture.netlify.app/assets/logo-square.png"
+    />
+    <meta property="og:url" content="https://nouran-couture.netlify.app/" />
+    <meta property="og:type" content="website" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="container topbar__inner">
+        <a class="brand" href="#home" aria-label="نوران للأزياء">
+          <img
+            src="assets/logo.png"
+            alt="NOURAN COUTURE"
+            onerror="this.style.display='none'"
+          />
+          <div class="brand__text">
+            <div class="brand__ar">نوران للأزياء</div>
+            <div class="brand__en">NOURAN COUTURE</div>
+          </div>
+        </a>
+
+        <nav class="nav">
+          <a href="#about">من نحن</a>
+          <a href="#collection">المجموعة</a>
+          <a href="#features">مميزاتنا</a>
+          <a href="#contact">تواصل</a>
+        </nav>
+
+        <button class="nav__toggle" id="navToggle" aria-label="فتح القائمة">
+          ☰
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Nav -->
+    <div class="mobile-nav" id="mobileNav">
+      <a href="#about">من نحن</a>
+      <a href="#collection">المجموعة</a>
+      <a href="#features">مميزاتنا</a>
+      <a href="#contact">تواصل</a>
+    </div>
+
+    <!-- Hero -->
+    <main id="home" class="hero">
+      <div
+        class="hero__bg"
+        style="background-image: url('assets/hero.jpg')"
+      ></div>
+      <div class="hero__overlay"></div>
+
+      <div class="container hero__content">
+        <span class="chip">أزياء نسائية • فخامة • أناقة</span>
+
+        <h1>إطلالتك تبدأ من <span class="gold">نوران للأزياء</span></h1>
+        <p>
+          متجر متخصص في أحدث صيحات الموضة النسائية — فساتين، عبايات، كاجوال
+          وإكسسوارات. اكتشفي تشكيلاتنا وتواصلي معنا للحجز والاستفسار.
+        </p>
+
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="#collection">استعرضي المجموعة</a>
+          <a
+            class="btn btn--ghost"
+            id="whatsHero"
+            href="#"
+            target="_blank"
+            rel="noopener"
+            >واتساب الآن</a
+          >
+        </div>
+
+        <div class="hero__stats">
+          <div class="stat">
+            <div class="stat__num">+100</div>
+            <div class="stat__label">قطعة مختارة</div>
+          </div>
+          <div class="stat">
+            <div class="stat__num">أسبوعي</div>
+            <div class="stat__label">تجديد الموديلات</div>
+          </div>
+          <div class="stat">
+            <div class="stat__num">ممتازة</div>
+            <div class="stat__label">جودة وخامة</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- About -->
+    <section id="about" class="section">
+      <div class="container grid-2">
+        <div>
+          <h2 class="section__title">من نحن</h2>
+          <p class="section__text">
+            <b>نوران للأزياء (NOURAN COUTURE)</b> متجر يقدم تشكيلة مميزة من
+            الأزياء النسائية تجمع بين الأناقة والجودة والذوق الرفيع. نحرص على
+            اختيار قطع تناسب جميع الأذواق وتمنحك إطلالة فريدة في كل مناسبة.
+          </p>
+          <ul class="list">
+            <li>فساتين سهرة ويومية</li>
+            <li>عبايات وملابس محجبات</li>
+            <li>كاجوال عصري</li>
+            <li>إكسسوارات مختارة</li>
+          </ul>
+        </div>
+
+        <div class="card glass">
+          <h3 class="card__title">رسالتنا</h3>
+          <p class="card__text">
+            نوفر تجربة شراء مريحة، وتشكيلات راقية، وخدمة زبائن ممتازة — لأننا
+            نؤمن أن الأناقة حق للجميع.
+          </p>
+
+          <div class="divider"></div>
+
+          <h3 class="card__title">رؤيتنا</h3>
+          <p class="card__text">
+            أن تصبح نوران للأزياء الوجهة الأولى لكل سيدة تبحث عن أسلوب راقٍ
+            ومميز.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Collection -->
+    <section id="collection" class="section section--alt">
+      <div class="container">
+        <div class="section__head">
+          <h2 class="section__title">المجموعة</h2>
+          <p class="section__text">
+            <!-- صور تجريبية — استبدليها بصور منتجات المحل لاحقًا. -->
+          </p>
+        </div>
+
+        <div class="tabs">
+          <button class="tab active" data-filter="all">الكل</button>
+          <button class="tab" data-filter="dresses">فساتين</button>
+          <button class="tab" data-filter="abayas">عبايات</button>
+          <button class="tab" data-filter="casual">كاجوال</button>
+          <button class="tab" data-filter="accessories">إكسسوارات</button>
+        </div>
+
+        <div class="gallery" id="gallery">
+          <!-- Card 1 -->
+          <article class="item" data-cat="dresses">
+            <img src="assets/p1.jpg" alt="فستان نسائي" />
+            <div class="item__body">
+              <h3>فستان أنيق</h3>
+              <p>تفاصيل راقية وخامة ممتازة.</p>
+              <button
+                class="btn btn--small btn--primary item__btn"
+                data-title="فستان أنيق"
+              >
+                اطلبي عبر واتساب
+              </button>
+            </div>
+          </article>
+
+          <!-- Card 2 -->
+          <article class="item" data-cat="abayas">
+            <img src="assets/p2.jpg" alt="عباية نسائية" />
+            <div class="item__body">
+              <h3>عباية فخمة</h3>
+              <p>مناسبة للمناسبات والإطلالات اليومية.</p>
+              <button
+                class="btn btn--small btn--primary item__btn"
+                data-title="عباية فخمة"
+              >
+                اطلبي عبر واتساب
+              </button>
+            </div>
+          </article>
+
+          <!-- Card 3 -->
+          <article class="item" data-cat="casual">
+            <img src="assets/p3.jpg" alt="كاجوال نسائي" />
+            <div class="item__body">
+              <h3>طقم كاجوال</h3>
+              <p>ستايل مريح وعصري.</p>
+              <button
+                class="btn btn--small btn--primary item__btn"
+                data-title="طقم كاجوال"
+              >
+                اطلبي عبر واتساب
+              </button>
+            </div>
+          </article>
+
+          <!-- Card 4 -->
+          <article class="item" data-cat="accessories">
+            <img src="assets/p4.jpg" alt="إكسسوارات نسائية" />
+            <div class="item__body">
+              <h3>إكسسوارات</h3>
+              <p>لمسة نهائية لإطلالة مثالية.</p>
+              <button
+                class="btn btn--small btn--primary item__btn"
+                data-title="إكسسوارات"
+              >
+                اطلبي عبر واتساب
+              </button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="section">
+      <div class="container">
+        <h2 class="section__title">لماذا نوران للأزياء؟</h2>
+
+        <div class="features">
+          <div class="feature">
+            <div class="icon">✦</div>
+            <h3>اختيار راقٍ</h3>
+            <p>قطع منتقاة بعناية لتناسب ذوقك.</p>
+          </div>
+          <div class="feature">
+            <div class="icon">✓</div>
+            <h3>جودة ممتازة</h3>
+            <p>خامات ممتازة وتفاصيل دقيقة.</p>
+          </div>
+          <div class="feature">
+            <div class="icon">⚡</div>
+            <h3>تحديث مستمر</h3>
+            <p>موديلات جديدة بشكل أسبوعي.</p>
+          </div>
+          <div class="feature">
+            <div class="icon">☎</div>
+            <h3>تواصل سريع</h3>
+            <p>واتساب مباشر للحجز والاستفسار.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="section section--alt">
+      <div class="container grid-2">
+        <div>
+          <h2 class="section__title">تواصل معنا</h2>
+          <p class="section__text">
+            للحجز والاستفسار، راسلينا على واتساب أو اتركي رسالة وسنرد عليك.
+          </p>
+
+          <div class="contact-card">
+            <div class="contact-row">
+              <span class="label">واتساب:</span>
+              <a id="whatsLink" href="#" target="_blank" rel="noopener"
+                >اضغطي هنا للتواصل</a
+              >
+            </div>
+            <div class="contact-row">
+              <span class="label">هاتف:</span>
+              <a href="tel:+218920920500" dir="ltr">+218 92 092 0500</a>
+            </div>
+            <div class="contact-row">
+              <span class="label">الموقع:</span>
+              <span>بنغازي / بلعون – ليبيا</span>
+            </div>
+            <div
+              style="
+                margin-top: 14px;
+                border-radius: 16px;
+                overflow: hidden;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+              "
+            >
+              <iframe
+                src="https://www.google.com/maps?q=27.0437,20.0629&z=16&output=embed"
+                width="100%"
+                height="260"
+                style="border: 0"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+              >
+              </iframe>
+            </div>
+          </div>
+        </div>
+
+        <form class="form" id="contactForm">
+          <h3>أرسلي رسالة</h3>
+          <label>الاسم</label>
+          <input type="text" id="name" placeholder="اسمك" required />
+
+          <label>رقم الهاتف</label>
+          <input type="tel" id="phone" placeholder="رقم الهاتف" required />
+
+          <label>الرسالة</label>
+          <textarea
+            id="message"
+            rows="5"
+            placeholder="اكتبي طلبك أو استفسارك..."
+            required
+          ></textarea>
+
+          <button class="btn btn--primary" type="submit">
+            إرسال عبر واتساب
+          </button>
+          <p class="form-hint">
+            سيتم فتح واتساب تلقائيًا مع الرسالة جاهزة للإرسال.
+          </p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <div>
+          <b>نوران للأزياء</b> — NOURAN COUTURE
+          <div class="muted">© جميع الحقوق محفوظة</div>
+        </div>
+        <a class="to-top" href="#home">↑ للأعلى</a>
+      </div>
+    </footer>
+
+    <!-- Floating WhatsApp -->
+    <a
+      class="whats-float"
+      id="whatsFloat"
+      href="#"
+      target="_blank"
+      rel="noopener"
+      aria-label="واتساب"
+    >
+      واتساب
+    </a>
+
+    <script src="app.js"></script>
+  </body>
+</html>
