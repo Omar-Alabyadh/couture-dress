@@ -1,0 +1,7 @@
+/* AR: خط Cairo من Google — نفس الموقع الأصلي. */
+/* EN: Cairo font from Google Fonts — same as the original static site. */
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap");
+
+/* AR: نستورد ملف الأنماط الأصلي حرفيًا للحفاظ على نفس UI/UX والاستجابة. */
+/* EN: Import the original stylesheet verbatim to preserve UI/UX and responsiveness. */
+@import "../../style.css";
