@@ -278,6 +278,19 @@
     .nav__toggle{ display:inline-flex; }
   }
 
+  @media (max-width: 768px){
+    .hero{
+      min-height: 74vh;
+    }
+
+    .hero__bg{
+      transform: none;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center top;
+    }
+  }
+
   /* Fix overlap: hide back-to-top on mobile */
 @media (max-width: 768px) {
     .to-top {
