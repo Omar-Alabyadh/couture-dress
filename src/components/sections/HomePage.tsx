@@ -4,51 +4,17 @@
 /* eslint-disable @next/next/no-img-element -- static marketing images match legacy HTML */
 
 import { FormEvent, useMemo, useState } from "react";
+import type { CollectionCategory, CollectionItemView } from "@/lib/types/collection";
 import { siteConfig } from "@/lib/config/site";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 
-type Category = "all" | "dresses" | "abayas" | "casual" | "accessories";
+type Category = "all" | CollectionCategory;
 
-type ProductItem = {
-  title: string;
-  description: string;
-  image: string;
-  alt: string;
-  category: Exclude<Category, "all">;
+type HomePageProps = {
+  collectionItems: CollectionItemView[];
 };
 
-const products: ProductItem[] = [
-  {
-    title: "فستان أنيق",
-    description: "تفاصيل راقية وخامة ممتازة.",
-    image: "/assets/p1.jpg",
-    alt: "فستان نسائي",
-    category: "dresses",
-  },
-  {
-    title: "عباية فخمة",
-    description: "مناسبة للمناسبات والإطلالات اليومية.",
-    image: "/assets/p2.jpg",
-    alt: "عباية نسائية",
-    category: "abayas",
-  },
-  {
-    title: "طقم كاجوال",
-    description: "ستايل مريح وعصري.",
-    image: "/assets/p3.jpg",
-    alt: "كاجوال نسائي",
-    category: "casual",
-  },
-  {
-    title: "إكسسوارات",
-    description: "لمسة نهائية لإطلالة مثالية.",
-    image: "/assets/p4.jpg",
-    alt: "إكسسوارات نسائية",
-    category: "accessories",
-  },
-];
-
-export default function HomePage() {
+export default function HomePage({ collectionItems }: HomePageProps) {
   const [activeCategory, setActiveCategory] = useState<Category>("all");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const defaultMessage = `مرحباً، أريد الاستفسار عن موديلات ${siteConfig.shopName}.`;
@@ -60,9 +26,9 @@ export default function HomePage() {
   const visibleProducts = useMemo(
     () =>
       activeCategory === "all"
-        ? products
-        : products.filter((item) => item.category === activeCategory),
-    [activeCategory],
+        ? collectionItems
+        : collectionItems.filter((item) => item.category === activeCategory),
+    [activeCategory, collectionItems],
   );
 
   function handleItemOrder(title: string) {
@@ -283,27 +249,40 @@ export default function HomePage() {
           </div>
 
           <div className="gallery" id="gallery">
-            {visibleProducts.map((item) => (
-              <article
-                className="item"
-                data-cat={item.category}
-                key={item.title}
-              >
-                <img src={item.image} alt={item.alt} />
-                <div className="item__body">
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
-                  <button
-                    className="btn btn--small btn--primary item__btn"
-                    data-title={item.title}
-                    onClick={() => handleItemOrder(item.title)}
-                    type="button"
-                  >
-                    اطلبي عبر واتساب
-                  </button>
-                </div>
-              </article>
-            ))}
+            {collectionItems.length === 0 ? (
+              <p className="section__text" style={{ gridColumn: "1 / -1" }}>
+                لا توجد قطع في المجموعة بعد. / No collection items yet. ربطي
+                قاعدة البيانات (DATABASE_URL) ثم نفّذي ترحيل Prisma وبذرة
+                البيانات (prisma db seed). / Connect Postgres (DATABASE_URL),
+                run Prisma migrations, then prisma db seed.
+              </p>
+            ) : visibleProducts.length === 0 ? (
+              <p className="section__text" style={{ gridColumn: "1 / -1" }}>
+                لا توجد قطع ضمن هذا التصنيف. / No items in this category.
+              </p>
+            ) : (
+              visibleProducts.map((item) => (
+                <article
+                  className="item"
+                  data-cat={item.category}
+                  key={item.id}
+                >
+                  <img src={item.imageUrl} alt={item.imageAlt} />
+                  <div className="item__body">
+                    <h3>{item.title}</h3>
+                    {item.description ? <p>{item.description}</p> : null}
+                    <button
+                      className="btn btn--small btn--primary item__btn"
+                      data-title={item.title}
+                      onClick={() => handleItemOrder(item.title)}
+                      type="button"
+                    >
+                      اطلبي عبر واتساب
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
           </div>
         </div>
       </section>

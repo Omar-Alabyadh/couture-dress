@@ -6,4 +6,8 @@ out
 coverage
 dist
 *.tsbuildinfo
-node_modules
+
+# AR: نُبقي الصور المصدرية في `assets/` فقط؛ Next ينسخها إلى `public/assets` عبر السكربت.
+# EN: Source images live in `assets/`; Next copies to `public/assets` via the sync script.
+public/assets/*
+!public/assets/.gitkeep

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getPublicCollectionItems } from "@/server/services/contentService";
+import { getPublicCollectionItemsForHome } from "@/server/services/contentService";
 
 export async function GET() {
   try {
-    const items = await getPublicCollectionItems();
+    const items = await getPublicCollectionItemsForHome();
     return NextResponse.json({ data: items });
   } catch {
     return NextResponse.json(

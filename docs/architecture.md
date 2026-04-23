@@ -21,3 +21,17 @@
 - AR: التعليقات تُكتب فقط عند منطق غير بديهي أو قرار معماري.
 - EN: Comments are added only for non-obvious logic or architectural decisions.
 - Keep comments short and intent-focused, never line-by-line narration.
+
+## Static assets (images)
+
+- AR: مصدر الصور الموحّد هو `assets/` في جذر المشروع (للموقع الثابت `index.html`).
+- EN: Canonical image source is repo-root `assets/` (legacy static `index.html`).
+- AR: سكربت `npm run sync:assets` ينسخ الملفات إلى `public/assets` قبل `dev/build`.
+- EN: `npm run sync:assets` copies files into `public/assets` before `dev/build` (`predev` / `prebuild`).
+
+## Collection content (DB)
+
+- AR: واجهة المجموعة تقرأ من PostgreSQL عبر `getPublicCollectionItemsForHome()` في الصفحة الرئيسية.
+- EN: The gallery reads PostgreSQL via `getPublicCollectionItemsForHome()` on the home page.
+- AR: بذرة تجريبية: `npx prisma db seed` بعد تهيئة `DATABASE_URL` وتطبيق الترحيلات.
+- EN: Demo seed: `npx prisma db seed` after `DATABASE_URL` is set and migrations are applied.
