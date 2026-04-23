@@ -1,6 +1,6 @@
 // ========= إعداداتك هنا =========
 const WHATSAPP_NUMBER = "218920920500"; // غيره لرقم المحل بصيغة دولية بدون +
-const SHOP_NAME = "كورتور للأزياء - COUTURE";
+const SHOP_NAME = "كوتور للأزياء - COUTURE";
 // ===============================
 
 const waBase = `https://wa.me/${WHATSAPP_NUMBER}`;
