@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleAnalyticsRoot } from "@/components/analytics/GoogleAnalyticsRoot";
 import "./globals.css";
 
 const siteUrl = new URL("https://www.couture-dress.com/");
@@ -48,7 +49,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body>{children}</body>
+      <body>
+        {children}
+        <GoogleAnalyticsRoot />
+      </body>
     </html>
   );
 }
