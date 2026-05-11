@@ -1,10 +1,15 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  ENGINEER
 }
 
 model SiteSetting {
@@ -15,14 +20,62 @@ model SiteSetting {
   updatedAt DateTime @updatedAt
 }
 
+/// مستخدم: المالك (يتحكم بالكامل) أو المهندس (عرض سجل التدقيق فقط)
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String?    @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole   @default(ENGINEER)
+  auditLogs     AuditLog[]
+
+  @@index([email])
+}
+
+/// ألوان يعرّفها المالك من الداشبورد
+model Color {
+  id        String   @id @default(cuid())
+  label     String
+  hex       String?
+  sortOrder Int      @default(0)
+  deletedAt DateTime?
+  items     CollectionItem[]
+
+  @@index([deletedAt, sortOrder])
+}
+
 model CollectionItem {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   titleAr     String
   titleEn     String?
   description String?
   imageUrl    String
   category    String
-  isPublished Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isPublished Boolean   @default(true)
+  sizes       String[]  @default([])
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  colors      Color[]
+
+  @@index([isPublished, deletedAt, category])
+  @@index([titleAr])
+}
+
+/// سجل تدقيق: للمراقبة والأمان
+model AuditLog {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ip         String?
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([entityType, entityId])
 }

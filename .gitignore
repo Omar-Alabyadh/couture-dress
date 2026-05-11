@@ -1,6 +1,9 @@
+.env
 .vercel
+.cursor/
 .env*.local
 node_modules
+src/generated/prisma
 .next
 out
 coverage

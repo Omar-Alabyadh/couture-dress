@@ -1,0 +1,166 @@
+/* لوحة التحكم — مدمجة مع ألوان الموقع دون اختلاف الـ public UI */
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap");
+
+.admin-canvas {
+  min-height: 100vh;
+  display: flex;
+  font-family: "Cairo", system-ui, sans-serif;
+  background: #0b0b0f;
+  color: #f6f1ee;
+}
+
+.admin-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  padding: 1.25rem 1rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.admin-sidebar a {
+  color: #d7c9c2;
+  text-decoration: none;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.admin-sidebar a:hover,
+.admin-sidebar a.is-active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f1ee;
+}
+
+.admin-signout {
+  margin-top: 0.8rem;
+  font-family: inherit;
+  background: #481126;
+  color: #f5e8de;
+  border: 0;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.admin-user {
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: auto;
+  word-break: break-all;
+  padding-top: 1rem;
+}
+
+.admin-brand {
+  font-weight: 800;
+  color: #b9856f;
+  margin: 0 0 0.5rem 0;
+}
+
+.admin-body {
+  flex: 1;
+  min-width: 0;
+  padding: 1.5rem 1.25rem;
+  overflow: auto;
+}
+
+@media (max-width: 800px) {
+  .admin-canvas {
+    flex-direction: column;
+  }
+  .admin-sidebar {
+    width: 100%;
+    border-left: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .admin-user {
+    margin-top: 0.5rem;
+  }
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 520px;
+}
+.admin-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+  color: #d7c9c2;
+  font-weight: 700;
+}
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  font: inherit;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+}
+.admin-hint {
+  color: #888;
+  font-size: 0.8rem;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+.admin-table th,
+.admin-table td {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.5rem;
+  text-align: start;
+  vertical-align: top;
+  word-break: break-word;
+}
+.admin-table th {
+  color: #b9856f;
+  font-weight: 800;
+}
+.login-card {
+  max-width: 420px;
+  margin: 3rem auto;
+  padding: 1.5rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+}
+.login-btn {
+  margin-top: 0.7rem;
+  width: 100%;
+  font: inherit;
+  background: #4285f4;
+  color: #fff;
+  border: 0;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 800;
+}
+.login-to-site {
+  display: inline-block;
+  margin-top: 1.2rem;
+  color: #b9856f;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+.admin-json {
+  min-height: 200px;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.4;
+  direction: ltr;
+  text-align: left;
+  font-family: ui-monospace, Consolas, monospace;
+}

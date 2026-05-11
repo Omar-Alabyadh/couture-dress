@@ -85,6 +85,59 @@
   .gold{ color:var(--gold2); }
   
   .hero__cta{ margin-top:18px; display:flex; gap:12px; flex-wrap:wrap; }
+
+  .hero__social{
+    margin-top:20px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .hero__social-label{
+    font-weight:800;
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:.02em;
+  }
+
+  .social-links{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .social-link{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:44px;
+    height:44px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.07);
+    color:var(--muted);
+    cursor: pointer;
+    transition: transform .2s, background .2s, color .2s, border-color .2s;
+  }
+  .social-link:hover{
+    color:var(--text);
+    background: rgba(255,255,255,.14);
+    border-color: rgba(255,255,255,.22);
+    transform: translateY(-2px);
+  }
+  .social-link--facebook:hover{ color:#1877f2; border-color: rgba(24,119,242,.45); }
+  .social-link--instagram:hover{ color:#e4405f; border-color: rgba(228,64,95,.45); }
+  .social-link--tiktok:hover{ color:#25f4ee; border-color: rgba(37,244,238,.35); }
+  .social-link--snapchat:hover{ color:#fffc00; border-color: rgba(255,252,0,.4); }
+  .social-link--disabled{
+    opacity:.38;
+    pointer-events:none;
+    cursor: not-allowed;
+    transform:none;
+  }
+  .social-link__icon{ width:22px; height:22px; }
+
+  .footer__brand .footer__social{ margin-top:12px; }
   
   .btn{
     display:inline-flex; align-items:center; justify-content:center;
@@ -311,4 +364,41 @@
     unicode-bidi: isolate;
   }
   
+  .products-filters{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    margin-bottom:20px;
+  }
+  @media (min-width: 720px){
+    .products-filters{ grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 980px){
+    .products-filters{ grid-template-columns: repeat(2, 1fr) minmax(180px, 1fr) minmax(180px, 1fr); }
+  }
+  .products-filters .field{ display:flex; flex-direction:column; gap:6px; }
+  .products-filters .field--wide{ grid-column: 1 / -1; }
+  @media (min-width: 980px){
+    .products-filters .field--wide{ grid-column: span 2; }
+  }
+  .products-filters label{ font-size:13px; color: var(--muted); font-weight:700; }
+  .products-filters input, .products-filters select{
+    width:100%;
+    padding:10px 12px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    font-family: inherit;
+  }
+  .color-swatch{
+    display:inline-block;
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    margin-left:4px;
+    border:1px solid var(--border);
+    vertical-align: middle;
+  }
   
+   

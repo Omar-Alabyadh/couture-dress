@@ -59,6 +59,64 @@ document.querySelectorAll(".item__btn").forEach((btn) => {
   });
 });
 
+// Branch map toggle (single iframe)
+const BRANCH_MAP = {
+  benghazi: {
+    title: "فرع بنغازي",
+    address:
+      "بنغازي - بلعون كوبري الفرش سنتر إيلين في اتجاه شارع فينسيا",
+    embed:
+      "https://www.google.com/maps?q=32.065307,20.086752&z=17&output=embed",
+    openUrl: "https://maps.app.goo.gl/Limcfk7Sh7SLTTEi7?g_st=aw",
+  },
+  tripoli: {
+    title: "فرع طرابلس",
+    address: "طرابلس - شارع بن عاشور الرئيسي",
+    embed:
+      "https://www.google.com/maps?q=%D8%B7%D8%B1%D8%A7%D8%A8%D9%84%D8%B3%D8%8C%20%D8%B4%D8%A7%D8%B1%D8%B9%20%D8%A8%D9%86%20%D8%B9%D8%A7%D8%B4%D9%88%D8%B1%20%D8%A7%D9%84%D8%B1%D8%A6%D9%8A%D8%B3%D9%8A%D8%8C%20%D9%84%D9%8A%D8%A8%D9%8A%D8%A7&z=17&output=embed",
+    openUrl: "https://maps.app.goo.gl/Ux1aoXG8iNyiCWAG8?g_st=ic",
+  },
+};
+
+function applyBranchMap(branchId) {
+  const b = BRANCH_MAP[branchId];
+  if (!b) return;
+
+  const addressEl = document.getElementById("branchAddressText");
+  const iframe = document.getElementById("branchMapIframe");
+  const external = document.getElementById("branchMapExternal");
+  if (addressEl) addressEl.textContent = b.address;
+  if (iframe) {
+    iframe.title = `خريطة ${b.title}`;
+    iframe.src = b.embed;
+  }
+  if (external) {
+    if (b.openUrl) {
+      external.href = b.openUrl;
+      external.textContent = `فتح الموقع في خرائط جوجل — ${b.title}`;
+      external.style.display = "inline-block";
+    } else {
+      external.style.display = "none";
+      external.removeAttribute("href");
+    }
+  }
+
+  document.querySelectorAll("[data-branch-map]").forEach((btn) => {
+    const active = btn.getAttribute("data-branch-map") === branchId;
+    btn.classList.toggle("btn--primary", active);
+    btn.classList.toggle("btn--ghost", !active);
+  });
+}
+
+document.querySelectorAll("[data-branch-map]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const id = btn.getAttribute("data-branch-map");
+    if (id) applyBranchMap(id);
+  });
+});
+
+applyBranchMap("benghazi");
+
 // Contact form -> WhatsApp
 const form = document.getElementById("contactForm");
 

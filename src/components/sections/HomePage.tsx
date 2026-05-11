@@ -4,7 +4,19 @@
 /* eslint-disable @next/next/no-img-element -- static marketing images match legacy HTML */
 
 import { FormEvent, useMemo, useState } from "react";
+import Link from "next/link";
 import type { CollectionCategory, CollectionItemView } from "@/lib/types/collection";
+import {
+  defaultLandingContent,
+  type LandingContent,
+} from "@/lib/types/landing";
+import {
+  sanitizeLandingHeroTitleHtml,
+  sanitizeLandingHtmlFragment,
+} from "@/lib/sanitize/landing-html";
+import { clampHeroBgImageUrl } from "@/lib/validation/landing-asset-url";
+import { SocialLinks } from "@/components/SocialLinks";
+import type { PublicSocialUrls } from "@/lib/config/site";
 import { siteConfig } from "@/lib/config/site";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 
@@ -12,15 +24,38 @@ type Category = "all" | CollectionCategory;
 
 type HomePageProps = {
   collectionItems: CollectionItemView[];
+  /** محتوى قابل للتعديل من الداشبورد */
+  landing?: LandingContent;
+  /** روابط التواصل كما قرأها الخادم — تُمرَّر للعميل لتفادي اختلاف SSR عن الحزمة */
+  socialUrls: PublicSocialUrls;
 };
 
-export default function HomePage({ collectionItems }: HomePageProps) {
+export default function HomePage({
+  collectionItems,
+  landing: landingProp,
+  socialUrls,
+}: HomePageProps) {
+  const landing = landingProp ?? defaultLandingContent();
+  const heroBgSafe = clampHeroBgImageUrl(
+    landing.heroBgImage,
+    defaultLandingContent().heroBgImage,
+  );
   const [activeCategory, setActiveCategory] = useState<Category>("all");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mapBranchId, setMapBranchId] = useState(
+    () => siteConfig.branches[0]?.id ?? "benghazi",
+  );
   const defaultMessage = `مرحباً، أريد الاستفسار عن موديلات ${siteConfig.shopName}.`;
   const defaultWhatsappLink = useMemo(
     () => buildWhatsappLink(defaultMessage),
     [defaultMessage],
+  );
+
+  const mapBranch = useMemo(
+    () =>
+      siteConfig.branches.find((b) => b.id === mapBranchId) ??
+      siteConfig.branches[0]!,
+    [mapBranchId],
   );
 
   const visibleProducts = useMemo(
@@ -76,6 +111,7 @@ export default function HomePage({ collectionItems }: HomePageProps) {
           </a>
 
           <nav className="nav">
+            <Link href="/products">المنتجات</Link>
             <a href="#about">من نحن</a>
             <a href="#collection">المجموعة</a>
             <a href="#features">مميزاتنا</a>
@@ -98,6 +134,9 @@ export default function HomePage({ collectionItems }: HomePageProps) {
         id="mobileNav"
         style={{ display: mobileNavOpen ? "block" : "none" }}
       >
+        <Link href="/products" onClick={() => setMobileNavOpen(false)}>
+          المنتجات
+        </Link>
         <a href="#about" onClick={() => setMobileNavOpen(false)}>
           من نحن
         </a>
@@ -115,48 +154,48 @@ export default function HomePage({ collectionItems }: HomePageProps) {
       <main id="home" className="hero">
         <div
           className="hero__bg"
-          style={{ backgroundImage: "url('/assets/hero.jpeg')" }}
+          style={{
+            backgroundImage: `url('${heroBgSafe}')`,
+          }}
         />
         <div className="hero__overlay" />
 
         <div className="container hero__content">
-          <span className="chip">أزياء نسائية • فخامة • أناقة</span>
+          <span className="chip">{landing.heroChip}</span>
 
-          <h1>
-            إطلالتك تبدأ من <span className="gold">كوتور للأزياء</span>
-          </h1>
-          <p>
-            متجر متخصص في أحدث صيحات الموضة النسائية — فساتين، عبايات، كاجوال
-            وإكسسوارات. اكتشفي تشكيلاتنا وتواصلي معنا للحجز والاستفسار.
-          </p>
+          <h1
+            dangerouslySetInnerHTML={{
+              __html: sanitizeLandingHeroTitleHtml(landing.heroTitleHtml),
+            }}
+          />
+          <p>{landing.heroSubtitle}</p>
 
           <div className="hero__cta">
-            <a className="btn btn--primary" href="#collection">
-              استعرضي المجموعة
-            </a>
+            <Link className="btn btn--primary" href="/products">
+              {landing.heroPrimaryCtaLabel}
+            </Link>
             <a
               className="btn btn--ghost"
               href={defaultWhatsappLink}
               target="_blank"
               rel="noopener noreferrer"
             >
-              واتساب الآن
+              {landing.heroSecondaryCtaLabel}
             </a>
           </div>
 
+          <div className="hero__social" aria-label="حسابات التواصل الاجتماعي">
+            <span className="hero__social-label">تابعينا</span>
+            <SocialLinks urls={socialUrls} />
+          </div>
+
           <div className="hero__stats">
-            <div className="stat">
-              <div className="stat__num">+100</div>
-              <div className="stat__label">قطعة مختارة</div>
-            </div>
-            <div className="stat">
-              <div className="stat__num">أسبوعي</div>
-              <div className="stat__label">تجديد الموديلات</div>
-            </div>
-            <div className="stat">
-              <div className="stat__num">ممتازة</div>
-              <div className="stat__label">جودة وخامة</div>
-            </div>
+            {landing.stats.map((s) => (
+              <div className="stat" key={s.label}>
+                <div className="stat__num">{s.num}</div>
+                <div className="stat__label">{s.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </main>
@@ -164,34 +203,28 @@ export default function HomePage({ collectionItems }: HomePageProps) {
       <section id="about" className="section">
         <div className="container grid-2">
           <div>
-            <h2 className="section__title">من نحن</h2>
-            <p className="section__text">
-              <b>كوتور للأزياء (COUTURE)</b> متجر يقدم تشكيلة مميزة من الأزياء
-              النسائية تجمع بين الأناقة والجودة والذوق الرفيع. نحرص على اختيار
-              قطع تناسب جميع الأذواق وتمنحك إطلالة فريدة في كل مناسبة.
-            </p>
+            <h2 className="section__title">{landing.aboutTitle}</h2>
+            <div
+              className="section__text"
+              dangerouslySetInnerHTML={{
+                __html: sanitizeLandingHtmlFragment(landing.aboutHtml),
+              }}
+            />
             <ul className="list">
-              <li>فساتين سهرة ويومية</li>
-              <li>عبايات وملابس محجبات</li>
-              <li>كاجوال عصري</li>
-              <li>إكسسوارات مختارة</li>
+              {landing.aboutList.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
             </ul>
           </div>
 
           <div className="card glass">
-            <h3 className="card__title">رسالتنا</h3>
-            <p className="card__text">
-              نوفر تجربة شراء مريحة، وتشكيلات راقية، وخدمة زبائن ممتازة — لأننا
-              نؤمن أن الأناقة حق للجميع.
-            </p>
+            <h3 className="card__title">{landing.missionTitle}</h3>
+            <p className="card__text">{landing.missionText}</p>
 
             <div className="divider" />
 
-            <h3 className="card__title">رؤيتنا</h3>
-            <p className="card__text">
-              أن تصبح كوتور للأزياء الوجهة الأولى لكل سيدة تبحث عن أسلوب راقٍ
-              ومميز.
-            </p>
+            <h3 className="card__title">{landing.visionTitle}</h3>
+            <p className="card__text">{landing.visionText}</p>
           </div>
         </div>
       </section>
@@ -199,9 +232,14 @@ export default function HomePage({ collectionItems }: HomePageProps) {
       <section id="collection" className="section section--alt">
         <div className="container">
           <div className="section__head">
-            <h2 className="section__title">المجموعة</h2>
-            <p className="section__text">
-              {/* صور تجريبية — استبدليها بصور منتجات المحل لاحقًا. */}
+            <h2 className="section__title">{landing.collectionTitle}</h2>
+            {landing.collectionSubtitle ? (
+              <p className="section__text">{landing.collectionSubtitle}</p>
+            ) : null}
+            <p style={{ marginTop: "0.5rem" }}>
+              <Link className="btn btn--ghost" href="/products">
+                تصفحي جميع المنتجات والفلاتر
+              </Link>
             </p>
           </div>
 
@@ -271,6 +309,21 @@ export default function HomePage({ collectionItems }: HomePageProps) {
                   <div className="item__body">
                     <h3>{item.title}</h3>
                     {item.description ? <p>{item.description}</p> : null}
+                    {(item.sizes.length > 0 || item.colors.length > 0) && (
+                      <p className="item__meta muted" style={{ fontSize: 13, margin: "0 0 6px" }}>
+                        {item.sizes.length > 0 ? (
+                          <span>المقاسات: {item.sizes.join("، ")}</span>
+                        ) : null}
+                        {item.sizes.length > 0 && item.colors.length > 0
+                          ? " · "
+                          : null}
+                        {item.colors.length > 0 ? (
+                          <span>
+                            {item.colors.map((c) => c.label).join("، ")}
+                          </span>
+                        ) : null}
+                      </p>
+                    )}
                     <button
                       className="btn btn--small btn--primary item__btn"
                       data-title={item.title}
@@ -289,29 +342,16 @@ export default function HomePage({ collectionItems }: HomePageProps) {
 
       <section id="features" className="section">
         <div className="container">
-          <h2 className="section__title">لماذا كوتور للأزياء؟</h2>
+          <h2 className="section__title">{landing.featuresTitle}</h2>
 
           <div className="features">
-            <div className="feature">
-              <div className="icon">✦</div>
-              <h3>اختيار راقٍ</h3>
-              <p>قطع منتقاة بعناية لتناسب ذوقك.</p>
-            </div>
-            <div className="feature">
-              <div className="icon">✓</div>
-              <h3>جودة ممتازة</h3>
-              <p>خامات ممتازة وتفاصيل دقيقة.</p>
-            </div>
-            <div className="feature">
-              <div className="icon">⚡</div>
-              <h3>تحديث مستمر</h3>
-              <p>موديلات جديدة بشكل أسبوعي.</p>
-            </div>
-            <div className="feature">
-              <div className="icon">☎</div>
-              <h3>تواصل سريع</h3>
-              <p>واتساب مباشر للحجز والاستفسار.</p>
-            </div>
+            {landing.features.map((f) => (
+              <div className="feature" key={f.title}>
+                <div className="icon">{f.icon}</div>
+                <h3>{f.title}</h3>
+                <p>{f.text}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -319,10 +359,8 @@ export default function HomePage({ collectionItems }: HomePageProps) {
       <section id="contact" className="section section--alt">
         <div className="container grid-2">
           <div>
-            <h2 className="section__title">تواصل معنا</h2>
-            <p className="section__text">
-              للحجز والاستفسار، راسلينا على واتساب أو اتركي رسالة وسنرد عليك.
-            </p>
+            <h2 className="section__title">{landing.contactTitle}</h2>
+            <p className="section__text">{landing.contactIntro}</p>
 
             <div className="contact-card">
               <div className="contact-row">
@@ -341,21 +379,59 @@ export default function HomePage({ collectionItems }: HomePageProps) {
                   +218 92 092 0500
                 </a>
               </div>
-              <div className="contact-row">
-                <span className="label">الموقع:</span>
-                <span>{siteConfig.location}</span>
+              <div
+                className="contact-row"
+                style={{ alignItems: "center", flexWrap: "wrap" }}
+              >
+                <span className="label">الفروع:</span>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                    flexWrap: "wrap",
+                    flex: "1 1 auto",
+                    minWidth: 0,
+                  }}
+                >
+                  {siteConfig.branches.map((branch) => (
+                    <button
+                      key={branch.id}
+                      type="button"
+                      className={`btn btn--small ${
+                        mapBranchId === branch.id
+                          ? "btn--primary"
+                          : "btn--ghost"
+                      }`}
+                      onClick={() => setMapBranchId(branch.id)}
+                    >
+                      {branch.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div
+                className="contact-row"
+                style={{
+                  marginTop: "14px",
+                  flexDirection: "column",
+                  alignItems: "stretch",
+                  gap: "6px",
+                }}
+              >
+                <span>{mapBranch.addressLine}</span>
               </div>
               <div
                 style={{
-                  marginTop: "14px",
+                  marginTop: "12px",
                   borderRadius: "16px",
                   overflow: "hidden",
                   border: "1px solid rgba(255, 255, 255, 0.12)",
                 }}
               >
                 <iframe
-                  title="خريطة الموقع"
-                  src="https://www.google.com/maps?q=27.0437,20.0629&z=16&output=embed"
+                  key={mapBranch.id}
+                  title={`خريطة ${mapBranch.title}`}
+                  src={mapBranch.mapEmbedSrc}
                   width="100%"
                   height={260}
                   style={{ border: 0, borderRadius: "16px" }}
@@ -364,6 +440,16 @@ export default function HomePage({ collectionItems }: HomePageProps) {
                   referrerPolicy="no-referrer-when-downgrade"
                 />
               </div>
+              {mapBranch.mapOpenUrl ? (
+                <a
+                  href={mapBranch.mapOpenUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "inline-block", marginTop: "10px" }}
+                >
+                  فتح الموقع في خرائط جوجل — {mapBranch.title}
+                </a>
+              ) : null}
             </div>
           </div>
 
@@ -408,9 +494,10 @@ export default function HomePage({ collectionItems }: HomePageProps) {
 
       <footer className="footer">
         <div className="container footer__inner">
-          <div>
-            <b>كوتور للأزياء</b> — COUTURE
+          <div className="footer__brand">
+            <b>{landing.footerAr}</b> — {landing.footerEn}
             <div className="muted">© جميع الحقوق محفوظة</div>
+            <SocialLinks className="footer__social" urls={socialUrls} />
           </div>
           <a className="to-top" href="#home">
             ↑ للأعلى

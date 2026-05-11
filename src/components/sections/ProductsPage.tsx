@@ -1,0 +1,308 @@
+"use client";
+
+/* eslint-disable @next/next/no-img-element -- match marketing site */
+
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
+import type { CollectionItemView } from "@/lib/types/collection";
+import { siteConfig } from "@/lib/config/site";
+import { buildWhatsappLink } from "@/lib/whatsapp";
+
+type ColorOption = { id: string; label: string; hex: string | null };
+
+type Category = "all" | "dresses" | "abayas" | "casual" | "accessories";
+
+const categoryLabels: Record<Exclude<Category, "all">, string> = {
+  dresses: "فساتين",
+  abayas: "عبايات",
+  casual: "كاجوال",
+  accessories: "إكسسوارات",
+};
+
+function buildQuery(p: {
+  q: string;
+  name: string;
+  size: string;
+  colorId: string;
+  category: Category;
+}) {
+  const u = new URLSearchParams();
+  if (p.q.trim()) u.set("q", p.q.trim());
+  if (p.name.trim()) u.set("name", p.name.trim());
+  if (p.size) u.set("size", p.size);
+  if (p.colorId) u.set("colorId", p.colorId);
+  if (p.category !== "all") u.set("category", p.category);
+  return u.toString();
+}
+
+export default function ProductsPage() {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [name, setName] = useState("");
+  const [size, setSize] = useState("");
+  const [colorId, setColorId] = useState("");
+  const [category, setCategory] = useState<Category>("all");
+  const [debouncedQ, setDebouncedQ] = useState("");
+  const [items, setItems] = useState<CollectionItemView[]>([]);
+  const [colors, setColors] = useState<ColorOption[]>([]);
+  const [sizes, setSizes] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 320);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    setErr(null);
+    const qs = buildQuery({
+      q: debouncedQ,
+      name,
+      size,
+      colorId,
+      category,
+    });
+    try {
+      const [pRes, cRes, sRes] = await Promise.all([
+        fetch(`/api/public/products?${qs}`, { cache: "no-store" }),
+        fetch("/api/public/colors", { cache: "no-store" }),
+        fetch("/api/public/sizes", { cache: "no-store" }),
+      ]);
+      if (!pRes.ok) throw new Error("fetch");
+      const pJson = (await pRes.json()) as { data: CollectionItemView[] };
+      setItems(pJson.data);
+      if (cRes.ok) {
+        const c = (await cRes.json()) as { data: ColorOption[] };
+        setColors(c.data);
+      }
+      if (sRes.ok) {
+        const s = (await sRes.json()) as { data: string[] };
+        setSizes(s.data);
+      }
+    } catch {
+      setErr("تعذر تحميل المنتجات. تحقق من الاتصال أو لاحقًا.");
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedQ, name, size, colorId, category]);
+
+  useEffect(() => {
+    return runAfterEffectFlush(() => {
+      void refetch();
+    });
+  }, [refetch]);
+
+  const defaultWhatsapp = useMemo(
+    () => buildWhatsappLink(`أريد الاستفسار عن موديلات ${siteConfig.shopName}.`),
+    [],
+  );
+
+  function order(title: string) {
+    const message = `مرحباً، أريد طلب/الاستفسار عن: ${title} من ${siteConfig.shopName}.`;
+    window.open(buildWhatsappLink(message), "_blank", "noopener,noreferrer");
+  }
+
+  return (
+    <>
+      <header className="topbar">
+        <div className="container topbar__inner">
+          <Link className="brand" href="/" aria-label="العودة للرئيسية">
+            <img
+              src="/assets/logo.jpeg"
+              alt="COUTURE"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+            <div className="brand__text">
+              <div className="brand__ar">كوتور للأزياء</div>
+              <div className="brand__en">COUTURE</div>
+            </div>
+          </Link>
+          <nav className="nav">
+            <Link href="/#about">من نحن</Link>
+            <Link href="/#collection">المجموعة</Link>
+            <Link href="/#features">مميزاتنا</Link>
+            <Link href="/#contact">تواصل</Link>
+            <span style={{ color: "var(--gold2)", fontWeight: 800 }}>المنتجات</span>
+          </nav>
+          <button
+            className="nav__toggle"
+            type="button"
+            aria-label="فتح القائمة"
+            onClick={() => setMobileNavOpen((c) => !c)}
+          >
+            ☰
+          </button>
+        </div>
+      </header>
+
+      <div
+        className="mobile-nav"
+        id="mobileNav"
+        style={{ display: mobileNavOpen ? "block" : "none" }}
+      >
+        <Link href="/#about" onClick={() => setMobileNavOpen(false)}>من نحن</Link>
+        <Link href="/#collection" onClick={() => setMobileNavOpen(false)}>المجموعة</Link>
+        <Link href="/#features" onClick={() => setMobileNavOpen(false)}>مميزاتنا</Link>
+        <Link href="/#contact" onClick={() => setMobileNavOpen(false)}>تواصل</Link>
+      </div>
+
+      <main className="section" style={{ paddingTop: 28 }}>
+        <div className="container">
+          <h1 className="section__title" style={{ marginTop: 0 }}>المنتجات</h1>
+          <p className="section__text">
+            ابحثي وصفّي حسب الاسم، المقاس، واللون — الألوان يعرّفها مالك المتجر من
+            لوحة التحكم.
+          </p>
+
+          <div className="products-filters" dir="rtl">
+            <div className="field field--wide">
+              <label htmlFor="pq">بحث (في الاسم والوصف)</label>
+              <input
+                id="pq"
+                name="q"
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="مثال: فستان، عباية..."
+                autoComplete="off"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="pname">اسم المنتج (ضمن الاسم فقط)</label>
+              <input
+                id="pname"
+                name="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="مطابقة لجزء من العنوان"
+                autoComplete="off"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="pcat">التصنيف</label>
+              <select
+                id="pcat"
+                name="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value as Category)}
+              >
+                <option value="all">الكل</option>
+                {Object.entries(categoryLabels).map(([k, l]) => (
+                  <option key={k} value={k}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="psize">المقاس</label>
+              <select
+                id="psize"
+                name="size"
+                value={size}
+                onChange={(e) => setSize(e.target.value)}
+              >
+                <option value="">— أي مقاس —</option>
+                {sizes.map((z) => (
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="pcol">اللون</label>
+              <select
+                id="pcol"
+                name="colorId"
+                value={colorId}
+                onChange={(e) => setColorId(e.target.value)}
+              >
+                <option value="">— أي لون —</option>
+                {colors.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                    {c.hex ? ` (#${c.hex})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {err ? <p className="section__text" style={{ color: "#c77" }}>{err}</p> : null}
+          {loading && !err ? (
+            <p className="section__text">جارٍ التحميل…</p>
+          ) : null}
+          <div className="gallery" style={{ marginTop: 8 }}>
+            {!loading && !err && items.length === 0 ? (
+              <p className="section__text" style={{ gridColumn: "1 / -1" }}>
+                لا توجد نتائج. جرّبي تخفيف الفلتر.
+              </p>
+            ) : null}
+            {items.map((item) => (
+              <article className="item" data-cat={item.category} key={item.id}>
+                <img src={item.imageUrl} alt={item.imageAlt} />
+                <div className="item__body">
+                  <h3>{item.title}</h3>
+                  {item.description ? <p>{item.description}</p> : null}
+                  {item.sizes.length > 0 || item.colors.length > 0 ? (
+                    <p
+                      className="item__meta muted"
+                      style={{ fontSize: 13, margin: "0 0 6px" }}
+                    >
+                      {item.sizes.length > 0 ? (
+                        <span>المقاسات: {item.sizes.join("، ")}</span>
+                      ) : null}
+                      {item.sizes.length > 0 && item.colors.length > 0 ? " · " : null}
+                      {item.colors.length > 0 ? (
+                        <span>
+                          {item.colors.map((c) => (
+                            <span key={c.id}>
+                              {c.hex ? (
+                                <span
+                                  className="color-swatch"
+                                  style={{ background: c.hex }}
+                                  title={c.label}
+                                />
+                              ) : null}
+                              {c.label}{" "}
+                            </span>
+                          ))}
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : null}
+                  <button
+                    className="btn btn--small btn--primary item__btn"
+                    type="button"
+                    onClick={() => order(item.title)}
+                  >
+                    اطلبي عبر واتساب
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </main>
+
+      <footer className="footer" style={{ marginTop: 40 }}>
+        <div className="container footer__inner">
+          <Link className="muted" href="/">
+            ← العودة للرئيسية
+          </Link>
+          <a className="to-top" href={defaultWhatsapp} target="_blank" rel="noopener noreferrer">
+            واتساب
+          </a>
+        </div>
+      </footer>
+    </>
+  );
+}

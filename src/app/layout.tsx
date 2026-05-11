@@ -9,22 +9,35 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
-  title: "كوتور للأزياء | COUTURE – بنغازي بلعون",
+  title: "كوتور للأزياء | COUTURE – بنغازي و طرابلس",
   description:
-    "كوتور للأزياء – COUTURE متجر أزياء نسائية في بنغازي/بلعون. فساتين، عبايات، كاجوال وإكسسوارات. تواصلي معنا عبر واتساب.",
+    "كوتور للأزياء – COUTURE متجر أزياء نسائية بفرعين في بنغازي و طرابلس. فساتين، عبايات، كاجوال وإكسسوارات. تواصلي معنا عبر واتساب.",
   alternates: {
     canonical: "/",
   },
   icons: {
-    icon: [{ url: "/assets/logo.jpeg", type: "image/jpeg" }],
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
+  manifest: "/site.webmanifest",
   openGraph: {
-    title: "كوتور للأزياء | COUTURE",
-    description:
-      "أزياء نسائية راقية في بنغازي/بلعون. تشكيلة مختارة وجودة ممتازة.",
+    title: "كوتور للأزياء",
+    description: "أزياء نسائية فاخرة ومختارة بعناية",
     url: siteUrl,
     type: "website",
-    images: [{ url: "/assets/logo.jpeg" }],
+    locale: "ar_LY",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "كوتور للأزياء",
+      },
+    ],
   },
 };
 

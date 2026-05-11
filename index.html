@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Title & Description -->
-    <title>كوتور للأزياء | COUTURE – بنغازي بلعون</title>
+    <title>كوتور للأزياء | COUTURE – بنغازي وطرابلس</title>
     <meta
       name="description"
-      content="كوتور للأزياء – COUTURE متجر أزياء نسائية في بنغازي/بلعون. فساتين، عبايات، كاجوال وإكسسوارات. تواصلي معنا عبر واتساب."
+      content="كوتور للأزياء – COUTURE متجر أزياء نسائية بفرعين في بنغازي وطرابلس. فساتين، عبايات، كاجوال وإكسسوارات. تواصلي معنا عبر واتساب."
     />
 
     <!-- Theme Color -->
@@ -23,7 +23,7 @@
     <meta property="og:title" content="كوتور للأزياء | COUTURE" />
     <meta
       property="og:description"
-      content="أزياء نسائية راقية في بنغازي/بلعون. تشكيلة مختارة وجودة ممتازة."
+      content="أزياء نسائية راقية في بنغازي وطرابلس. تشكيلة مختارة وجودة ممتازة."
     />
     <meta
       property="og:image"
@@ -295,29 +295,75 @@
               <span class="label">هاتف:</span>
               <a href="tel:+218920920500" dir="ltr">+218 92 092 0500</a>
             </div>
-            <div class="contact-row">
-              <span class="label">الموقع:</span>
-              <span>بنغازي / بلعون – ليبيا</span>
+            <div
+              class="contact-row"
+              style="align-items: center; flex-wrap: wrap"
+            >
+              <span class="label">الفروع:</span>
+              <div
+                id="branchMapButtons"
+                style="
+                  display: flex;
+                  gap: 10px;
+                  flex-wrap: wrap;
+                  flex: 1 1 auto;
+                  min-width: 0;
+                "
+              >
+                <button
+                  type="button"
+                  class="btn btn--small btn--primary"
+                  data-branch-map="benghazi"
+                >
+                  فرع بنغازي
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--small btn--ghost"
+                  data-branch-map="tripoli"
+                >
+                  فرع طرابلس
+                </button>
+              </div>
+            </div>
+            <div
+              class="contact-row"
+              id="branchAddressRow"
+              style="
+                margin-top: 14px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 6px;
+              "
+            >
+              <span id="branchAddressText"></span>
             </div>
             <div
               style="
-                margin-top: 14px;
+                margin-top: 12px;
                 border-radius: 16px;
                 overflow: hidden;
                 border: 1px solid rgba(255, 255, 255, 0.12);
               "
             >
               <iframe
-                src="https://www.google.com/maps?q=27.0437,20.0629&z=16&output=embed"
+                id="branchMapIframe"
+                title="خريطة الفرع"
                 width="100%"
                 height="260"
                 style="border: 0; border-radius: 16px;"
                 allowfullscreen=""
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade"
-              >
-              </iframe>
+              ></iframe>
             </div>
+            <a
+              id="branchMapExternal"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="display: none; margin-top: 10px"
+            ></a>
           </div>
         </div>
 
