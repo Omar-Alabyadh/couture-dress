@@ -1,6 +1,5 @@
-/* AR: خط Cairo من Google — نفس الموقع الأصلي. */
-/* EN: Cairo font from Google Fonts — same as the original static site. */
-@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap");
+/* AR: خط Cairo يُحمَّل عبر `next/font/google` في `layout.tsx`. */
+/* EN: Cairo is loaded via `next/font/google` in `layout.tsx`. */
 
 /* AR: نستورد ملف الأنماط الأصلي حرفيًا للحفاظ على نفس UI/UX والاستجابة. */
 /* EN: Import the original stylesheet verbatim to preserve UI/UX and responsiveness. */

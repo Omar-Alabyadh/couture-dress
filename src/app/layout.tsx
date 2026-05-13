@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { Cairo } from "next/font/google";
 import { GoogleAnalyticsRoot } from "@/components/analytics/GoogleAnalyticsRoot";
 import "./globals.css";
+
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  weight: ["300", "400", "600", "700", "800"],
+  display: "swap",
+});
 
 const siteUrl = new URL("https://www.couture-dress.com/");
 
@@ -48,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" className={cairo.className}>
       <body>
         {children}
         <GoogleAnalyticsRoot />
