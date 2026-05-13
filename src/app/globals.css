@@ -1,5 +1,5 @@
-/* AR: خط Cairo يُحمَّل عبر `next/font/google` في `layout.tsx`. */
-/* EN: Cairo is loaded via `next/font/google` in `layout.tsx`. */
+/* AR: خط Cairo يُحمَّل مرة واحدة عبر `next/font/google` في `src/app/fonts.ts` ويُطبَّق من `layout.tsx`. */
+/* EN: Cairo is loaded once via `next/font/google` in `src/app/fonts.ts` and applied from `layout.tsx`. */
 
 /* AR: نستورد ملف الأنماط الأصلي حرفيًا للحفاظ على نفس UI/UX والاستجابة. */
 /* EN: Import the original stylesheet verbatim to preserve UI/UX and responsiveness. */

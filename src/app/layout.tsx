@@ -1,13 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Cairo } from "next/font/google";
 import { GoogleAnalyticsRoot } from "@/components/analytics/GoogleAnalyticsRoot";
+import { cairo } from "./fonts";
 import "./globals.css";
-
-const cairo = Cairo({
-  subsets: ["arabic", "latin"],
-  weight: ["300", "400", "600", "700", "800"],
-  display: "swap",
-});
 
 const siteUrl = new URL("https://www.couture-dress.com/");
 
