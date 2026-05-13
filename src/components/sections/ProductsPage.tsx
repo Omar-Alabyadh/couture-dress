@@ -8,6 +8,8 @@ import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import type { CollectionItemView } from "@/lib/types/collection";
 import { siteConfig } from "@/lib/config/site";
 import { buildWhatsappLink } from "@/lib/whatsapp";
+import Reveal from "@/components/motion/Reveal";
+import { useStickyHeader } from "@/components/motion/useStickyHeader";
 
 type ColorOption = { id: string; label: string; hex: string | null };
 
@@ -38,6 +40,7 @@ function buildQuery(p: {
 
 export default function ProductsPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const headerRef = useStickyHeader<HTMLElement>();
   const [q, setQ] = useState("");
   const [name, setName] = useState("");
   const [size, setSize] = useState("");
@@ -108,7 +111,7 @@ export default function ProductsPage() {
 
   return (
     <>
-      <header className="topbar">
+      <header ref={headerRef} className="topbar">
         <div className="container topbar__inner">
           <Link className="brand" href="/" aria-label="العودة للرئيسية">
             <img
@@ -142,9 +145,9 @@ export default function ProductsPage() {
       </header>
 
       <div
-        className="mobile-nav"
+        className={`mobile-nav${mobileNavOpen ? " mobile-nav--open" : ""}`}
         id="mobileNav"
-        style={{ display: mobileNavOpen ? "block" : "none" }}
+        aria-hidden={!mobileNavOpen}
       >
         <Link href="/#about" onClick={() => setMobileNavOpen(false)}>من نحن</Link>
         <Link href="/#collection" onClick={() => setMobileNavOpen(false)}>المجموعة</Link>
@@ -246,48 +249,56 @@ export default function ProductsPage() {
                 لا توجد نتائج. جرّبي تخفيف الفلتر.
               </p>
             ) : null}
-            {items.map((item) => (
-              <article className="item" data-cat={item.category} key={item.id}>
-                <img src={item.imageUrl} alt={item.imageAlt} />
-                <div className="item__body">
-                  <h3>{item.title}</h3>
-                  {item.description ? <p>{item.description}</p> : null}
-                  {item.sizes.length > 0 || item.colors.length > 0 ? (
-                    <p
-                      className="item__meta muted"
-                      style={{ fontSize: 13, margin: "0 0 6px" }}
+            {items.map((item, idx) => (
+              <Reveal
+                key={item.id}
+                variant="zoom"
+                delay={Math.min(idx * 60, 360)}
+              >
+                <article className="item" data-cat={item.category}>
+                  <div className="item__media">
+                    <img src={item.imageUrl} alt={item.imageAlt} loading="lazy" />
+                  </div>
+                  <div className="item__body">
+                    <h3>{item.title}</h3>
+                    {item.description ? <p>{item.description}</p> : null}
+                    {item.sizes.length > 0 || item.colors.length > 0 ? (
+                      <p
+                        className="item__meta muted"
+                        style={{ fontSize: 13, margin: "0 0 6px" }}
+                      >
+                        {item.sizes.length > 0 ? (
+                          <span>المقاسات: {item.sizes.join("، ")}</span>
+                        ) : null}
+                        {item.sizes.length > 0 && item.colors.length > 0 ? " · " : null}
+                        {item.colors.length > 0 ? (
+                          <span>
+                            {item.colors.map((c) => (
+                              <span key={c.id}>
+                                {c.hex ? (
+                                  <span
+                                    className="color-swatch"
+                                    style={{ background: c.hex }}
+                                    title={c.label}
+                                  />
+                                ) : null}
+                                {c.label}{" "}
+                              </span>
+                            ))}
+                          </span>
+                        ) : null}
+                      </p>
+                    ) : null}
+                    <button
+                      className="btn btn--small btn--primary item__btn"
+                      type="button"
+                      onClick={() => order(item.title)}
                     >
-                      {item.sizes.length > 0 ? (
-                        <span>المقاسات: {item.sizes.join("، ")}</span>
-                      ) : null}
-                      {item.sizes.length > 0 && item.colors.length > 0 ? " · " : null}
-                      {item.colors.length > 0 ? (
-                        <span>
-                          {item.colors.map((c) => (
-                            <span key={c.id}>
-                              {c.hex ? (
-                                <span
-                                  className="color-swatch"
-                                  style={{ background: c.hex }}
-                                  title={c.label}
-                                />
-                              ) : null}
-                              {c.label}{" "}
-                            </span>
-                          ))}
-                        </span>
-                      ) : null}
-                    </p>
-                  ) : null}
-                  <button
-                    className="btn btn--small btn--primary item__btn"
-                    type="button"
-                    onClick={() => order(item.title)}
-                  >
-                    اطلبي عبر واتساب
-                  </button>
-                </div>
-              </article>
+                      اطلبي عبر واتساب
+                    </button>
+                  </div>
+                </article>
+              </Reveal>
             ))}
           </div>
         </div>

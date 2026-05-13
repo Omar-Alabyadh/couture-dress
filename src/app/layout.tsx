@@ -50,6 +50,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className={cairo.className}>
+      <head>
+        {/*
+         * AR: ضمان ظهور المحتوى بدون JS (الكشف بالمراقب يحتاج JS).
+         * EN: Ensure reveal-on-scroll content stays visible if JS is disabled.
+         */}
+        <noscript>
+          <style>{`.reveal{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
+      </head>
       <body>
         {children}
         <GoogleAnalyticsRoot />

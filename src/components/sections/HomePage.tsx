@@ -19,6 +19,8 @@ import { SocialLinks } from "@/components/SocialLinks";
 import type { PublicSocialUrls } from "@/lib/config/site";
 import { siteConfig } from "@/lib/config/site";
 import { buildWhatsappLink } from "@/lib/whatsapp";
+import Reveal from "@/components/motion/Reveal";
+import { useStickyHeader } from "@/components/motion/useStickyHeader";
 
 type Category = "all" | CollectionCategory;
 
@@ -45,6 +47,7 @@ export default function HomePage({
   const [mapBranchId, setMapBranchId] = useState(
     () => siteConfig.branches[0]?.id ?? "benghazi",
   );
+  const headerRef = useStickyHeader<HTMLElement>();
   const defaultMessage = `مرحباً، أريد الاستفسار عن موديلات ${siteConfig.shopName}.`;
   const defaultWhatsappLink = useMemo(
     () => buildWhatsappLink(defaultMessage),
@@ -94,7 +97,7 @@ export default function HomePage({
 
   return (
     <>
-      <header className="topbar">
+      <header ref={headerRef} className="topbar">
         <div className="container topbar__inner">
           <a className="brand" href="#home" aria-label="كوتور للأزياء">
             <img
@@ -130,9 +133,9 @@ export default function HomePage({
       </header>
 
       <div
-        className="mobile-nav"
+        className={`mobile-nav${mobileNavOpen ? " mobile-nav--open" : ""}`}
         id="mobileNav"
-        style={{ display: mobileNavOpen ? "block" : "none" }}
+        aria-hidden={!mobileNavOpen}
       >
         <Link href="/products" onClick={() => setMobileNavOpen(false)}>
           المنتجات
@@ -202,7 +205,7 @@ export default function HomePage({
 
       <section id="about" className="section">
         <div className="container grid-2">
-          <div>
+          <Reveal>
             <h2 className="section__title">{landing.aboutTitle}</h2>
             <div
               className="section__text"
@@ -215,33 +218,37 @@ export default function HomePage({
                 <li key={line}>{line}</li>
               ))}
             </ul>
-          </div>
+          </Reveal>
 
-          <div className="card glass">
-            <h3 className="card__title">{landing.missionTitle}</h3>
-            <p className="card__text">{landing.missionText}</p>
+          <Reveal delay={120} variant="left">
+            <div className="card glass">
+              <h3 className="card__title">{landing.missionTitle}</h3>
+              <p className="card__text">{landing.missionText}</p>
 
-            <div className="divider" />
+              <div className="divider" />
 
-            <h3 className="card__title">{landing.visionTitle}</h3>
-            <p className="card__text">{landing.visionText}</p>
-          </div>
+              <h3 className="card__title">{landing.visionTitle}</h3>
+              <p className="card__text">{landing.visionText}</p>
+            </div>
+          </Reveal>
         </div>
       </section>
 
       <section id="collection" className="section section--alt">
         <div className="container">
-          <div className="section__head">
-            <h2 className="section__title">{landing.collectionTitle}</h2>
-            {landing.collectionSubtitle ? (
-              <p className="section__text">{landing.collectionSubtitle}</p>
-            ) : null}
-            <p style={{ marginTop: "0.5rem" }}>
-              <Link className="btn btn--ghost" href="/products">
-                تصفحي جميع المنتجات والفلاتر
-              </Link>
-            </p>
-          </div>
+          <Reveal>
+            <div className="section__head">
+              <h2 className="section__title">{landing.collectionTitle}</h2>
+              {landing.collectionSubtitle ? (
+                <p className="section__text">{landing.collectionSubtitle}</p>
+              ) : null}
+              <p style={{ marginTop: "0.5rem" }}>
+                <Link className="btn btn--ghost" href="/products">
+                  تصفحي جميع المنتجات والفلاتر
+                </Link>
+              </p>
+            </div>
+          </Reveal>
 
           <div className="tabs">
             <button
@@ -299,41 +306,45 @@ export default function HomePage({
                 لا توجد قطع ضمن هذا التصنيف. / No items in this category.
               </p>
             ) : (
-              visibleProducts.map((item) => (
-                <article
-                  className="item"
-                  data-cat={item.category}
+              visibleProducts.map((item, idx) => (
+                <Reveal
                   key={item.id}
+                  variant="zoom"
+                  delay={Math.min(idx * 70, 420)}
                 >
-                  <img src={item.imageUrl} alt={item.imageAlt} />
-                  <div className="item__body">
-                    <h3>{item.title}</h3>
-                    {item.description ? <p>{item.description}</p> : null}
-                    {(item.sizes.length > 0 || item.colors.length > 0) && (
-                      <p className="item__meta muted" style={{ fontSize: 13, margin: "0 0 6px" }}>
-                        {item.sizes.length > 0 ? (
-                          <span>المقاسات: {item.sizes.join("، ")}</span>
-                        ) : null}
-                        {item.sizes.length > 0 && item.colors.length > 0
-                          ? " · "
-                          : null}
-                        {item.colors.length > 0 ? (
-                          <span>
-                            {item.colors.map((c) => c.label).join("، ")}
-                          </span>
-                        ) : null}
-                      </p>
-                    )}
-                    <button
-                      className="btn btn--small btn--primary item__btn"
-                      data-title={item.title}
-                      onClick={() => handleItemOrder(item.title)}
-                      type="button"
-                    >
-                      اطلبي عبر واتساب
-                    </button>
-                  </div>
-                </article>
+                  <article className="item" data-cat={item.category}>
+                    <div className="item__media">
+                      <img src={item.imageUrl} alt={item.imageAlt} loading="lazy" />
+                    </div>
+                    <div className="item__body">
+                      <h3>{item.title}</h3>
+                      {item.description ? <p>{item.description}</p> : null}
+                      {(item.sizes.length > 0 || item.colors.length > 0) && (
+                        <p className="item__meta muted" style={{ fontSize: 13, margin: "0 0 6px" }}>
+                          {item.sizes.length > 0 ? (
+                            <span>المقاسات: {item.sizes.join("، ")}</span>
+                          ) : null}
+                          {item.sizes.length > 0 && item.colors.length > 0
+                            ? " · "
+                            : null}
+                          {item.colors.length > 0 ? (
+                            <span>
+                              {item.colors.map((c) => c.label).join("، ")}
+                            </span>
+                          ) : null}
+                        </p>
+                      )}
+                      <button
+                        className="btn btn--small btn--primary item__btn"
+                        data-title={item.title}
+                        onClick={() => handleItemOrder(item.title)}
+                        type="button"
+                      >
+                        اطلبي عبر واتساب
+                      </button>
+                    </div>
+                  </article>
+                </Reveal>
               ))
             )}
           </div>
@@ -342,15 +353,19 @@ export default function HomePage({
 
       <section id="features" className="section">
         <div className="container">
-          <h2 className="section__title">{landing.featuresTitle}</h2>
+          <Reveal>
+            <h2 className="section__title">{landing.featuresTitle}</h2>
+          </Reveal>
 
           <div className="features">
-            {landing.features.map((f) => (
-              <div className="feature" key={f.title}>
-                <div className="icon">{f.icon}</div>
-                <h3>{f.title}</h3>
-                <p>{f.text}</p>
-              </div>
+            {landing.features.map((f, idx) => (
+              <Reveal key={f.title} delay={Math.min(idx * 90, 360)}>
+                <div className="feature">
+                  <div className="icon">{f.icon}</div>
+                  <h3>{f.title}</h3>
+                  <p>{f.text}</p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -358,7 +373,7 @@ export default function HomePage({
 
       <section id="contact" className="section section--alt">
         <div className="container grid-2">
-          <div>
+          <Reveal>
             <h2 className="section__title">{landing.contactTitle}</h2>
             <p className="section__text">{landing.contactIntro}</p>
 
@@ -451,44 +466,46 @@ export default function HomePage({
                 </a>
               ) : null}
             </div>
-          </div>
+          </Reveal>
 
-          <form className="form" id="contactForm" onSubmit={handleSubmit}>
-            <h3>أرسلي رسالة</h3>
-            <label htmlFor="name">الاسم</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              placeholder="اسمك"
-              required
-            />
+          <Reveal delay={120} variant="left">
+            <form className="form" id="contactForm" onSubmit={handleSubmit}>
+              <h3>أرسلي رسالة</h3>
+              <label htmlFor="name">الاسم</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="اسمك"
+                required
+              />
 
-            <label htmlFor="phone">رقم الهاتف</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              placeholder="رقم الهاتف"
-              required
-            />
+              <label htmlFor="phone">رقم الهاتف</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                placeholder="رقم الهاتف"
+                required
+              />
 
-            <label htmlFor="message">الرسالة</label>
-            <textarea
-              id="message"
-              name="message"
-              rows={5}
-              placeholder="اكتبي طلبك أو استفسارك..."
-              required
-            />
+              <label htmlFor="message">الرسالة</label>
+              <textarea
+                id="message"
+                name="message"
+                rows={5}
+                placeholder="اكتبي طلبك أو استفسارك..."
+                required
+              />
 
-            <button className="btn btn--primary" type="submit">
-              إرسال عبر واتساب
-            </button>
-            <p className="form-hint">
-              سيتم فتح واتساب تلقائيًا مع الرسالة جاهزة للإرسال.
-            </p>
-          </form>
+              <button className="btn btn--primary" type="submit">
+                إرسال عبر واتساب
+              </button>
+              <p className="form-hint">
+                سيتم فتح واتساب تلقائيًا مع الرسالة جاهزة للإرسال.
+              </p>
+            </form>
+          </Reveal>
         </div>
       </section>
 

@@ -4,3 +4,7 @@
 /* AR: نستورد ملف الأنماط الأصلي حرفيًا للحفاظ على نفس UI/UX والاستجابة. */
 /* EN: Import the original stylesheet verbatim to preserve UI/UX and responsiveness. */
 @import "../../style.css";
+
+/* AR: طبقة الحركة والصقل — تُحمَّل بعد الأنماط الأصلية لتغلبها بترتيب التدرّج. */
+/* EN: Motion + polish layer — loaded AFTER the base stylesheet so it wins by cascade order. */
+@import "./motion.css";
