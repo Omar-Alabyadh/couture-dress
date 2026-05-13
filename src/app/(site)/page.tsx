@@ -10,6 +10,17 @@ import { defaultLandingContent } from "@/lib/types/landing";
 export const dynamic = "force-dynamic";
 
 export default async function SiteHomePage() {
+  if (process.env.SITE_RECOVERY === "1") {
+    const socialUrls = readPublicSocialUrls();
+    return (
+      <HomePage
+        collectionItems={[]}
+        landing={defaultLandingContent()}
+        socialUrls={socialUrls}
+      />
+    );
+  }
+
   let collectionItems: CollectionItemView[] = [];
   let landing;
   try {

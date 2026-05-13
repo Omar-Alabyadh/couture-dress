@@ -5,12 +5,22 @@ import { GoogleAnalyticsPageViews } from "./GoogleAnalyticsPageViews";
 /**
  * Production GA4 (Google Analytics 4) via the official Next.js `@next/third-parties`
  * integration: loads gtag after hydration and tracks SPA-style route changes.
- * Disabled when `NEXT_PUBLIC_GA_ID` is unset (e.g. local dev without analytics).
+ *
+ * Rollback without redeploying logic: unset `NEXT_PUBLIC_GA_ID` or set `NEXT_PUBLIC_GA_DISABLED=true`.
+ * Invalid measurement IDs are ignored so bad env cannot break the document.
  */
-const gaId = process.env.NEXT_PUBLIC_GA_ID;
+const gaDisabled =
+  process.env.NEXT_PUBLIC_GA_DISABLED === "1" ||
+  process.env.NEXT_PUBLIC_GA_DISABLED === "true";
+
+const rawGaId = process.env.NEXT_PUBLIC_GA_ID?.trim() ?? "";
+const gaId = /^G-[A-Z0-9]+$/i.test(rawGaId) ? rawGaId : "";
+
+/** Bypass analytics + third-party scripts when stabilizing production (set on the server only). */
+const siteRecovery = process.env.SITE_RECOVERY === "1";
 
 export function GoogleAnalyticsRoot() {
-  if (!gaId) {
+  if (siteRecovery || gaDisabled || !gaId) {
     return null;
   }
 

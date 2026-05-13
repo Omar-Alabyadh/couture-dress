@@ -3,6 +3,9 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+// Prisma ORM 7: connection URLs belong in `prisma.config.ts`, not here (see P1012).
+// - Runtime (pooled): `DATABASE_URL` → `src/server/db/client.ts` (`PrismaPg`).
+// - Migrate / CLI: `DIRECT_URL` → `prisma.config.ts` `datasource.url`.
 datasource db {
   provider = "postgresql"
 }

@@ -16,6 +16,11 @@ function isAuditApi(p: string) {
 }
 
 export async function middleware(req: NextRequest) {
+  /** Temporary: skip auth gating while debugging production (unset after `/` is healthy). */
+  if (process.env.SITE_RECOVERY === "1") {
+    return NextResponse.next();
+  }
+
   const p = req.nextUrl.pathname;
 
   if (p === "/admin/login" || p.startsWith("/api/auth/")) {

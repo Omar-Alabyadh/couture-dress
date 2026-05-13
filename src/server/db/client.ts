@@ -15,10 +15,21 @@ function createClient(): PrismaClient {
   });
 }
 
-// AR: نستخدم singleton لتجنب تعدد اتصالات Prisma أثناء التطوير.
-// EN: Use a singleton Prisma client to avoid extra connections in dev.
-export const prisma = globalForPrisma.prisma ?? createClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+function getPrismaSync(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createClient();
+  }
+  return globalForPrisma.prisma;
 }
+
+// Lazy proxy: importing this module must not throw when DATABASE_URL is missing at cold start.
+// Dynamic pages wrap DB calls in try/catch; errors should occur on first query, not at import time.
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getPrismaSync();
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === "function"
+      ? (value as (...args: unknown[]) => unknown).bind(client)
+      : value;
+  },
+});
