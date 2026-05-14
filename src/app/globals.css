@@ -8,3 +8,63 @@
 /* AR: طبقة الحركة والصقل — تُحمَّل بعد الأنماط الأصلية لتغلبها بترتيب التدرّج. */
 /* EN: Motion + polish layer — loaded AFTER the base stylesheet so it wins by cascade order. */
 @import "./motion.css";
+
+/* ============================================================
+   Global selection + scrollbar — brand burgundy (public + admin)
+   EN: Couture-tinted selection; thin scrollbar without layout tricks.
+   ============================================================ */
+
+::selection {
+  background: rgba(122, 28, 58, 0.72);
+  color: #fff7f2;
+}
+
+::-moz-selection {
+  background: rgba(122, 28, 58, 0.72);
+  color: #fff7f2;
+}
+
+/* Firefox — solid thumb/track (no gradients in scrollbar-color) */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(105, 32, 52, 0.92) rgba(10, 7, 12, 0.96);
+}
+
+/* Chromium / Safari / legacy Edge */
+html::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html::-webkit-scrollbar-track {
+  background: linear-gradient(
+    180deg,
+    rgba(14, 9, 16, 0.98) 0%,
+    rgba(7, 5, 10, 1) 100%
+  );
+  border-inline-start: 1px solid rgba(72, 17, 38, 0.22);
+}
+
+html::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 2px solid rgba(5, 3, 8, 0.45);
+  background: linear-gradient(
+    180deg,
+    rgba(118, 40, 62, 0.92) 0%,
+    rgba(78, 20, 38, 0.9) 100%
+  );
+  background-clip: padding-box;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(132, 48, 72, 0.95) 0%,
+    rgba(92, 28, 48, 0.93) 100%
+  );
+}
+
+html::-webkit-scrollbar-corner {
+  background: rgba(7, 5, 10, 0.96);
+}
