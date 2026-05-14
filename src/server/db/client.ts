@@ -1,7 +1,23 @@
+import { statSync } from "node:fs";
+import { join } from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+/** Cached singleton + bundle mtime so dev HMR does not keep a stale client after `prisma generate`. */
+const globalForPrisma = globalThis as unknown as {
+  prisma?: PrismaClient;
+  prismaGeneratedClientMtimeMs?: number;
+};
+
+function generatedPrismaClientMtimeMs(): number {
+  try {
+    return statSync(
+      join(process.cwd(), "src", "generated", "prisma", "client.ts"),
+    ).mtimeMs;
+  } catch {
+    return 0;
+  }
+}
 
 function createClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
@@ -16,6 +32,22 @@ function createClient(): PrismaClient {
 }
 
 function getPrismaSync(): PrismaClient {
+  if (process.env.NODE_ENV !== "production") {
+    const bundleMtime = generatedPrismaClientMtimeMs();
+    if (
+      globalForPrisma.prisma &&
+      globalForPrisma.prismaGeneratedClientMtimeMs !== bundleMtime
+    ) {
+      void globalForPrisma.prisma.$disconnect();
+      globalForPrisma.prisma = undefined;
+    }
+    if (!globalForPrisma.prisma) {
+      globalForPrisma.prisma = createClient();
+      globalForPrisma.prismaGeneratedClientMtimeMs = bundleMtime;
+    }
+    return globalForPrisma.prisma;
+  }
+
   if (!globalForPrisma.prisma) {
     globalForPrisma.prisma = createClient();
   }
