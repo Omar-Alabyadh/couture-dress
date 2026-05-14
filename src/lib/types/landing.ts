@@ -38,6 +38,21 @@ export type LandingContent = {
 
 export const LANDING_SETTING_KEY = "landing_v1";
 
+/** نصوص contactIntro القديمة من لوحة التحكم — تُستبدل تلقائيًا بالنص الحالي في defaultLandingContent(). */
+const LEGACY_CONTACT_INTRO_VALUES = new Set<string>([
+  "للحجز والاستفسار، راسلينا على واتساب أو اتركي رسالة وسنرد عليك.",
+]);
+
+function upgradeLegacyContactIntro(content: LandingContent): LandingContent {
+  const def = defaultLandingContent();
+  const t =
+    typeof content.contactIntro === "string" ? content.contactIntro.trim() : "";
+  if (!t || LEGACY_CONTACT_INTRO_VALUES.has(t)) {
+    return { ...content, contactIntro: def.contactIntro };
+  }
+  return content;
+}
+
 export function defaultLandingContent(): LandingContent {
   return {
     heroChip: "أزياء نسائية • فخامة • أناقة",
@@ -136,7 +151,12 @@ export function parseLandingContent(raw: string | null | undefined): LandingCont
       typeof merged.heroBgImage === "string" ? merged.heroBgImage : def.heroBgImage,
       def.heroBgImage,
     );
-    return { ...merged, heroTitleHtml, aboutHtml, heroBgImage };
+    return upgradeLegacyContactIntro({
+      ...merged,
+      heroTitleHtml,
+      aboutHtml,
+      heroBgImage,
+    });
   } catch {
     return def;
   }

@@ -31,8 +31,9 @@ export default function AdminLandingPage() {
       <h1 style={{ margin: "0 0 0.3rem" }}>الصفحة الرئيسية (JSON)</h1>
       <p className="admin-hint" style={{ marginTop: 0 }}>
         عدّلي المفاتيح: heroTitleHtml، heroBgImage، aboutHtml، aboutList، stats،
-        features، contactTitle، وغيرها. احتفظي بصيغة JSON صالحة. النسخ
-        الاحتياطي يدوي مُنصح به.
+        features، contactTitle، contactIntro، وغيرها. احتفظي بصيغة JSON صالحة. النسخ
+        الاحتياطي يدوي مُنصح به. نص contactIntro القديم المحفوظ مسبقًا يُحدَّث تلقائيًا
+        إلى النسخة الحالية عند التحميل إن وافق النص المخزَّن القيمة الافتراضية السابقة.
       </p>
       {err ? <p style={{ color: "#c88" }}>{err}</p> : null}
       {msg ? <p style={{ color: "#8c8" }}>{msg}</p> : null}

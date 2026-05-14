@@ -1483,11 +1483,14 @@ select:focus-visible {
 }
 
 #contact .section__text--contact-head {
-  margin: 18px auto 0;
-  max-width: min(56ch, 100%);
-  line-height: 1.75;
+  margin-block: 18px 0;
+  margin-inline: auto;
+  max-inline-size: min(40ch, 94%);
+  line-height: 1.82;
+  font-size: clamp(0.9rem, 0.22vw + 0.86rem, 0.97rem);
   color: rgba(215, 201, 194, 0.88);
   font-weight: 600;
+  text-wrap: balance;
 }
 
 #contact .contact-card--luxury {
@@ -1846,6 +1849,8 @@ select:focus-visible {
   width: fit-content;
   max-width: min(320px, 100%);
   align-self: flex-start;
+  margin-inline-start: 0;
+  margin-inline-end: auto;
   justify-content: center;
   font-weight: 950;
   letter-spacing: 0.02em;
@@ -1926,6 +1931,7 @@ select:focus-visible {
     width: 100%;
     max-width: none;
     align-self: stretch;
+    margin-inline: 0;
   }
 }
 

@@ -523,7 +523,12 @@ export default function HomePage({
             </Reveal>
 
             <Reveal delay={120} variant="left">
-              <form className="form form--contact-luxury" id="contactForm" onSubmit={handleSubmit}>
+              <form
+                className="form form--contact-luxury"
+                id="contactForm"
+                dir="rtl"
+                onSubmit={handleSubmit}
+              >
               <h3>أرسلي رسالة</h3>
               <label htmlFor="name">الاسم</label>
               <input
