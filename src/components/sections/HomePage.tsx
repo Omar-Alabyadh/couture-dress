@@ -3,7 +3,7 @@
 /* AR/EN: نستخدم <img> مثل الموقع الأصلي (مسارات public/assets) لتفادي تعقيدات التحسين هنا. */
 /* eslint-disable @next/next/no-img-element -- static marketing images match legacy HTML */
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   COLLECTION_CATEGORY_ORDER,
@@ -26,6 +26,7 @@ import { buildStaticMapPreviewUrl } from "@/lib/maps/static-map-preview";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import Reveal from "@/components/motion/Reveal";
 import { useStickyHeader } from "@/components/motion/useStickyHeader";
+import { MobileNavShell } from "@/components/layout/MobileNavShell";
 import SiteFooter from "@/components/sections/SiteFooter";
 
 const HOME_CATEGORY_FALLBACK_IMAGE = "/assets/hero.jpeg";
@@ -81,6 +82,7 @@ export default function HomePage({
     defaultLandingContent().heroBgImage,
   );
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
   const [mapBranchId, setMapBranchId] = useState(
     () => siteConfig.branches[0]?.id ?? "benghazi",
   );
@@ -178,37 +180,67 @@ export default function HomePage({
           </nav>
 
           <button
-            className="nav__toggle"
-            aria-label="فتح القائمة"
-            onClick={() => setMobileNavOpen((current) => !current)}
+            className={`nav__toggle${mobileNavOpen ? " nav__toggle--open" : ""}`}
             type="button"
+            aria-expanded={mobileNavOpen}
+            aria-controls="mobileNav"
+            aria-label={mobileNavOpen ? "إغلاق القائمة" : "فتح القائمة"}
+            onClick={() => setMobileNavOpen((current) => !current)}
           >
-            ☰
+            <span className="nav__toggle-bars" aria-hidden>
+              <span />
+              <span />
+              <span />
+            </span>
           </button>
         </div>
       </header>
 
-      <div
-        className={`mobile-nav${mobileNavOpen ? " mobile-nav--open" : ""}`}
+      <MobileNavShell
+        open={mobileNavOpen}
+        onClose={closeMobileNav}
         id="mobileNav"
-        aria-hidden={!mobileNavOpen}
       >
-        <Link href="/products" onClick={() => setMobileNavOpen(false)}>
-          المنتجات
-        </Link>
-        <a href="#about" onClick={() => setMobileNavOpen(false)}>
-          من نحن
-        </a>
-        <a href="#collection" onClick={() => setMobileNavOpen(false)}>
-          المجموعة
-        </a>
-        <a href="#features" onClick={() => setMobileNavOpen(false)}>
-          مميزاتنا
-        </a>
-        <a href="#contact" onClick={() => setMobileNavOpen(false)}>
-          تواصل
-        </a>
-      </div>
+        <ul className="mobile-nav__list">
+          <li>
+            <Link
+              href="/products"
+              className="mobile-nav__link"
+              onClick={closeMobileNav}
+            >
+              المنتجات
+            </Link>
+          </li>
+          <li>
+            <a href="#about" className="mobile-nav__link" onClick={closeMobileNav}>
+              من نحن
+            </a>
+          </li>
+          <li>
+            <a
+              href="#collection"
+              className="mobile-nav__link"
+              onClick={closeMobileNav}
+            >
+              المجموعة
+            </a>
+          </li>
+          <li>
+            <a
+              href="#features"
+              className="mobile-nav__link"
+              onClick={closeMobileNav}
+            >
+              مميزاتنا
+            </a>
+          </li>
+          <li>
+            <a href="#contact" className="mobile-nav__link" onClick={closeMobileNav}>
+              تواصل
+            </a>
+          </li>
+        </ul>
+      </MobileNavShell>
 
       <main id="home" className="hero">
         <div

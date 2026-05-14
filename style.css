@@ -39,22 +39,13 @@
     display:none; border:1px solid var(--border);
     background:rgba(255,255,255,.06); color:var(--text);
     padding:8px 12px; border-radius:12px; font-size:18px;
+    align-items:center; justify-content:center;
   }
-  
-  .mobile-nav{
-    display:none;
-    position:fixed; top:64px; left:0; right:0;
-    background: rgba(11,11,15,.92);
-    border-bottom:1px solid var(--border);
-    backdrop-filter: blur(12px);
-    z-index:49;
+
+  /* Mobile drawer host — layout + visibility in style.css; polish in motion.css */
+  .mobile-nav-shell {
+    display: none;
   }
-  .mobile-nav a{
-    display:block; padding:14px 18px; color:var(--muted);
-    border-top:1px solid rgba(255,255,255,.06);
-    font-weight:800;
-  }
-  .mobile-nav a:hover{ color:var(--text); background:rgba(255,255,255,.05); }
   
   .hero{ position:relative; min-height: 92vh; display:flex; align-items:center; overflow:hidden; }
   .hero__bg{
@@ -329,6 +320,7 @@
   @media (max-width: 720px){
     .nav{ display:none; }
     .nav__toggle{ display:inline-flex; }
+    .mobile-nav-shell{ display:block; }
   }
 
   @media (max-width: 768px){

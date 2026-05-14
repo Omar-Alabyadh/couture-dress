@@ -15,6 +15,7 @@ import { ProductMediaCarousel } from "@/components/products/ProductMediaCarousel
 import type { ProductSlide } from "@/components/products/ProductMediaCarousel";
 import Reveal from "@/components/motion/Reveal";
 import { useStickyHeader } from "@/components/motion/useStickyHeader";
+import { MobileNavShell } from "@/components/layout/MobileNavShell";
 import SiteFooter from "@/components/sections/SiteFooter";
 import { LuxuryListbox } from "@/components/ui/LuxuryListbox";
 
@@ -76,6 +77,7 @@ export default function ProductsPage({
   initialCategory,
 }: ProductsPageProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
   const headerRef = useStickyHeader<HTMLElement>();
   const [q, setQ] = useState("");
   const [name, setName] = useState("");
@@ -208,26 +210,76 @@ export default function ProductsPage({
             </span>
           </nav>
           <button
-            className="nav__toggle"
+            className={`nav__toggle${mobileNavOpen ? " nav__toggle--open" : ""}`}
             type="button"
-            aria-label="فتح القائمة"
+            aria-expanded={mobileNavOpen}
+            aria-controls="mobileNav"
+            aria-label={mobileNavOpen ? "إغلاق القائمة" : "فتح القائمة"}
             onClick={() => setMobileNavOpen((c) => !c)}
           >
-            ☰
+            <span className="nav__toggle-bars" aria-hidden>
+              <span />
+              <span />
+              <span />
+            </span>
           </button>
         </div>
       </header>
 
-      <div
-        className={`mobile-nav${mobileNavOpen ? " mobile-nav--open" : ""}`}
+      <MobileNavShell
+        open={mobileNavOpen}
+        onClose={closeMobileNav}
         id="mobileNav"
-        aria-hidden={!mobileNavOpen}
       >
-        <Link href="/#about" onClick={() => setMobileNavOpen(false)}>من نحن</Link>
-        <Link href="/#collection" onClick={() => setMobileNavOpen(false)}>المجموعة</Link>
-        <Link href="/#features" onClick={() => setMobileNavOpen(false)}>مميزاتنا</Link>
-        <Link href="/#contact" onClick={() => setMobileNavOpen(false)}>تواصل</Link>
-      </div>
+        <ul className="mobile-nav__list">
+          <li>
+            <Link
+              href="/#about"
+              className="mobile-nav__link"
+              onClick={closeMobileNav}
+            >
+              من نحن
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/#collection"
+              className="mobile-nav__link"
+              onClick={closeMobileNav}
+            >
+              المجموعة
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/#features"
+              className="mobile-nav__link"
+              onClick={closeMobileNav}
+            >
+              مميزاتنا
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/#contact"
+              className="mobile-nav__link"
+              onClick={closeMobileNav}
+            >
+              تواصل
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/products"
+              className="mobile-nav__link mobile-nav__link--current"
+              aria-current="page"
+              onClick={closeMobileNav}
+            >
+              المنتجات
+            </Link>
+          </li>
+        </ul>
+      </MobileNavShell>
 
       <main className="section" style={{ paddingTop: 28 }}>
         <div className="container">
