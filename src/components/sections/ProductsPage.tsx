@@ -11,6 +11,7 @@ import { buildWhatsappLink } from "@/lib/whatsapp";
 import Reveal from "@/components/motion/Reveal";
 import { useStickyHeader } from "@/components/motion/useStickyHeader";
 import SiteFooter from "@/components/sections/SiteFooter";
+import { LuxuryListbox } from "@/components/ui/LuxuryListbox";
 
 type ColorOption = { id: string; label: string; hex: string | null };
 
@@ -117,6 +118,36 @@ export default function ProductsPage({
     [],
   );
 
+  const categoryOptions = useMemo(
+    () => [
+      { value: "all", label: "الكل" },
+      ...Object.entries(categoryLabels).map(([k, l]) => ({
+        value: k,
+        label: l,
+      })),
+    ],
+    [],
+  );
+
+  const sizeOptions = useMemo(
+    () => [
+      { value: "", label: "— أي مقاس —" },
+      ...sizes.map((z) => ({ value: z, label: z })),
+    ],
+    [sizes],
+  );
+
+  const colorOptions = useMemo(
+    () => [
+      { value: "", label: "— أي لون —" },
+      ...colors.map((c) => ({
+        value: c.id,
+        label: `${c.label}${c.hex ? ` (#${c.hex})` : ""}`,
+      })),
+    ],
+    [colors],
+  );
+
   function order(title: string) {
     const message = `مرحباً، أريد طلب/الاستفسار عن: ${title} من ${siteConfig.shopName}.`;
     window.open(buildWhatsappLink(message), "_blank", "noopener,noreferrer");
@@ -205,52 +236,30 @@ export default function ProductsPage({
             </div>
             <div className="field">
               <label htmlFor="pcat">التصنيف</label>
-              <select
+              <LuxuryListbox
                 id="pcat"
-                name="category"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as Category)}
-              >
-                <option value="all">الكل</option>
-                {Object.entries(categoryLabels).map(([k, l]) => (
-                  <option key={k} value={k}>
-                    {l}
-                  </option>
-                ))}
-              </select>
+                options={categoryOptions}
+                onChange={(v) => setCategory(v as Category)}
+              />
             </div>
             <div className="field">
               <label htmlFor="psize">المقاس</label>
-              <select
+              <LuxuryListbox
                 id="psize"
-                name="size"
                 value={size}
-                onChange={(e) => setSize(e.target.value)}
-              >
-                <option value="">— أي مقاس —</option>
-                {sizes.map((z) => (
-                  <option key={z} value={z}>
-                    {z}
-                  </option>
-                ))}
-              </select>
+                options={sizeOptions}
+                onChange={setSize}
+              />
             </div>
             <div className="field">
               <label htmlFor="pcol">اللون</label>
-              <select
+              <LuxuryListbox
                 id="pcol"
-                name="colorId"
                 value={colorId}
-                onChange={(e) => setColorId(e.target.value)}
-              >
-                <option value="">— أي لون —</option>
-                {colors.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                    {c.hex ? ` (#${c.hex})` : ""}
-                  </option>
-                ))}
-              </select>
+                options={colorOptions}
+                onChange={setColorId}
+              />
             </div>
           </div>
 
