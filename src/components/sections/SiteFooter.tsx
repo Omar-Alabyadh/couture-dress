@@ -174,18 +174,23 @@ export default function SiteFooter({
               >
                 معلومات التواصل
               </h4>
-              <ul className="site-footer__list site-footer__list--contact">
+              <ul
+                className="site-footer__list site-footer__list--contact"
+                dir="rtl"
+              >
                 <li>
                   <a
                     href={`tel:${siteConfig.phone}`}
-                    dir="ltr"
                     className="site-footer__contact-row"
                   >
                     <span className="site-footer__contact-swatch">
                       <LuPhone aria-hidden />
                     </span>
                     <span className="site-footer__contact-body">
-                      <span className="site-footer__contact-primary">
+                      <span
+                        className="site-footer__contact-primary site-footer__contact-primary--num"
+                        dir="ltr"
+                      >
                         +218 92 092 0500
                       </span>
                     </span>
