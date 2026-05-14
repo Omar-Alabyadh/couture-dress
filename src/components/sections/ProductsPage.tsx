@@ -6,10 +6,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import type { CollectionItemView } from "@/lib/types/collection";
-import { siteConfig } from "@/lib/config/site";
+import { siteConfig, type PublicSocialUrls } from "@/lib/config/site";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import Reveal from "@/components/motion/Reveal";
 import { useStickyHeader } from "@/components/motion/useStickyHeader";
+import SiteFooter from "@/components/sections/SiteFooter";
 
 type ColorOption = { id: string; label: string; hex: string | null };
 
@@ -38,7 +39,12 @@ function buildQuery(p: {
   return u.toString();
 }
 
-export default function ProductsPage() {
+type ProductsPageProps = {
+  /** روابط التواصل من الخادم (تحافظ على تطابق SSR/CSR). */
+  socialUrls: PublicSocialUrls;
+};
+
+export default function ProductsPage({ socialUrls }: ProductsPageProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const headerRef = useStickyHeader<HTMLElement>();
   const [q, setQ] = useState("");
@@ -304,16 +310,10 @@ export default function ProductsPage() {
         </div>
       </main>
 
-      <footer className="footer" style={{ marginTop: 40 }}>
-        <div className="container footer__inner">
-          <Link className="muted" href="/">
-            ← العودة للرئيسية
-          </Link>
-          <a className="to-top" href={defaultWhatsapp} target="_blank" rel="noopener noreferrer">
-            واتساب
-          </a>
-        </div>
-      </footer>
+      <SiteFooter
+        socialUrls={socialUrls}
+        whatsappLink={defaultWhatsapp}
+      />
     </>
   );
 }

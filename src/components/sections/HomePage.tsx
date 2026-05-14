@@ -21,6 +21,7 @@ import { siteConfig } from "@/lib/config/site";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import Reveal from "@/components/motion/Reveal";
 import { useStickyHeader } from "@/components/motion/useStickyHeader";
+import SiteFooter from "@/components/sections/SiteFooter";
 
 type Category = "all" | CollectionCategory;
 
@@ -509,18 +510,12 @@ export default function HomePage({
         </div>
       </section>
 
-      <footer className="footer">
-        <div className="container footer__inner">
-          <div className="footer__brand">
-            <b>{landing.footerAr}</b> — {landing.footerEn}
-            <div className="muted">© جميع الحقوق محفوظة</div>
-            <SocialLinks className="footer__social" urls={socialUrls} />
-          </div>
-          <a className="to-top" href="#home">
-            ↑ للأعلى
-          </a>
-        </div>
-      </footer>
+      <SiteFooter
+        socialUrls={socialUrls}
+        whatsappLink={defaultWhatsappLink}
+        brandAr={landing.footerAr}
+        brandEn={landing.footerEn}
+      />
 
       <a
         className="whats-float"
