@@ -16,7 +16,10 @@ function isAuditApi(p: string) {
 }
 
 export async function middleware(req: NextRequest) {
-  /** Temporary: skip auth gating while debugging production (unset after `/` is healthy). */
+  /**
+   * Emergency bypass: when `SITE_RECOVERY=1`, admin and `/api/admin` routes are not
+   * auth-gated. Keep unset in production; see deployment runbooks / ops docs.
+   */
   if (process.env.SITE_RECOVERY === "1") {
     return NextResponse.next();
   }

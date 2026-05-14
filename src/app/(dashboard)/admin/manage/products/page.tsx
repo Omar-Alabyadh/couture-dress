@@ -2,6 +2,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
+import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import {
+  AdminButton,
+  AdminCard,
+  AdminEmptyState,
+  AdminErrorState,
+  AdminLoadingState,
+  AdminSectionHeader,
+  AdminTable,
+} from "@/components/admin/AdminPrimitives";
 
 type ColorRow = { id: string; label: string; deletedAt: string | null };
 type ProductImageRow = {
@@ -34,133 +46,185 @@ const cats = [
 ];
 
 export default function AdminProductsPage() {
+  const { pushToast } = useAdminToast();
+  const { requestConfirm } = useAdminConfirm();
   const [list, setList] = useState<Product[]>([]);
   const [colors, setColors] = useState<ColorRow[]>([]);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
+
   const load = useCallback(async () => {
-    setMsg(null);
-    const [p, c] = await Promise.all([
-      fetch("/api/admin/products", { cache: "no-store" }),
-      fetch("/api/admin/colors", { cache: "no-store" }),
-    ]);
-    if (p.ok) {
-      const j = (await p.json()) as { data: Product[] };
-      setList(j.data);
-    }
-    if (c.ok) {
-      const j2 = (await c.json()) as { data: ColorRow[] };
-      setColors(j2.data);
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [p, c] = await Promise.all([
+        fetch("/api/admin/products", { cache: "no-store" }),
+        fetch("/api/admin/colors", { cache: "no-store" }),
+      ]);
+      if (!p.ok) {
+        const msg =
+          (await readApiErrorMessage(p)) ?? fallbackErrorMessage(p);
+        setLoadError(msg);
+        setList([]);
+      } else {
+        const j = (await p.json()) as { data: Product[] };
+        setList(j.data);
+      }
+      if (c.ok) {
+        const j2 = (await c.json()) as { data: ColorRow[] };
+        setColors(j2.data);
+      }
+    } catch {
+      setLoadError("تعذر الاتصال بالخادم.");
+      setList([]);
+    } finally {
+      setLoading(false);
     }
   }, []);
+
   useEffect(() => {
     return runAfterEffectFlush(() => {
       void load();
     });
   }, [load]);
+
+  async function confirmSoftDelete(product: Product) {
+    const ok = await requestConfirm({
+      title: "حذف ناعم للمنتج",
+      message: `سيتم أرشفة «${product.titleAr}». يمكنك استرجاعه لاحقًا من الأرشيف.`,
+      confirmLabel: "نعم، أرشِفي",
+      cancelLabel: "إلغاء",
+      destructive: true,
+    });
+    if (!ok) return;
+    const r = await fetch(`/api/admin/products/${product.id}`, {
+      method: "DELETE",
+    });
+    if (!r.ok) {
+      const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+      pushToast(msg, "error");
+      return;
+    }
+    pushToast("نُقل المنتج إلى الأرشيف.", "success");
+    await load();
+  }
+
   return (
     <div dir="rtl" style={{ maxWidth: 960 }}>
-      <h1 style={{ margin: "0 0 0.3rem" }}>المنتجات</h1>
-      <p className="admin-hint" style={{ marginTop: 0 }}>
-        الحذف من هنا تمويه (soft) — تسترجعينه من &quot;الأرشيف&quot;.
-      </p>
-      {msg ? <p style={{ color: "#8c8" }}>{msg}</p> : null}
-      <p>
-        <button
-          type="button"
-          className="login-btn"
-          style={{ width: "auto", display: "inline-block" }}
-          onClick={() => {
-            setCreating(true);
-            setEditing(null);
-          }}
-        >
-          + منتج جديد
-        </button>
-      </p>
-      {creating && (
-        <ProductForm
-          key="create-product"
-          colors={colors}
-          onClose={() => setCreating(false)}
-          onSaved={async () => {
-            setCreating(false);
-            setMsg("تم الحفظ");
-            await load();
-          }}
+      <AdminCard>
+        <AdminSectionHeader
+          title="المنتجات"
+          description='الحذف من هنا تمويه (soft) — تسترجعينه من "الأرشيف".'
+          actions={
+            <AdminButton
+              type="button"
+              variant="primary"
+              onClick={() => {
+                setCreating(true);
+                setEditing(null);
+              }}
+            >
+              + منتج جديد
+            </AdminButton>
+          }
         />
-      )}
-      {editing && (
-        <ProductForm
-          key={editing.id}
-          initial={editing}
-          colors={colors}
-          onClose={() => setEditing(null)}
-          onSaved={async () => {
-            setEditing(null);
-            setMsg("تم التحديث");
-            await load();
-          }}
-        />
-      )}
-      <table className="admin-table" style={{ marginTop: 12 }}>
-        <thead>
-          <tr>
-            <th>العنوان</th>
-            <th>تصنيف</th>
-            <th>مقاسات</th>
-            <th>السعر</th>
-            <th>ألوان</th>
-            <th>نشر</th>
-            <th>—</th>
-          </tr>
-        </thead>
-        <tbody>
-          {list.map((p) => (
-            <tr key={p.id}>
-              <td>{p.titleAr}</td>
-              <td>{cats.find((c) => c.v === p.category)?.l ?? p.category}</td>
-              <td style={{ fontSize: 12 }}>{p.sizes.join("، ")}</td>
-              <td style={{ fontSize: 12 }}>
-                {p.price != null && p.price !== ""
-                  ? `${p.price} ${p.currency || "LYD"}`
-                  : "—"}
-              </td>
-              <td style={{ fontSize: 12 }}>
-                {p.colors.map((c) => c.label).join("، ")}
-              </td>
-              <td>{p.isPublished ? "نعم" : "لا"}</td>
-              <td>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditing(p);
-                    setCreating(false);
-                  }}
-                >
-                  تعديل
-                </button>{" "}
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!confirm("حذف الناعم؟")) return;
-                    const r = await fetch(`/api/admin/products/${p.id}`, {
-                      method: "DELETE",
-                    });
-                    if (r.ok) {
-                      setMsg("نُقل للأرشيف");
-                      await load();
-                    }
-                  }}
-                >
-                  حذف
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+        {loadError ? (
+          <AdminErrorState message={loadError} onRetry={() => void load()} />
+        ) : null}
+
+        {loading && list.length === 0 && !loadError ? (
+          <AdminLoadingState />
+        ) : null}
+
+        {creating && (
+          <ProductForm
+            key="create-product"
+            colors={colors}
+            onClose={() => setCreating(false)}
+            onSaved={async () => {
+              setCreating(false);
+              pushToast("تم إنشاء المنتج.", "success");
+              await load();
+            }}
+          />
+        )}
+        {editing && (
+          <ProductForm
+            key={editing.id}
+            initial={editing}
+            colors={colors}
+            onClose={() => setEditing(null)}
+            onSaved={async () => {
+              setEditing(null);
+              pushToast("تم تحديث المنتج.", "success");
+              await load();
+            }}
+          />
+        )}
+
+        {!loading && !loadError && list.length === 0 ? (
+          <AdminEmptyState
+            title="لا توجد منتجات بعد"
+            description='اضغطي "منتج جديد" لإضافة أول قطعة.'
+          />
+        ) : null}
+
+        {!loadError && list.length > 0 ? (
+          <AdminTable style={{ marginTop: 12 }}>
+            <thead>
+              <tr>
+                <th>العنوان</th>
+                <th>تصنيف</th>
+                <th>مقاسات</th>
+                <th>السعر</th>
+                <th>ألوان</th>
+                <th>نشر</th>
+                <th>—</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.titleAr}</td>
+                  <td>{cats.find((c) => c.v === p.category)?.l ?? p.category}</td>
+                  <td style={{ fontSize: 12 }}>{p.sizes.join("، ")}</td>
+                  <td style={{ fontSize: 12 }}>
+                    {p.price != null && p.price !== ""
+                      ? `${p.price} ${p.currency || "LYD"}`
+                      : "—"}
+                  </td>
+                  <td style={{ fontSize: 12 }}>
+                    {p.colors.map((c) => c.label).join("، ")}
+                  </td>
+                  <td>{p.isPublished ? "نعم" : "لا"}</td>
+                  <td>
+                    <AdminButton
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditing(p);
+                        setCreating(false);
+                      }}
+                    >
+                      تعديل
+                    </AdminButton>{" "}
+                    <AdminButton
+                      type="button"
+                      variant="danger"
+                      onClick={() => void confirmSoftDelete(p)}
+                    >
+                      حذف
+                    </AdminButton>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </AdminTable>
+        ) : null}
+      </AdminCard>
     </div>
   );
 }
@@ -208,6 +272,7 @@ function ProductForm({
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
+  const { pushToast } = useAdminToast();
   const [titleAr, setTitleAr] = useState(initial?.titleAr ?? "");
   const [titleEn, setTitleEn] = useState(initial?.titleEn ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -243,12 +308,11 @@ function ProductForm({
       }))
       .filter((r) => r.url.length > 0);
     if (cleaned.length === 0) {
-      alert("أضيفي رابط صورة واحد على الأقل.");
+      pushToast("أضيفي رابط صورة واحد على الأقل.", "error");
       setLoading(false);
       return;
     }
-    const primary =
-      cleaned.find((r) => r.isPrimary) ?? cleaned[0]!;
+    const primary = cleaned.find((r) => r.isPrimary) ?? cleaned[0]!;
     const imagesPayload = cleaned.map((r, i) => ({
       url: r.url,
       alt: r.alt ? r.alt : null,
@@ -275,18 +339,26 @@ function ProductForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-        if (!r.ok) throw new Error("bad");
+        if (!r.ok) {
+          const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+          pushToast(msg, "error");
+          return;
+        }
       } else {
         const r = await fetch("/api/admin/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-        if (!r.ok) throw new Error("bad");
+        if (!r.ok) {
+          const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+          pushToast(msg, "error");
+          return;
+        }
       }
       await onSaved();
     } catch {
-      alert("فشل الحفظ");
+      pushToast("تعذر الاتصال بالخادم أثناء الحفظ.", "error");
     } finally {
       setLoading(false);
     }
@@ -364,7 +436,14 @@ function ProductForm({
         </ul>
       </div>
 
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          flexWrap: "wrap",
+          alignItems: "flex-start",
+        }}
+      >
         <div style={{ flex: "0 0 auto" }}>
           <div style={{ fontWeight: 800, marginBottom: 6, color: "#d7c9c2" }}>
             معاينة 4:5 (الصورة الأساسية)
@@ -462,9 +541,9 @@ function ProductForm({
               </button>
             </div>
           ))}
-          <button type="button" className="login-btn" onClick={addImageRow}>
+          <AdminButton type="button" variant="primary" onClick={addImageRow}>
             + إضافة صورة
-          </button>
+          </AdminButton>
         </div>
       </div>
 
@@ -552,12 +631,12 @@ function ProductForm({
         منشور
       </label>
       <p>
-        <button className="login-btn" type="submit" disabled={loading}>
+        <AdminButton type="submit" variant="primary" disabled={loading}>
           {loading ? "…" : "حفظ"}
-        </button>{" "}
-        <button type="button" onClick={onClose}>
+        </AdminButton>{" "}
+        <AdminButton type="button" variant="secondary" onClick={onClose}>
           إلغاء
-        </button>
+        </AdminButton>
       </p>
     </form>
   );

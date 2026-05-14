@@ -6,98 +6,146 @@ import {
   defaultLandingContent,
   type LandingContent,
 } from "@/lib/types/landing";
+import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import {
+  AdminButton,
+  AdminCard,
+  AdminErrorState,
+  AdminLoadingState,
+  AdminSectionHeader,
+  AdminTextarea,
+} from "@/components/admin/AdminPrimitives";
 
 export default function AdminLandingPage() {
+  const { pushToast } = useAdminToast();
   const [raw, setRaw] = useState<string>("");
   const [err, setErr] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
   const load = useCallback(async () => {
+    setLoading(true);
     setErr(null);
-    const r = await fetch("/api/admin/landing", { cache: "no-store" });
-    if (!r.ok) {
-      setErr("تعذر التحميل");
-      return;
+    try {
+      const r = await fetch("/api/admin/landing", { cache: "no-store" });
+      if (!r.ok) {
+        const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+        setErr(msg);
+        return;
+      }
+      const j = (await r.json()) as { content: LandingContent };
+      setRaw(JSON.stringify(j.content ?? defaultLandingContent(), null, 2));
+    } catch {
+      setErr("تعذر الاتصال بالخادم.");
+    } finally {
+      setLoading(false);
     }
-    const j = (await r.json()) as { content: LandingContent };
-    setRaw(JSON.stringify(j.content ?? defaultLandingContent(), null, 2));
   }, []);
+
   useEffect(() => {
     return runAfterEffectFlush(() => {
       void load();
     });
   }, [load]);
+
   return (
     <div dir="rtl" style={{ maxWidth: 900 }}>
-      <h1 style={{ margin: "0 0 0.3rem" }}>الصفحة الرئيسية (JSON)</h1>
-      <p className="admin-hint" style={{ marginTop: 0 }}>
-        عدّلي المفاتيح: heroTitleHtml، heroBgImage، aboutHtml، aboutList، stats،
-        features، contactTitle، contactIntro، وغيرها. احتفظي بصيغة JSON صالحة. النسخ
-        الاحتياطي يدوي مُنصح به. نص contactIntro القديم المحفوظ مسبقًا يُحدَّث تلقائيًا
-        إلى النسخة الحالية عند التحميل إن وافق النص المخزَّن القيمة الافتراضية السابقة.
-      </p>
-      {err ? <p style={{ color: "#c88" }}>{err}</p> : null}
-      {msg ? <p style={{ color: "#8c8" }}>{msg}</p> : null}
-      <textarea
-        className="admin-json"
-        value={raw}
-        onChange={(e) => setRaw(e.target.value)}
-        style={{ width: "100%" }}
-        spellCheck={false}
-      />
-      <p style={{ marginTop: 10 }}>
-        <button
-          className="login-btn"
-          type="button"
-          onClick={async () => {
-            setMsg(null);
-            try {
-              const parsed = JSON.parse(raw) as LandingContent;
-              if (typeof parsed.heroTitleHtml !== "string") {
-                setErr("heroTitleHtml لازم يبقى نص");
-                return;
-              }
-              const r = await fetch("/api/admin/landing", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: raw,
-              });
-              if (r.ok) {
-                setMsg("تم الحفظ");
-                setErr(null);
-              } else {
-                setErr("رفض الحفظ");
-              }
-            } catch {
-              setErr("JSON غير صالح");
-            }
-          }}
-        >
-          حفظ
-        </button>{" "}
-        <button type="button" onClick={load}>
-          إعادة تحميل
-        </button>{" "}
-        <button
-          type="button"
-          onClick={() =>
-            setRaw(
-              JSON.stringify(
-                (() => {
+      <AdminCard>
+        <AdminSectionHeader
+          title="الصفحة الرئيسية (JSON)"
+          description="عدّلي المفاتيح: heroTitleHtml، heroBgImage، aboutHtml، aboutList، stats، features، contactTitle، contactIntro، وغيرها. احتفظي بصيغة JSON صالحة. النسخ الاحتياطي يدوي مُنصح به. نص contactIntro القديم المحفوظ مسبقًا يُحدَّث تلقائيًا عند التحميل إن وافق النص المخزَّن القيمة الافتراضية السابقة."
+        />
+
+        {loading ? <AdminLoadingState /> : null}
+
+        {err && !loading ? (
+          <AdminErrorState message={err} onRetry={() => void load()} />
+        ) : null}
+
+        {!loading && !err ? (
+          <>
+            <AdminTextarea
+              className="admin-json"
+              value={raw}
+              onChange={(e) => setRaw(e.target.value)}
+              style={{ width: "100%" }}
+              spellCheck={false}
+            />
+            <p style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <AdminButton
+                type="button"
+                variant="primary"
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true);
+                  setErr(null);
                   try {
-                    return JSON.parse(raw) as object;
+                    const parsed = JSON.parse(raw) as LandingContent;
+                    if (typeof parsed.heroTitleHtml !== "string") {
+                      setErr("heroTitleHtml لازم يبقى نص");
+                      pushToast("heroTitleHtml لازم يبقى نص", "error");
+                      return;
+                    }
+                    const r = await fetch("/api/admin/landing", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: raw,
+                    });
+                    if (!r.ok) {
+                      const msg =
+                        (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+                      setErr(msg);
+                      pushToast(msg, "error");
+                      return;
+                    }
+                    pushToast("تم حفظ الصفحة الرئيسية.", "success");
+                    setErr(null);
                   } catch {
-                    return defaultLandingContent();
+                    const msg = "JSON غير صالح";
+                    setErr(msg);
+                    pushToast(msg, "error");
+                  } finally {
+                    setSaving(false);
                   }
-                })(),
-                null,
-                2,
-              ),
-            )
-          }
-        >
-          تنسيق
-        </button>
-      </p>
+                }}
+              >
+                {saving ? "…" : "حفظ"}
+              </AdminButton>
+              <AdminButton
+                type="button"
+                variant="secondary"
+                disabled={saving}
+                onClick={() => void load()}
+              >
+                إعادة تحميل
+              </AdminButton>
+              <AdminButton
+                type="button"
+                variant="ghost"
+                disabled={saving}
+                onClick={() =>
+                  setRaw(
+                    JSON.stringify(
+                      (() => {
+                        try {
+                          return JSON.parse(raw) as object;
+                        } catch {
+                          return defaultLandingContent();
+                        }
+                      })(),
+                      null,
+                      2,
+                    ),
+                  )
+                }
+              >
+                تنسيق
+              </AdminButton>
+            </p>
+          </>
+        ) : null}
+      </AdminCard>
     </div>
   );
 }
