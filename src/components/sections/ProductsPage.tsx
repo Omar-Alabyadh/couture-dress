@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
-import type { CollectionItemView } from "@/lib/types/collection";
+import type { CollectionItemView, CollectionCategory } from "@/lib/types/collection";
 import { siteConfig, type PublicSocialUrls } from "@/lib/config/site";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import Reveal from "@/components/motion/Reveal";
@@ -42,16 +42,23 @@ function buildQuery(p: {
 type ProductsPageProps = {
   /** روابط التواصل من الخادم (تحافظ على تطابق SSR/CSR). */
   socialUrls: PublicSocialUrls;
+  /** من عنوان الصفحة `?category=` عند فتح `/products?category=dresses` */
+  initialCategory?: CollectionCategory;
 };
 
-export default function ProductsPage({ socialUrls }: ProductsPageProps) {
+export default function ProductsPage({
+  socialUrls,
+  initialCategory,
+}: ProductsPageProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const headerRef = useStickyHeader<HTMLElement>();
   const [q, setQ] = useState("");
   const [name, setName] = useState("");
   const [size, setSize] = useState("");
   const [colorId, setColorId] = useState("");
-  const [category, setCategory] = useState<Category>("all");
+  const [category, setCategory] = useState<Category>(() =>
+    initialCategory ?? "all",
+  );
   const [debouncedQ, setDebouncedQ] = useState("");
   const [items, setItems] = useState<CollectionItemView[]>([]);
   const [colors, setColors] = useState<ColorOption[]>([]);

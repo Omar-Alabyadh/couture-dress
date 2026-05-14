@@ -5,7 +5,11 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
-import type { CollectionCategory, CollectionItemView } from "@/lib/types/collection";
+import {
+  COLLECTION_CATEGORY_ORDER,
+  type CollectionCategory,
+  type CollectionItemView,
+} from "@/lib/types/collection";
 import {
   defaultLandingContent,
   type LandingContent,
@@ -23,7 +27,36 @@ import Reveal from "@/components/motion/Reveal";
 import { useStickyHeader } from "@/components/motion/useStickyHeader";
 import SiteFooter from "@/components/sections/SiteFooter";
 
-type Category = "all" | CollectionCategory;
+const HOME_CATEGORY_FALLBACK_IMAGE = "/assets/hero.jpeg";
+
+const HOME_CATEGORY_PREVIEWS: Record<
+  CollectionCategory,
+  { title: string; description: string; ctaLabel: string }
+> = {
+  dresses: {
+    title: "فساتين",
+    description:
+      "فساتين سهرة وزفاف بقصّات راقية ولمسات كوتور تليق بلحظاتك المميزة.",
+    ctaLabel: "تصفحي المجموعة",
+  },
+  abayas: {
+    title: "عبايات",
+    description:
+      "عبايات يومية وسهرة بخامات ناعمة وتفاصيل هادئة تعكس أناقتك اليومية.",
+    ctaLabel: "تصفحي المجموعة",
+  },
+  casual: {
+    title: "كاجوال",
+    description:
+      "قطع يومية مريحة بلمسة عصرية — توازن بين السهولة والتميز.",
+    ctaLabel: "تصفحي المجموعة",
+  },
+  accessories: {
+    title: "إكسسوارات",
+    description: "لمسات تكمّل إطلالتك: حقائب وقطع مختارة بعناية.",
+    ctaLabel: "تصفحي المجموعة",
+  },
+};
 
 type HomePageProps = {
   collectionItems: CollectionItemView[];
@@ -43,7 +76,6 @@ export default function HomePage({
     landing.heroBgImage,
     defaultLandingContent().heroBgImage,
   );
-  const [activeCategory, setActiveCategory] = useState<Category>("all");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mapBranchId, setMapBranchId] = useState(
     () => siteConfig.branches[0]?.id ?? "benghazi",
@@ -62,19 +94,13 @@ export default function HomePage({
     [mapBranchId],
   );
 
-  const visibleProducts = useMemo(
-    () =>
-      activeCategory === "all"
-        ? collectionItems
-        : collectionItems.filter((item) => item.category === activeCategory),
-    [activeCategory, collectionItems],
-  );
-
-  function handleItemOrder(title: string) {
-    const message = `مرحباً، أريد طلب/الاستفسار عن: ${title} من ${siteConfig.shopName}.`;
-    window.open(buildWhatsappLink(message), "_blank", "noopener,noreferrer");
-  }
-
+  const categorySpotlightItem = useMemo(() => {
+    const map = new Map<CollectionCategory, CollectionItemView>();
+    for (const item of collectionItems) {
+      if (!map.has(item.category)) map.set(item.category, item);
+    }
+    return map;
+  }, [collectionItems]);
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -243,6 +269,12 @@ export default function HomePage({
               {landing.collectionSubtitle ? (
                 <p className="section__text">{landing.collectionSubtitle}</p>
               ) : null}
+              {collectionItems.length === 0 ? (
+                <p className="section__text" style={{ marginTop: "0.75rem" }}>
+                  لا توجد معاينات من قاعدة البيانات بعد؛ تُعرض التصنيفات
+                  بصور افتراضية. للمنتجات الكاملة تصفّحي صفحة المنتجات.
+                </p>
+              ) : null}
               <p style={{ marginTop: "0.5rem" }}>
                 <Link className="btn btn--ghost" href="/products">
                   تصفحي جميع المنتجات والفلاتر
@@ -251,103 +283,40 @@ export default function HomePage({
             </div>
           </Reveal>
 
-          <div className="tabs">
-            <button
-              className={`tab ${activeCategory === "all" ? "active" : ""}`}
-              data-filter="all"
-              onClick={() => setActiveCategory("all")}
-              type="button"
-            >
-              الكل
-            </button>
-            <button
-              className={`tab ${activeCategory === "dresses" ? "active" : ""}`}
-              data-filter="dresses"
-              onClick={() => setActiveCategory("dresses")}
-              type="button"
-            >
-              فساتين
-            </button>
-            <button
-              className={`tab ${activeCategory === "abayas" ? "active" : ""}`}
-              data-filter="abayas"
-              onClick={() => setActiveCategory("abayas")}
-              type="button"
-            >
-              عبايات
-            </button>
-            <button
-              className={`tab ${activeCategory === "casual" ? "active" : ""}`}
-              data-filter="casual"
-              onClick={() => setActiveCategory("casual")}
-              type="button"
-            >
-              كاجوال
-            </button>
-            <button
-              className={`tab ${activeCategory === "accessories" ? "active" : ""}`}
-              data-filter="accessories"
-              onClick={() => setActiveCategory("accessories")}
-              type="button"
-            >
-              إكسسوارات
-            </button>
-          </div>
-
           <div className="gallery" id="gallery">
-            {collectionItems.length === 0 ? (
-              <p className="section__text" style={{ gridColumn: "1 / -1" }}>
-                لا توجد قطع في المجموعة بعد. / No collection items yet. ربطي
-                قاعدة البيانات (DATABASE_URL) ثم نفّذي ترحيل Prisma وبذرة
-                البيانات (prisma db seed). / Connect Postgres (DATABASE_URL),
-                run Prisma migrations, then prisma db seed.
-              </p>
-            ) : visibleProducts.length === 0 ? (
-              <p className="section__text" style={{ gridColumn: "1 / -1" }}>
-                لا توجد قطع ضمن هذا التصنيف. / No items in this category.
-              </p>
-            ) : (
-              visibleProducts.map((item, idx) => (
+            {COLLECTION_CATEGORY_ORDER.map((categoryId, idx) => {
+              const meta = HOME_CATEGORY_PREVIEWS[categoryId];
+              const rep = categorySpotlightItem.get(categoryId);
+              const imageUrl = rep?.imageUrl ?? HOME_CATEGORY_FALLBACK_IMAGE;
+              const imageAlt =
+                rep?.imageAlt ??
+                `معاينة قسم ${meta.title} — كوتور للأزياء`;
+
+              return (
                 <Reveal
-                  key={item.id}
+                  key={categoryId}
                   variant="zoom"
                   delay={Math.min(idx * 70, 420)}
                 >
-                  <article className="item" data-cat={item.category}>
+                  <Link
+                    href={`/products?category=${categoryId}`}
+                    className="item item--category-preview"
+                    aria-labelledby={`collection-cat-${categoryId}`}
+                  >
                     <div className="item__media">
-                      <img src={item.imageUrl} alt={item.imageAlt} loading="lazy" />
+                      <img src={imageUrl} alt={imageAlt} loading="lazy" />
                     </div>
                     <div className="item__body">
-                      <h3>{item.title}</h3>
-                      {item.description ? <p>{item.description}</p> : null}
-                      {(item.sizes.length > 0 || item.colors.length > 0) && (
-                        <p className="item__meta muted" style={{ fontSize: 13, margin: "0 0 6px" }}>
-                          {item.sizes.length > 0 ? (
-                            <span>المقاسات: {item.sizes.join("، ")}</span>
-                          ) : null}
-                          {item.sizes.length > 0 && item.colors.length > 0
-                            ? " · "
-                            : null}
-                          {item.colors.length > 0 ? (
-                            <span>
-                              {item.colors.map((c) => c.label).join("، ")}
-                            </span>
-                          ) : null}
-                        </p>
-                      )}
-                      <button
-                        className="btn btn--small btn--primary item__btn"
-                        data-title={item.title}
-                        onClick={() => handleItemOrder(item.title)}
-                        type="button"
-                      >
-                        اطلبي عبر واتساب
-                      </button>
+                      <h3 id={`collection-cat-${categoryId}`}>{meta.title}</h3>
+                      <p>{meta.description}</p>
+                      <span className="btn btn--small btn--primary item__btn">
+                        {meta.ctaLabel}
+                      </span>
                     </div>
-                  </article>
+                  </Link>
                 </Reveal>
-              ))
-            )}
+              );
+            })}
           </div>
         </div>
       </section>

@@ -4,6 +4,18 @@ export type CollectionCategory =
   | "casual"
   | "accessories";
 
+/** Stable order for homepage category previews and filters. */
+export const COLLECTION_CATEGORY_ORDER: CollectionCategory[] = [
+  "dresses",
+  "abayas",
+  "casual",
+  "accessories",
+];
+
+export function isCollectionCategory(value: string): value is CollectionCategory {
+  return (COLLECTION_CATEGORY_ORDER as readonly string[]).includes(value);
+}
+
 export type ProductColorView = {
   id: string;
   label: string;
