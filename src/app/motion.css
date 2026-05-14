@@ -1184,14 +1184,25 @@
 
 .mobile-nav-shell__backdrop {
   position: absolute;
-  inset: 0;
+  /* Dim/blur page only below the sticky topbar — keeps brand crisp */
+  top: calc(58px + env(safe-area-inset-top, 0px));
+  left: 0;
+  right: 0;
+  bottom: 0;
   margin: 0;
   padding: 0;
   border: 0;
   cursor: pointer;
-  background: rgba(5, 3, 8, 0.52);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  background:
+    linear-gradient(
+      185deg,
+      rgba(48, 14, 26, 0.42) 0%,
+      rgba(6, 3, 10, 0.68) 55%,
+      rgba(4, 2, 8, 0.74) 100%
+    ),
+    rgba(9, 5, 12, 0.38);
+  backdrop-filter: blur(16px) saturate(1.06);
+  -webkit-backdrop-filter: blur(16px) saturate(1.06);
 }
 
 .mobile-nav.mobile-nav--drawer {
