@@ -23,6 +23,15 @@ type ProductImageRow = {
   isPrimary: boolean;
   sortOrder: number;
 };
+type ProductVariantRow = {
+  id: string;
+  size: string;
+  colorId: string | null;
+  quantity: number;
+  isAvailable: boolean;
+  allowSpecialOrder: boolean;
+  sortOrder: number;
+};
 type Product = {
   id: string;
   titleAr: string;
@@ -36,6 +45,7 @@ type Product = {
   sizes: string[];
   colors: { id: string; label: string; deletedAt?: string | null }[];
   images: ProductImageRow[];
+  variants: ProductVariantRow[];
 };
 
 const cats = [
@@ -116,7 +126,7 @@ export default function AdminProductsPage() {
       <AdminCard>
         <AdminSectionHeader
           title="المنتجات"
-          description='الحذف من هنا تمويه (soft) — تسترجعينه من "الأرشيف".'
+          description='الحذف من هنا تمويه (soft) — تسترجعينه من "الأرشيف". حقل sizes القديم يُحدَّث تلقائيًا من «المقاسات والتوفر».'
           actions={
             <AdminButton
               type="button"
@@ -190,7 +200,11 @@ export default function AdminProductsPage() {
                 <tr key={p.id}>
                   <td>{p.titleAr}</td>
                   <td>{cats.find((c) => c.v === p.category)?.l ?? p.category}</td>
-                  <td style={{ fontSize: 12 }}>{p.sizes.join("، ")}</td>
+                  <td style={{ fontSize: 12 }}>
+                    {p.variants?.length
+                      ? p.variants.map((v) => v.size).join("، ")
+                      : p.sizes.join("، ")}
+                  </td>
                   <td style={{ fontSize: 12 }}>
                     {p.price != null && p.price !== ""
                       ? `${p.price} ${p.currency || "LYD"}`
@@ -236,8 +250,21 @@ type LocalImageRow = {
   isPrimary: boolean;
 };
 
+type VariantFormRow = {
+  key: string;
+  size: string;
+  colorId: string;
+  quantity: string;
+  isAvailable: boolean;
+  allowSpecialOrder: boolean;
+};
+
 function newKey() {
   return `img-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+function newVariantKey() {
+  return `var-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 function initialImageRows(initial?: Product): LocalImageRow[] {
@@ -261,6 +288,40 @@ function initialImageRows(initial?: Product): LocalImageRow[] {
   ];
 }
 
+function initialVariantRows(initial?: Product): VariantFormRow[] {
+  if (initial?.variants && initial.variants.length > 0) {
+    return initial.variants.map((v) => ({
+      key: v.id,
+      size: v.size,
+      colorId: v.colorId ?? "",
+      quantity: String(v.quantity),
+      isAvailable: v.isAvailable,
+      allowSpecialOrder: v.allowSpecialOrder,
+    }));
+  }
+  const sz = initial?.sizes ?? [];
+  if (sz.length > 0) {
+    return sz.map((s, i) => ({
+      key: `leg-${i}-${s}`,
+      size: s,
+      colorId: "",
+      quantity: "1",
+      isAvailable: true,
+      allowSpecialOrder: false,
+    }));
+  }
+  return [
+    {
+      key: newVariantKey(),
+      size: "",
+      colorId: "",
+      quantity: "1",
+      isAvailable: true,
+      allowSpecialOrder: false,
+    },
+  ];
+}
+
 function ProductForm({
   initial,
   colors,
@@ -278,7 +339,9 @@ function ProductForm({
   const [description, setDescription] = useState(initial?.description ?? "");
   const [category, setCategory] = useState(initial?.category ?? "dresses");
   const [isPublished, setIsPublished] = useState(initial?.isPublished ?? true);
-  const [sizes, setSizes] = useState((initial?.sizes ?? []).join(", "));
+  const [variantRows, setVariantRows] = useState<VariantFormRow[]>(() =>
+    initialVariantRows(initial),
+  );
   const [colorIds, setColorIds] = useState<Set<string>>(
     new Set((initial?.colors ?? []).map((c) => c.id)),
   );
@@ -296,10 +359,6 @@ function ProductForm({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const sizeList = sizes
-      .split(/،|,/)
-      .map((s) => s.trim())
-      .filter(Boolean);
     const cleaned = imageRows
       .map((r) => ({
         ...r,
@@ -311,6 +370,44 @@ function ProductForm({
       pushToast("أضيفي رابط صورة واحد على الأقل.", "error");
       setLoading(false);
       return;
+    }
+    const variantsPayload: {
+      size: string;
+      colorId: string | null;
+      quantity: number;
+      isAvailable: boolean;
+      allowSpecialOrder: boolean;
+    }[] = [];
+    for (const row of variantRows) {
+      const sz = row.size.trim();
+      if (!sz) {
+        pushToast("كل صف يجب أن يحتوي مقاسًا.", "error");
+        setLoading(false);
+        return;
+      }
+      const q = parseInt(row.quantity.trim(), 10);
+      if (!Number.isFinite(q) || q < 0 || q > 999999) {
+        pushToast("الكمية يجب أن تكون رقمًا صحيحًا ≥ 0.", "error");
+        setLoading(false);
+        return;
+      }
+      variantsPayload.push({
+        size: sz,
+        colorId: row.colorId.trim() ? row.colorId.trim() : null,
+        quantity: q,
+        isAvailable: row.isAvailable,
+        allowSpecialOrder: row.allowSpecialOrder,
+      });
+    }
+    const keys = new Set<string>();
+    for (const v of variantsPayload) {
+      const k = `${v.size.toLowerCase()}__${v.colorId ?? ""}`;
+      if (keys.has(k)) {
+        pushToast("لا تكرّري نفس المقاس مع نفس اللون في صفين.", "error");
+        setLoading(false);
+        return;
+      }
+      keys.add(k);
     }
     const primary = cleaned.find((r) => r.isPrimary) ?? cleaned[0]!;
     const imagesPayload = cleaned.map((r, i) => ({
@@ -326,11 +423,11 @@ function ProductForm({
       imageUrl: primary.url,
       category,
       isPublished,
-      sizes: sizeList,
       colorIds: Array.from(colorIds),
       price: price.trim() === "" ? null : price.trim(),
       currency: currency.trim() || "LYD",
       images: imagesPayload,
+      variants: variantsPayload,
     };
     try {
       if (initial) {
@@ -385,6 +482,27 @@ function ProductForm({
         next[0] = { ...next[0]!, isPrimary: true };
       }
       return next;
+    });
+  }
+
+  function addVariantRow() {
+    setVariantRows((rows) => [
+      ...rows,
+      {
+        key: newVariantKey(),
+        size: "",
+        colorId: "",
+        quantity: "1",
+        isAvailable: true,
+        allowSpecialOrder: false,
+      },
+    ]);
+  }
+
+  function removeVariantRow(key: string) {
+    setVariantRows((rows) => {
+      if (rows.length <= 1) return rows;
+      return rows.filter((r) => r.key !== key);
     });
   }
 
@@ -579,17 +697,155 @@ function ProductForm({
           ))}
         </select>
       </label>
-      <label>
-        المقاسات (مفصولة بفاصلة)
-        <input
-          value={sizes}
-          onChange={(e) => setSizes(e.target.value)}
-          placeholder="M, L, XL"
-        />
-      </label>
+
+      <div
+        style={{
+          marginTop: 14,
+          padding: "12px 12px",
+          borderRadius: 12,
+          border: "1px solid rgba(185,133,111,0.35)",
+        }}
+      >
+        <div style={{ fontWeight: 800, marginBottom: 8, color: "#d7c9c2" }}>
+          المقاسات والتوفر
+        </div>
+        <p className="admin-hint" style={{ marginTop: 0 }}>
+          الكمية 0 أو إلغاء «متاح» يظهر المقاس للزبائن كغير متوفر. «طلب خاص»
+          يسمح برسالة واتساب لطلب غير متوفر.
+        </p>
+        {variantRows.map((row) => (
+          <div
+            key={row.key}
+            style={{
+              display: "grid",
+              gap: 8,
+              marginBottom: 10,
+              padding: 10,
+              borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <label style={{ margin: 0 }}>
+              المقاس
+              <input
+                value={row.size}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setVariantRows((rows) =>
+                    rows.map((r) =>
+                      r.key === row.key ? { ...r, size: v } : r,
+                    ),
+                  );
+                }}
+                required
+              />
+            </label>
+            <label style={{ margin: 0 }}>
+              الكمية
+              <input
+                type="number"
+                min={0}
+                value={row.quantity}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setVariantRows((rows) =>
+                    rows.map((r) =>
+                      r.key === row.key ? { ...r, quantity: v } : r,
+                    ),
+                  );
+                }}
+              />
+            </label>
+            <label style={{ margin: 0 }}>
+              لون (اختياري)
+              <select
+                value={row.colorId}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setVariantRows((rows) =>
+                    rows.map((r) =>
+                      r.key === row.key ? { ...r, colorId: v } : r,
+                    ),
+                  );
+                }}
+              >
+                <option value="">— بدون —</option>
+                {colors.map((c) => {
+                  const archived = Boolean(c.deletedAt);
+                  if (archived && row.colorId !== c.id) return null;
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                      {archived ? " (مؤرشف)" : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                margin: 0,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={row.isAvailable}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  setVariantRows((rows) =>
+                    rows.map((r) =>
+                      r.key === row.key ? { ...r, isAvailable: v } : r,
+                    ),
+                  );
+                }}
+              />
+              متاح للبيع
+            </label>
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                margin: 0,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={row.allowSpecialOrder}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  setVariantRows((rows) =>
+                    rows.map((r) =>
+                      r.key === row.key ? { ...r, allowSpecialOrder: v } : r,
+                    ),
+                  );
+                }}
+              />
+              طلب خاص عبر واتساب عند عدم التوفر
+            </label>
+            <AdminButton
+              type="button"
+              variant="ghost"
+              onClick={() => removeVariantRow(row.key)}
+              disabled={variantRows.length <= 1}
+            >
+              حذف الصف
+            </AdminButton>
+          </div>
+        ))}
+        <AdminButton type="button" variant="secondary" onClick={addVariantRow}>
+          + صف مقاس
+        </AdminButton>
+      </div>
+
       <div>
         <div style={{ fontWeight: 800, fontSize: "0.9rem", color: "#d7c9c2" }}>
-          الألوان
+          ألوان المنتج (فلاتر)
         </div>
         {colors.map((c) => {
           const isArchived = Boolean(c.deletedAt);

@@ -44,6 +44,7 @@ model Color {
   sortOrder Int      @default(0)
   deletedAt DateTime?
   items     CollectionItem[]
+  variants  ProductVariant[]
 
   @@index([deletedAt, sortOrder])
 }
@@ -59,15 +60,37 @@ model CollectionItem {
   currency    String    @default("LYD")
   category    String
   isPublished Boolean   @default(true)
+  /// Legacy compatibility — يُزامن مع المقاسات المتاحة من variants عند الحفظ من لوحة التحكم
   sizes       String[]  @default([])
   deletedAt   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   colors      Color[]
   images      ProductImage[]
+  variants    ProductVariant[]
 
   @@index([isPublished, deletedAt, category])
   @@index([titleAr])
+}
+
+/// مقاس/لون لكل منتج مع التوفر والطلب الخاص — المصدر الرئيسي للعرض العام
+model ProductVariant {
+  id                String         @id @default(cuid())
+  collectionItemId  String
+  collectionItem    CollectionItem @relation(fields: [collectionItemId], references: [id], onDelete: Cascade)
+  size              String
+  colorId           String?
+  color             Color?         @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  quantity          Int            @default(1)
+  isAvailable       Boolean        @default(true)
+  allowSpecialOrder Boolean        @default(false)
+  sortOrder         Int            @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([collectionItemId, sortOrder])
+  @@index([collectionItemId, size])
+  @@index([colorId])
 }
 
 /// صور متعددة لكل منتج — الحفاظ على `imageUrl` كنسخة احتياطية للواجهات القديمة

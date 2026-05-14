@@ -5,7 +5,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
-import type { CollectionItemView, CollectionCategory } from "@/lib/types/collection";
+import type {
+  CollectionItemView,
+  CollectionCategory,
+  ProductVariantView,
+} from "@/lib/types/collection";
+import { isVariantSellable } from "@/lib/types/collection";
 import { siteConfig, type PublicSocialUrls } from "@/lib/config/site";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import { buildProductOrderWhatsappMessage } from "@/lib/whatsapp/product-order-message";
@@ -65,6 +70,21 @@ function buildQuery(p: {
   return u.toString();
 }
 
+/** Variants from DB, or legacy `sizes` as synthetic in-stock rows */
+function displayVariantsForProduct(item: CollectionItemView): ProductVariantView[] {
+  if (item.variants.length > 0) return item.variants;
+  return item.sizes.map((s, i) => ({
+    id: `legacy:${item.id}:${i}:${s}`,
+    size: s,
+    colorId: null,
+    colorLabel: null,
+    quantity: 1,
+    isAvailable: true,
+    allowSpecialOrder: false,
+    sortOrder: i,
+  }));
+}
+
 type ProductsPageProps = {
   /** روابط التواصل من الخادم (تحافظ على تطابق SSR/CSR). */
   socialUrls: PublicSocialUrls;
@@ -92,6 +112,9 @@ export default function ProductsPage({
   const [sizes, setSizes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [selectedVariantByProduct, setSelectedVariantByProduct] = useState<
+    Record<string, string>
+  >({});
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q), 320);
@@ -174,11 +197,22 @@ export default function ProductsPage({
     [colors],
   );
 
-  function orderProduct(item: CollectionItemView) {
+  function orderProduct(item: CollectionItemView, selectedVariantId: string | null) {
+    const rows = displayVariantsForProduct(item);
+    const v = selectedVariantId
+      ? rows.find((r) => r.id === selectedVariantId) ?? null
+      : null;
+    const sellable = v ? isVariantSellable(v) : false;
+    const special = Boolean(v && !sellable && v.allowSpecialOrder);
+    const unavailableNoSpecial = Boolean(v && !sellable && !v.allowSpecialOrder);
     const message = buildProductOrderWhatsappMessage({
       productName: item.title,
       price: item.price,
       currency: item.currency,
+      selectedSize: v?.size ?? null,
+      selectedColorLabel: v?.colorLabel ?? null,
+      specialOrderMode: special,
+      unavailableNoSpecial: unavailableNoSpecial && !special,
     });
     window.open(buildWhatsappLink(message), "_blank", "noopener,noreferrer");
   }
@@ -394,13 +428,58 @@ export default function ProductsPage({
                         ))}
                       </div>
                     ) : null}
-                    {item.sizes.length > 0 ? (
-                      <div className="product-card__chips" aria-label="المقاسات">
-                        {item.sizes.map((z) => (
-                          <span key={z} className="product-chip">
-                            {z}
-                          </span>
-                        ))}
+                    {displayVariantsForProduct(item).length > 0 ? (
+                      <div
+                        className="product-size-pills"
+                        aria-label="المقاسات والتوفر"
+                      >
+                        {displayVariantsForProduct(item).map((v) => {
+                          const sellable = isVariantSellable(v);
+                          const selected =
+                            selectedVariantByProduct[item.id] === v.id;
+                          const cls = [
+                            "product-size-pill",
+                            selected ? "product-size-pill--selected" : "",
+                            !sellable ? "product-size-pill--unavailable" : "",
+                            !sellable && v.allowSpecialOrder
+                              ? "product-size-pill--special"
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ");
+                          const title = !sellable
+                            ? v.allowSpecialOrder
+                              ? "غير متوفر حاليًا — طلب خاص عبر واتساب"
+                              : "غير متوفر حاليًا"
+                            : undefined;
+                          return (
+                            <button
+                              key={v.id}
+                              type="button"
+                              className={cls}
+                              title={title}
+                              onClick={() =>
+                                setSelectedVariantByProduct((m) => ({
+                                  ...m,
+                                  [item.id]: v.id,
+                                }))
+                              }
+                            >
+                              <span>{v.size}</span>
+                              {v.colorLabel ? (
+                                <span style={{ opacity: 0.88 }}>
+                                  {" "}
+                                  · {v.colorLabel}
+                                </span>
+                              ) : null}
+                              {!sellable && v.allowSpecialOrder ? (
+                                <span className="product-size-pill__special">
+                                  طلب خاص
+                                </span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
                       </div>
                     ) : null}
                     <p className="product-card__delivery">{PRODUCT_DELIVERY_NOTE}</p>
@@ -410,7 +489,12 @@ export default function ProductsPage({
                       data-track="whatsapp_click"
                       data-product-id={item.id}
                       data-product-name={item.title}
-                      onClick={() => orderProduct(item)}
+                      onClick={() =>
+                        orderProduct(
+                          item,
+                          selectedVariantByProduct[item.id] ?? null,
+                        )
+                      }
                     >
                       اطلبي عبر واتساب
                     </button>

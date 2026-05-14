@@ -99,6 +99,16 @@ async function main() {
             },
           ],
         },
+        variants: {
+          create: item.sizes.map((size, i) => ({
+            size,
+            colorId: null,
+            quantity: 1,
+            isAvailable: true,
+            allowSpecialOrder: false,
+            sortOrder: i,
+          })),
+        },
       },
     });
   }

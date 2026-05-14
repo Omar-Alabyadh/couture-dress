@@ -68,3 +68,65 @@ html::-webkit-scrollbar-thumb:hover {
 html::-webkit-scrollbar-corner {
   background: rgba(7, 5, 10, 0.96);
 }
+
+/* —— Product size / variant pills (/products) —— */
+.product-size-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin-top: 0.35rem;
+}
+
+.product-size-pill {
+  position: relative;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f6f1ee;
+  cursor: pointer;
+  line-height: 1.2;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.product-size-pill--selected {
+  border-color: rgba(185, 133, 111, 0.85);
+  background: rgba(185, 133, 111, 0.22);
+}
+
+.product-size-pill--unavailable {
+  text-decoration: line-through;
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.product-size-pill--unavailable.product-size-pill--special {
+  cursor: pointer;
+  opacity: 0.85;
+  text-decoration: none;
+  border-style: dashed;
+}
+
+.product-size-pill__special {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #e8c4a8;
+  margin-top: 0.12rem;
+}
+
+.product-size-pill[aria-disabled="true"] {
+  pointer-events: none;
+}
+
+.product-size-pill:focus-visible {
+  outline: 2px solid rgba(185, 133, 111, 0.85);
+  outline-offset: 2px;
+}

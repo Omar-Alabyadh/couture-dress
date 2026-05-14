@@ -148,3 +148,90 @@ export function isValidOptionalDescription(
   if (s == null || s === "") return true;
   return s.length <= MAX_DESCRIPTION;
 }
+
+export const MAX_VARIANTS = 60;
+
+export type NormalizedProductVariantInput = {
+  size: string;
+  colorId: string | null;
+  quantity: number;
+  isAvailable: boolean;
+  allowSpecialOrder: boolean;
+  sortOrder: number;
+};
+
+/**
+ * Legacy `sizes` synced from variants: unique sizes (trimmed) that are in stock
+ * (available flag + positive quantity), preserving first-seen order by sortOrder.
+ */
+export function legacySizesFromNormalizedVariants(
+  rows: NormalizedProductVariantInput[],
+): string[] {
+  const sorted = [...rows].map((r, i) => ({ ...r, _i: i }));
+  sorted.sort((a, b) => {
+      const oa = a.sortOrder ?? a._i;
+      const ob = b.sortOrder ?? b._i;
+      return oa - ob || a._i - b._i;
+    });
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const r of sorted) {
+    if (!r.isAvailable || r.quantity <= 0) continue;
+    const s = r.size.trim();
+    if (!s || seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+  }
+  return out;
+}
+
+function sortOrderFromIndex(i: number): number {
+  return i;
+}
+
+/**
+ * Parse and validate variant rows from admin JSON.
+ * Enforces unique (size trimmed lower, colorId|null) per product.
+ */
+export function normalizeProductVariantsInput(
+  raw: unknown,
+): { ok: true; rows: NormalizedProductVariantInput[] } | { ok: false } {
+  if (!Array.isArray(raw)) return { ok: false };
+  if (raw.length > MAX_VARIANTS) return { ok: false };
+  const rows: NormalizedProductVariantInput[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    if (!item || typeof item !== "object") return { ok: false };
+    const o = item as Record<string, unknown>;
+    const size = String(o.size ?? "").trim();
+    if (!size || size.length > MAX_SIZE_TOKEN_LEN) return { ok: false };
+    let colorId: string | null = null;
+    if (o.colorId != null && o.colorId !== "") {
+      const c = String(o.colorId).trim();
+      if (!c) return { ok: false };
+      colorId = c;
+    }
+    const qRaw = o.quantity;
+    const quantity =
+      typeof qRaw === "number" && Number.isFinite(qRaw)
+        ? Math.trunc(qRaw)
+        : parseInt(String(qRaw ?? "0"), 10);
+    if (!Number.isFinite(quantity) || quantity < 0 || quantity > 999_999) {
+      return { ok: false };
+    }
+    const isAvailable = Boolean(o.isAvailable);
+    const allowSpecialOrder = Boolean(o.allowSpecialOrder);
+    const key = `${size.toLowerCase()}__${colorId ?? ""}`;
+    if (seen.has(key)) return { ok: false };
+    seen.add(key);
+    rows.push({
+      size,
+      colorId,
+      quantity,
+      isAvailable,
+      allowSpecialOrder,
+      sortOrder: sortOrderFromIndex(rows.length),
+    });
+  }
+  return { ok: true, rows };
+}

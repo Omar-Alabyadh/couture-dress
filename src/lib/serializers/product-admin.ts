@@ -1,4 +1,15 @@
 import type { Prisma } from "@/generated/prisma/client";
+
+export type ProductVariantAdminJson = {
+  id: string;
+  size: string;
+  colorId: string | null;
+  quantity: number;
+  isAvailable: boolean;
+  allowSpecialOrder: boolean;
+  sortOrder: number;
+};
+
 export type AdminProductJson = {
   id: string;
   titleAr: string;
@@ -18,15 +29,20 @@ export type AdminProductJson = {
     isPrimary: boolean;
     sortOrder: number;
   }[];
+  variants: ProductVariantAdminJson[];
 };
 
-export type ProductWithColorsAndImages = Prisma.CollectionItemGetPayload<{
-  include: { colors: true; images: true };
+export type ProductWithColorsImagesVariants = Prisma.CollectionItemGetPayload<{
+  include: { colors: true; images: true; variants: true };
 }>;
 
 export function serializeProductForAdmin(
-  row: ProductWithColorsAndImages,
+  row: ProductWithColorsImagesVariants,
 ): AdminProductJson {
+  const variants = [...(row.variants ?? [])].sort(
+    (a, b) =>
+      a.sortOrder - b.sortOrder || a.id.localeCompare(b.id),
+  );
   return {
     id: row.id,
     titleAr: row.titleAr,
@@ -56,5 +72,14 @@ export function serializeProductForAdmin(
         isPrimary: i.isPrimary,
         sortOrder: i.sortOrder,
       })),
+    variants: variants.map((v) => ({
+      id: v.id,
+      size: v.size,
+      colorId: v.colorId,
+      quantity: v.quantity,
+      isAvailable: v.isAvailable,
+      allowSpecialOrder: v.allowSpecialOrder,
+      sortOrder: v.sortOrder,
+    })),
   };
 }

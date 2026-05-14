@@ -4,19 +4,26 @@ import { prisma } from "@/server/db/client";
 import { requireOwner } from "@/lib/api/admin-auth";
 import { logAudit } from "@/server/services/auditService";
 import { getClientIp } from "@/lib/api/get-client-ip";
-import { serializeProductForAdmin } from "@/lib/serializers/product-admin";
+import {
+  serializeProductForAdmin,
+  type ProductWithColorsImagesVariants,
+} from "@/lib/serializers/product-admin";
 import { isRecord } from "@/lib/validation/record";
 import {
   isSafeProductImageUrl,
   isValidOptionalDescription,
   isValidOptionalTitleEn,
   isValidTitleAr,
+  legacySizesFromNormalizedVariants,
   normalizeColorIds,
   normalizeProductImagesForSave,
   normalizeProductSizes,
+  normalizeProductVariantsInput,
   parseCurrency,
   parseOptionalPrice,
+  type NormalizedProductVariantInput,
 } from "@/lib/validation/product-input";
+import { variantColorIdsExistOnDb } from "@/lib/products/validate-variant-colors";
 
 const CATEGORIES = new Set(["dresses", "abayas", "casual", "accessories"]);
 
@@ -34,6 +41,7 @@ type PatchBody = {
   price?: string | null;
   currency?: string;
   images?: unknown;
+  variants?: unknown;
 };
 
 function parsePatch(body: unknown): PatchBody | null {
@@ -69,6 +77,7 @@ function parsePatch(body: unknown): PatchBody | null {
   }
   if (body.currency !== undefined) out.currency = String(body.currency);
   if (body.images !== undefined) out.images = body.images;
+  if (body.variants !== undefined) out.variants = body.variants;
   return out;
 }
 
@@ -121,6 +130,31 @@ export async function PATCH(req: Request, ctx: Ctx) {
     }
     p.colorIds = normalized;
   }
+
+  let variantReplace: NormalizedProductVariantInput[] | null = null;
+  if (p.variants !== undefined) {
+    if (!Array.isArray(p.variants)) {
+      return NextResponse.json({ error: "variants يجب أن تكون مصفوفة" }, { status: 400 });
+    }
+    const nv = normalizeProductVariantsInput(p.variants);
+    if (!nv.ok) {
+      return NextResponse.json({ error: "مقاسات/variants غير صالحة" }, { status: 400 });
+    }
+    if (nv.rows.length === 0) {
+      return NextResponse.json(
+        { error: "أضيفي صف مقاس واحد على الأقل في «المقاسات والتوفر»." },
+        { status: 400 },
+      );
+    }
+    const okColors = await variantColorIdsExistOnDb(
+      nv.rows.map((v) => v.colorId),
+    );
+    if (!okColors) {
+      return NextResponse.json({ error: "لون غير صالح في أحد الصفوف." }, { status: 400 });
+    }
+    variantReplace = nv.rows;
+  }
+
   try {
     const existing = await prisma.collectionItem.findFirst({
       where: { id, deletedAt: null },
@@ -136,7 +170,9 @@ export async function PATCH(req: Request, ctx: Ctx) {
     if (p.description !== undefined) data.description = p.description;
     if (p.category !== undefined) data.category = p.category;
     if (p.isPublished !== undefined) data.isPublished = p.isPublished;
-    if (p.sizes !== undefined) data.sizes = p.sizes;
+    if (p.sizes !== undefined && variantReplace == null) {
+      data.sizes = p.sizes;
+    }
     if (p.colorIds !== undefined) {
       data.colors = { set: p.colorIds.map((i) => ({ id: i })) };
     }
@@ -148,6 +184,21 @@ export async function PATCH(req: Request, ctx: Ctx) {
         p.price === null || p.price === ""
           ? null
           : new Prisma.Decimal(p.price);
+    }
+
+    if (variantReplace != null) {
+      data.sizes = legacySizesFromNormalizedVariants(variantReplace);
+      data.variants = {
+        deleteMany: {},
+        create: variantReplace.map((v, i) => ({
+          size: v.size,
+          colorId: v.colorId,
+          quantity: v.quantity,
+          isAvailable: v.isAvailable,
+          allowSpecialOrder: v.allowSpecialOrder,
+          sortOrder: i,
+        })),
+      };
     }
 
     const nextTitleAr =
@@ -208,7 +259,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     const row = await prisma.collectionItem.update({
       where: { id, deletedAt: null },
       data,
-      include: { colors: true, images: true },
+      include: { colors: true, images: true, variants: true },
     });
     await logAudit({
       userId: r.session!.user.id,
@@ -217,7 +268,9 @@ export async function PATCH(req: Request, ctx: Ctx) {
       entityId: id,
       ip,
     });
-    return NextResponse.json({ data: serializeProductForAdmin(row) });
+    return NextResponse.json({
+      data: serializeProductForAdmin(row as ProductWithColorsImagesVariants),
+    });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "تعذر التحديث" }, { status: 400 });

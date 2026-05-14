@@ -11,22 +11,46 @@ import {
   isValidOptionalDescription,
   isValidOptionalTitleEn,
   isValidTitleAr,
+  legacySizesFromNormalizedVariants,
   normalizeColorIds,
   normalizeProductImagesForSave,
   normalizeProductSizes,
+  normalizeProductVariantsInput,
   parseCurrency,
   parseOptionalPrice,
+  type NormalizedProductVariantInput,
 } from "@/lib/validation/product-input";
-import { serializeProductForAdmin } from "@/lib/serializers/product-admin";
+import {
+  serializeProductForAdmin,
+  type ProductWithColorsImagesVariants,
+} from "@/lib/serializers/product-admin";
+import { variantColorIdsExistOnDb } from "@/lib/products/validate-variant-colors";
 
 const CATEGORIES = new Set(["dresses", "abayas", "casual", "accessories"]);
+
+function defaultVariantsFromSizesStrings(
+  sizes: string[],
+): NormalizedProductVariantInput[] | null {
+  const norm = normalizeProductSizes(sizes);
+  if (norm == null) return null;
+  return norm.map((size, i) => ({
+    size,
+    colorId: null,
+    quantity: 1,
+    isAvailable: true,
+    allowSpecialOrder: false,
+    sortOrder: i,
+  }));
+}
 
 export async function GET() {
   const r = await requireOwner();
   if (r.error) return r.error;
   try {
     const rows = await listCollectionForAdmin();
-    const data = rows.map(serializeProductForAdmin);
+    const data = rows.map((row) =>
+      serializeProductForAdmin(row as ProductWithColorsImagesVariants),
+    );
     return NextResponse.json({ data });
   } catch {
     return NextResponse.json({ error: "تعذر التحميل" }, { status: 500 });
@@ -45,6 +69,7 @@ type CreateBody = {
   price?: string | null;
   currency: string;
   images?: unknown;
+  variants?: unknown;
 };
 
 function parseCreate(body: unknown): CreateBody | null {
@@ -100,6 +125,7 @@ function parseCreate(body: unknown): CreateBody | null {
     price: priceParsed,
     currency,
     images: body.images,
+    variants: body.variants,
   };
 }
 
@@ -130,6 +156,39 @@ export async function POST(req: Request) {
   const primaryUrl =
     imgNorm.rows.find((x) => x.isPrimary)?.url ?? imgNorm.rows[0]!.url;
 
+  let variantRows: NormalizedProductVariantInput[];
+  if (Array.isArray(p.variants)) {
+    const nv = normalizeProductVariantsInput(p.variants);
+    if (!nv.ok) {
+      return NextResponse.json({ error: "مقاسات/variants غير صالحة" }, { status: 400 });
+    }
+    if (nv.rows.length === 0) {
+      return NextResponse.json(
+        { error: "أضيفي صف مقاس واحد على الأقل في «المقاسات والتوفر»." },
+        { status: 400 },
+      );
+    }
+    variantRows = nv.rows;
+  } else {
+    const fb = defaultVariantsFromSizesStrings(p.sizes ?? []);
+    if (!fb || fb.length === 0) {
+      return NextResponse.json(
+        { error: "أضيفي مقاسًا واحدًا على الأقل." },
+        { status: 400 },
+      );
+    }
+    variantRows = fb;
+  }
+
+  const okColors = await variantColorIdsExistOnDb(
+    variantRows.map((v) => v.colorId),
+  );
+  if (!okColors) {
+    return NextResponse.json({ error: "لون غير صالح في أحد الصفوف." }, { status: 400 });
+  }
+
+  const syncedSizes = legacySizesFromNormalizedVariants(variantRows);
+
   try {
     const row = await prisma.collectionItem.create({
       data: {
@@ -142,7 +201,7 @@ export async function POST(req: Request) {
         currency: p.currency,
         category: p.category,
         isPublished: p.isPublished,
-        sizes: p.sizes,
+        sizes: syncedSizes,
         colors:
           colorIds.length > 0
             ? { connect: colorIds.map((cid) => ({ id: cid })) }
@@ -155,8 +214,18 @@ export async function POST(req: Request) {
             sortOrder: im.sortOrder,
           })),
         },
+        variants: {
+          create: variantRows.map((v, i) => ({
+            size: v.size,
+            colorId: v.colorId,
+            quantity: v.quantity,
+            isAvailable: v.isAvailable,
+            allowSpecialOrder: v.allowSpecialOrder,
+            sortOrder: i,
+          })),
+        },
       },
-      include: { colors: true, images: true },
+      include: { colors: true, images: true, variants: true },
     });
     await logAudit({
       userId: r.session!.user.id,
@@ -166,7 +235,9 @@ export async function POST(req: Request) {
       metadata: { titleAr: p.titleAr },
       ip,
     });
-    return NextResponse.json({ data: serializeProductForAdmin(row) });
+    return NextResponse.json({
+      data: serializeProductForAdmin(row as ProductWithColorsImagesVariants),
+    });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "تعذر الإنشاء" }, { status: 400 });

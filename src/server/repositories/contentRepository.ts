@@ -16,6 +16,13 @@ const imageInclude = {
   ],
 };
 
+const variantInclude = {
+  orderBy: [
+    { sortOrder: "asc" as const },
+    { id: "asc" as const },
+  ],
+};
+
 export async function listCollectionItems() {
   return prisma.collectionItem.findMany({
     where: { isPublished: true, deletedAt: null },
@@ -23,6 +30,7 @@ export async function listCollectionItems() {
     include: {
       colors: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } },
       images: imageInclude,
+      variants: variantInclude,
     },
   });
 }
@@ -49,7 +57,21 @@ export async function listPublicProducts(filters: PublicProductFilters) {
     });
   }
   if (filters.size) {
-    and.push({ sizes: { has: filters.size.trim() } });
+    const sz = filters.size.trim();
+    and.push({
+      OR: [
+        { sizes: { has: sz } },
+        {
+          variants: {
+            some: {
+              size: sz,
+              isAvailable: true,
+              quantity: { gt: 0 },
+            },
+          },
+        },
+      ],
+    });
   }
   if (filters.colorId) {
     and.push({
@@ -62,6 +84,7 @@ export async function listPublicProducts(filters: PublicProductFilters) {
     include: {
       colors: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } },
       images: imageInclude,
+      variants: variantInclude,
     },
   });
 }
@@ -73,6 +96,7 @@ export async function listCollectionForAdmin() {
     include: {
       colors: { orderBy: { sortOrder: "asc" } },
       images: imageInclude,
+      variants: variantInclude,
     },
   });
 }
@@ -81,7 +105,7 @@ export async function listTrashedCollection() {
   return prisma.collectionItem.findMany({
     where: { NOT: { deletedAt: null } },
     orderBy: { updatedAt: "desc" },
-    include: { colors: true, images: imageInclude },
+    include: { colors: true, images: imageInclude, variants: variantInclude },
   });
 }
 
