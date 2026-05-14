@@ -29,6 +29,9 @@ import SiteFooter from "@/components/sections/SiteFooter";
 
 const HOME_CATEGORY_FALLBACK_IMAGE = "/assets/hero.jpeg";
 
+/** AR: بطاقة مميّزة تحريريًا — يُفضّل عنوان «اختيار راقٍ» إن وُجد في المحتوى. */
+const FEATURE_HIGHLIGHT_TITLE = "اختيار راقٍ";
+
 const HOME_CATEGORY_PREVIEWS: Record<
   CollectionCategory,
   { title: string; description: string; ctaLabel: string }
@@ -101,6 +104,14 @@ export default function HomePage({
     }
     return map;
   }, [collectionItems]);
+
+  const featuresHasHighlightTitle = useMemo(
+    () =>
+      landing.features.some(
+        (x) => x.title.trim() === FEATURE_HIGHLIGHT_TITLE,
+      ),
+    [landing.features],
+  );
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -321,22 +332,35 @@ export default function HomePage({
         </div>
       </section>
 
-      <section id="features" className="section">
+      <section id="features" className="section section--features">
         <div className="container">
           <Reveal>
             <h2 className="section__title">{landing.featuresTitle}</h2>
           </Reveal>
 
-          <div className="features">
-            {landing.features.map((f, idx) => (
-              <Reveal key={f.title} delay={Math.min(idx * 90, 360)}>
-                <div className="feature">
-                  <div className="icon">{f.icon}</div>
-                  <h3>{f.title}</h3>
-                  <p>{f.text}</p>
-                </div>
-              </Reveal>
-            ))}
+          <div className="features-ambient">
+            <div className="features">
+              {landing.features.map((f, idx) => {
+                const isFeatured = featuresHasHighlightTitle
+                  ? f.title.trim() === FEATURE_HIGHLIGHT_TITLE
+                  : idx === 0;
+                return (
+                  <Reveal key={f.title} delay={Math.min(idx * 90, 360)}>
+                    <div
+                      className={
+                        isFeatured ? "feature feature--featured" : "feature"
+                      }
+                    >
+                      <div className="icon" aria-hidden="true">
+                        {f.icon}
+                      </div>
+                      <h3>{f.title}</h3>
+                      <p>{f.text}</p>
+                    </div>
+                  </Reveal>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
