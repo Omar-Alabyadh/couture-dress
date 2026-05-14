@@ -137,7 +137,9 @@ export default function ProductsPage({ socialUrls }: ProductsPageProps) {
             <Link href="/#collection">المجموعة</Link>
             <Link href="/#features">مميزاتنا</Link>
             <Link href="/#contact">تواصل</Link>
-            <span style={{ color: "var(--gold2)", fontWeight: 800 }}>المنتجات</span>
+            <span className="nav__current" aria-current="page">
+              المنتجات
+            </span>
           </nav>
           <button
             className="nav__toggle"
