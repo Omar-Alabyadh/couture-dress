@@ -3000,6 +3000,14 @@ select:focus-visible {
   gap: 26px;
   flex-wrap: wrap;
 }
+.site-footer__bottom-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
 .site-footer__copy {
   margin: 0;
   display: inline-flex;
@@ -3021,6 +3029,38 @@ select:focus-visible {
 }
 .site-footer__copy-rights {
   opacity: 0.82;
+}
+
+.site-footer__dev-credit {
+  margin: 0;
+  max-width: 100%;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.55;
+  color: rgba(215, 201, 194, 0.58);
+}
+.site-footer__dev-credit-link {
+  color: rgba(215, 201, 194, 0.78);
+  text-decoration: none;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  transition:
+    color 0.3s var(--motion-ease),
+    text-decoration-color 0.3s var(--motion-ease);
+}
+.site-footer__dev-credit-link:hover {
+  color: rgba(245, 232, 222, 0.9);
+  text-decoration: underline;
+  text-decoration-color: rgba(185, 133, 111, 0.45);
+}
+.site-footer__dev-credit-link:focus-visible {
+  outline: 2px solid rgba(185, 133, 111, 0.5);
+  outline-offset: 3px;
+  border-radius: 3px;
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-decoration-color: rgba(185, 133, 111, 0.5);
 }
 
 .site-footer__totop {
@@ -3300,8 +3340,18 @@ select:focus-visible {
     margin-top: 44px;
     padding: 22px 0 4px;
   }
+  .site-footer__bottom-meta {
+    align-items: center;
+    flex: 1 1 100%;
+    width: 100%;
+  }
   .site-footer__copy {
     justify-content: center;
+  }
+  .site-footer__dev-credit {
+    text-align: center;
+    padding-inline: min(3vw, 12px);
+    text-wrap: balance;
   }
   .social-links--footer {
     gap: 16px;

@@ -368,21 +368,34 @@ export default function SiteFooter({
         </div>
 
         <div className="site-footer__bottom">
-          <p className="site-footer__copy">
-            <span>© {year}</span>
-            <span className="site-footer__copy-dot" aria-hidden>
-              •
-            </span>
-            <span>
-              <strong>{brandAr}</strong> — {brandEn}
-            </span>
-            <span className="site-footer__copy-dot" aria-hidden>
-              •
-            </span>
-            <span className="site-footer__copy-rights">
-              جميع الحقوق محفوظة
-            </span>
-          </p>
+          <div className="site-footer__bottom-meta">
+            <p className="site-footer__copy">
+              <span>© {year}</span>
+              <span className="site-footer__copy-dot" aria-hidden>
+                •
+              </span>
+              <span>
+                <strong>{brandAr}</strong> — {brandEn}
+              </span>
+              <span className="site-footer__copy-dot" aria-hidden>
+                •
+              </span>
+              <span className="site-footer__copy-rights">
+                جميع الحقوق محفوظة
+              </span>
+            </p>
+            <p className="site-footer__dev-credit">
+              تطوير وتصميم:{" "}
+              <a
+                className="site-footer__dev-credit-link"
+                href="https://omar-alabyadh.github.io/Portfolio/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                م. عمر الأبيض
+              </a>
+            </p>
+          </div>
           <button
             type="button"
             onClick={handleBackToTop}
