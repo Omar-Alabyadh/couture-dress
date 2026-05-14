@@ -8,8 +8,23 @@ import {
   useId,
   useRef,
   useState,
+  useSyncExternalStore,
   type KeyboardEvent,
 } from "react";
+
+function subscribeReducedMotion(cb: () => void) {
+  const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+
+function getReducedMotionSnapshot() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function getReducedMotionServerSnapshot() {
+  return false;
+}
 
 export type ProductSlide = {
   id: string;
@@ -29,6 +44,11 @@ export function ProductMediaCarousel({
   const baseId = useId();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot,
+  );
 
   const single = slides.length <= 1;
   const slide = slides[0];
@@ -40,10 +60,13 @@ export function ProductMediaCarousel({
       const len = slides.length;
       const next = ((i % len) + len) % len;
       const w = el.clientWidth;
-      el.scrollTo({ left: next * w, behavior: "smooth" });
+      el.scrollTo({
+        left: next * w,
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+      });
       setIndex(next);
     },
-    [slides.length],
+    [slides.length, prefersReducedMotion],
   );
 
   useEffect(() => {

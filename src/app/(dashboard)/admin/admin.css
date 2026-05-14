@@ -72,6 +72,10 @@
   gap: 0.75rem;
   max-width: 520px;
 }
+
+.admin-form--wide {
+  max-width: 720px;
+}
 .admin-form label {
   display: flex;
   flex-direction: column;
@@ -564,4 +568,204 @@
 .admin-modal__btn--danger {
   background: #7a1e2b;
   color: #fff;
+}
+
+/* --- Product media manager (admin) --- */
+.admin-media-panel {
+  margin: 12px 0;
+  padding: 14px 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(185, 133, 111, 0.38);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.admin-media-panel__title {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f6f1ee;
+}
+
+.admin-media-panel__guidance {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #c9bbb4;
+}
+
+.admin-media-panel__guidance strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #e8dcd5;
+  font-size: 0.86rem;
+}
+
+.admin-media-panel__guidance ul {
+  margin: 0;
+  padding-inline-start: 1.1rem;
+}
+
+.admin-media-panel__empty {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px dashed rgba(185, 133, 111, 0.45);
+  color: #c9a89a;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.admin-media-panel__error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(200, 80, 80, 0.55);
+  background: rgba(90, 20, 28, 0.35);
+  color: #f5c9c9;
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.admin-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-media-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  min-width: 0;
+}
+
+.admin-media-card--primary {
+  border-color: rgba(185, 133, 111, 0.65);
+  box-shadow: 0 0 0 1px rgba(185, 133, 111, 0.22);
+}
+
+.admin-media-card__badge {
+  align-self: flex-start;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(185, 133, 111, 0.35);
+  color: #fff5ef;
+}
+
+.admin-media-card__preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.admin-media-card__preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-media-card__preview--broken img {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-media-card__preview-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: rgba(215, 201, 194, 0.55);
+  line-height: 1.45;
+}
+
+.admin-media-card__preview-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: #e8a0a0;
+  line-height: 1.45;
+  background: rgba(40, 12, 18, 0.55);
+}
+
+.admin-media-card__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #a89890;
+}
+
+.admin-media-card__order {
+  margin-inline-end: auto;
+  font-weight: 700;
+  color: #d7c9c2;
+}
+
+.admin-media-card label {
+  margin: 0;
+}
+
+.admin-media-inline-error {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: #f0a0a0;
+}
+
+.admin-table-thumb {
+  width: 44px;
+  aspect-ratio: 4 / 5;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.admin-table-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-table-thumb--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #666;
+  text-align: center;
+  line-height: 1.2;
+  padding: 2px;
 }

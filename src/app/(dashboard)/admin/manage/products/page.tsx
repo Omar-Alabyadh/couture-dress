@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
+import { isSafeProductImageUrl } from "@/lib/validation/product-input";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
@@ -54,6 +55,36 @@ const cats = [
   { v: "casual", l: "كاجوال" },
   { v: "accessories", l: "إكسسوارات" },
 ];
+
+function primaryProductThumbSrc(p: Product): string {
+  const sorted = [...(p.images ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+  const primary = sorted.find((i) => i.isPrimary) ?? sorted[0];
+  const u = primary?.url?.trim();
+  if (u) return u;
+  return p.imageUrl?.trim() ?? "";
+}
+
+function AdminProductThumbCell({ src }: { src: string }) {
+  const trimmed = src.trim();
+  const [failedFor, setFailedFor] = useState<string | null>(null);
+  const failed = Boolean(trimmed && failedFor === trimmed);
+  if (!trimmed || failed) {
+    return (
+      <div className="admin-table-thumb admin-table-thumb--empty">—</div>
+    );
+  }
+  return (
+    <div className="admin-table-thumb">
+      {/* eslint-disable-next-line @next/next/no-img-element -- admin list thumbnail */}
+      <img
+        src={trimmed}
+        alt=""
+        loading="lazy"
+        onError={() => setFailedFor(trimmed)}
+      />
+    </div>
+  );
+}
 
 export default function AdminProductsPage() {
   const { pushToast } = useAdminToast();
@@ -186,6 +217,7 @@ export default function AdminProductsPage() {
           <AdminTable style={{ marginTop: 12 }}>
             <thead>
               <tr>
+                <th aria-label="معاينة">صورة</th>
                 <th>العنوان</th>
                 <th>تصنيف</th>
                 <th>مقاسات</th>
@@ -196,8 +228,13 @@ export default function AdminProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {list.map((p) => (
+              {list.map((p) => {
+                const thumb = primaryProductThumbSrc(p);
+                return (
                 <tr key={p.id}>
+                  <td style={{ width: 56, verticalAlign: "middle" }}>
+                    <AdminProductThumbCell src={thumb} />
+                  </td>
                   <td>{p.titleAr}</td>
                   <td>{cats.find((c) => c.v === p.category)?.l ?? p.category}</td>
                   <td style={{ fontSize: 12 }}>
@@ -234,7 +271,8 @@ export default function AdminProductsPage() {
                     </AdminButton>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </AdminTable>
         ) : null}
@@ -278,10 +316,11 @@ function initialImageRows(initial?: Product): LocalImageRow[] {
         isPrimary: im.isPrimary,
       }));
   }
+  const legacy = initial?.imageUrl?.trim() ?? "";
   return [
     {
       key: newKey(),
-      url: initial?.imageUrl ?? "/assets/p1.jpg",
+      url: legacy,
       alt: "",
       isPrimary: true,
     },
@@ -322,6 +361,153 @@ function initialVariantRows(initial?: Product): VariantFormRow[] {
   ];
 }
 
+function AdminProductMediaCard({
+  row,
+  index,
+  total,
+  urlError,
+  primaryRadioName,
+  onUrlChange,
+  onAltChange,
+  onSetPrimary,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  disableRemove,
+}: {
+  row: LocalImageRow;
+  index: number;
+  total: number;
+  urlError?: string;
+  primaryRadioName: string;
+  onUrlChange: (v: string) => void;
+  onAltChange: (v: string) => void;
+  onSetPrimary: () => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  disableRemove: boolean;
+}) {
+  const url = row.url.trim();
+  const [failedForUrl, setFailedForUrl] = useState<string | null>(null);
+  const loadFailed = Boolean(url && failedForUrl === url);
+  const unsafe = url.length > 0 && !isSafeProductImageUrl(url);
+  const inlineUrlMsg =
+    urlError ??
+    (unsafe ? "الرابط يجب أن يبدأ بـ https:// أو http:// أو / (مسار عام فقط)." : undefined);
+
+  return (
+    <div
+      className={`admin-media-card${row.isPrimary ? " admin-media-card--primary" : ""}`}
+    >
+      {row.isPrimary ? (
+        <span className="admin-media-card__badge">صورة أساسية</span>
+      ) : null}
+      <div className="admin-media-card__preview">
+        {url.length === 0 ? (
+          <span className="admin-media-card__preview-placeholder">
+            معاينة الصورة — أضيفي رابطًا صالحًا
+          </span>
+        ) : null}
+        {url.length > 0 && unsafe ? (
+          <span className="admin-media-card__preview-error">
+            لا يمكن عرض معاينة — رابط غير مسموح
+          </span>
+        ) : null}
+        {url.length > 0 && !unsafe ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element -- admin media preview */}
+            <img
+              src={url}
+              alt={row.alt.trim() || "معاينة"}
+              onError={() => setFailedForUrl(url)}
+              style={{ visibility: loadFailed ? "hidden" : "visible" }}
+            />
+            {loadFailed ? (
+              <span className="admin-media-card__preview-error">
+                تعذر تحميل الصورة. تحققي من الرابط أو الصلاحيات.
+              </span>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+
+      <div className="admin-media-card__toolbar">
+        <span className="admin-media-card__order">
+          الترتيب {index + 1} / {total}
+        </span>
+        <AdminButton
+          type="button"
+          variant="ghost"
+          disabled={index === 0}
+          onClick={onMoveUp}
+          aria-label="نقل الصورة لأعلى"
+        >
+          ↑
+        </AdminButton>
+        <AdminButton
+          type="button"
+          variant="ghost"
+          disabled={index >= total - 1}
+          onClick={onMoveDown}
+          aria-label="نقل الصورة لأسفل"
+        >
+          ↓
+        </AdminButton>
+      </div>
+
+      <label style={{ margin: 0 }}>
+        رابط الصورة
+        <input
+          value={row.url}
+          onChange={(e) => onUrlChange(e.target.value)}
+          placeholder="https://… أو /assets/…"
+          dir="ltr"
+          style={{ textAlign: "left" }}
+        />
+      </label>
+      {inlineUrlMsg ? (
+        <p className="admin-media-inline-error">{inlineUrlMsg}</p>
+      ) : null}
+
+      <label style={{ margin: 0 }}>
+        وصف بديل (alt) اختياري
+        <input
+          value={row.alt}
+          onChange={(e) => onAltChange(e.target.value)}
+        />
+      </label>
+
+      <label
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          margin: 0,
+        }}
+      >
+        <input
+          type="radio"
+          name={primaryRadioName}
+          checked={row.isPrimary}
+          onChange={onSetPrimary}
+        />
+        تعيين كصورة أساسية
+      </label>
+
+      <AdminButton
+        type="button"
+        variant="ghost"
+        onClick={onRemove}
+        disabled={disableRemove}
+      >
+        إزالة
+      </AdminButton>
+    </div>
+  );
+}
+
 function ProductForm({
   initial,
   colors,
@@ -334,6 +520,8 @@ function ProductForm({
   onSaved: () => void | Promise<void>;
 }) {
   const { pushToast } = useAdminToast();
+  const formDomId = useId();
+  const primaryRadioName = `primary-image-${formDomId.replace(/:/g, "")}`;
   const [titleAr, setTitleAr] = useState(initial?.titleAr ?? "");
   const [titleEn, setTitleEn] = useState(initial?.titleEn ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -351,14 +539,24 @@ function ProductForm({
     initialImageRows(initial),
   );
   const [loading, setLoading] = useState(false);
+  const [mediaPanelError, setMediaPanelError] = useState<string | null>(null);
+  const [mediaUrlErrors, setMediaUrlErrors] = useState<Record<string, string>>(
+    () => ({}),
+  );
 
   const primaryRow =
     imageRows.find((r) => r.isPrimary) ?? imageRows[0] ?? null;
-  const previewUrl = primaryRow?.url?.trim() || "/assets/p1.jpg";
+  const primaryEmptyButOthersFilled = Boolean(
+    primaryRow &&
+      !primaryRow.url.trim() &&
+      imageRows.some((r) => r.url.trim().length > 0),
+  );
+  const allImageUrlsEmpty = imageRows.every((r) => !r.url.trim());
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setMediaPanelError(null);
     const cleaned = imageRows
       .map((r) => ({
         ...r,
@@ -367,10 +565,42 @@ function ProductForm({
       }))
       .filter((r) => r.url.length > 0);
     if (cleaned.length === 0) {
-      pushToast("أضيفي رابط صورة واحد على الأقل.", "error");
+      setMediaPanelError("أضيفي صورة واحدة على الأقل للمنتج");
+      pushToast("أضيفي صورة واحدة على الأقل للمنتج.", "error");
       setLoading(false);
       return;
     }
+
+    const nextUrlErrors: Record<string, string> = {};
+    for (const row of cleaned) {
+      if (!isSafeProductImageUrl(row.url)) {
+        nextUrlErrors[row.key] =
+          "رابط غير صالح — استخدمي https:// أو http:// أو مسارًا عامًا يبدأ بـ /";
+      }
+    }
+    if (Object.keys(nextUrlErrors).length > 0) {
+      setMediaUrlErrors(nextUrlErrors);
+      pushToast("صححي روابط الصور غير الصالحة.", "error");
+      setLoading(false);
+      return;
+    }
+
+    const seen = new Map<string, string>();
+    for (const row of cleaned) {
+      const norm = row.url.trim().toLowerCase();
+      const existing = seen.get(norm);
+      if (existing) {
+        setMediaUrlErrors({
+          [existing]: "نفس الرابط مستخدم أكثر من مرة",
+          [row.key]: "نفس الرابط مستخدم أكثر من مرة",
+        });
+        pushToast("يوجد رابط صورة مكرر في القائمة.", "error");
+        setLoading(false);
+        return;
+      }
+      seen.set(norm, row.key);
+    }
+    setMediaUrlErrors({});
     const variantsPayload: {
       size: string;
       colorId: string | null;
@@ -467,6 +697,21 @@ function ProductForm({
     );
   }
 
+  function moveImageRow(key: string, dir: -1 | 1) {
+    setImageRows((rows) => {
+      const i = rows.findIndex((r) => r.key === key);
+      if (i < 0) return rows;
+      const j = i + dir;
+      if (j < 0 || j >= rows.length) return rows;
+      const next = [...rows];
+      const a = next[i]!;
+      const b = next[j]!;
+      next[i] = b;
+      next[j] = a;
+      return next;
+    });
+  }
+
   function addImageRow() {
     setImageRows((rows) => [
       ...rows,
@@ -509,8 +754,8 @@ function ProductForm({
   return (
     <form
       onSubmit={submit}
-      className="admin-form"
-      style={{ margin: "0.5rem 0 1.2rem", maxWidth: 560 }}
+      className="admin-form admin-form--wide"
+      style={{ margin: "0.5rem 0 1.2rem" }}
     >
       <h3>{initial ? "تعديل" : "جديد"}</h3>
       <label>
@@ -534,136 +779,80 @@ function ProductForm({
         />
       </label>
 
-      <div
-        className="admin-hint"
-        style={{
-          margin: "12px 0",
-          padding: "10px 12px",
-          borderRadius: 12,
-          border: "1px solid rgba(185,133,111,0.35)",
-          lineHeight: 1.55,
-        }}
-      >
-        <strong>معيار الصور الموصى به</strong>
-        <ul style={{ margin: "8px 0 0", paddingInlineStart: "1.1rem" }}>
-          <li>النسبة: 4:5 (عرض : ارتفاع)</li>
-          <li>الأفضل: 1200×1500 بكسل</li>
-          <li>الحد الأدنى الموصى به: 800×1000</li>
-          <li>الصيغة المفضّلة: WebP — يُقبل أيضًا JPG/PNG</li>
-          <li>لصور الهاتف: قصّي المنتج بوضوح قبل النشر</li>
-        </ul>
-      </div>
+      <section className="admin-media-panel" aria-labelledby="product-media-heading">
+        <h4 id="product-media-heading" className="admin-media-panel__title">
+          صور المنتج
+        </h4>
+        <div className="admin-media-panel__guidance">
+          <strong>إرشادات التصوير للملابس</strong>
+          <ul>
+            <li>النسبة المثالية: 4:5 (عرض × ارتفاع)</li>
+            <li>أفضل مقاس: 1200×1500 بكسل — الحد الأدنى: 800×1000</li>
+            <li>الصور العمودية أوضح لعرض القصّة والتفاصيل</li>
+            <li>استخدمي إضاءة موحدة وخلفية هادئة</li>
+            <li>تجنّبي الصور الأفقية الواسعة ولقطات الشاشة قدر الإمكان</li>
+          </ul>
+        </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 16,
-          flexWrap: "wrap",
-          alignItems: "flex-start",
-        }}
-      >
-        <div style={{ flex: "0 0 auto" }}>
-          <div style={{ fontWeight: 800, marginBottom: 6, color: "#d7c9c2" }}>
-            معاينة 4:5 (الصورة الأساسية)
-          </div>
-          <div
-            style={{
-              width: 140,
-              aspectRatio: "4 / 5",
-              borderRadius: 12,
-              overflow: "hidden",
-              border: "1px solid rgba(185,133,111,0.4)",
-              background: "rgba(0,0,0,0.25)",
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- admin preview */}
-            <img
-              src={previewUrl}
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              onError={(ev) => {
-                ev.currentTarget.style.opacity = "0.35";
-              }}
-            />
-          </div>
-        </div>
-        <div style={{ flex: "1 1 240px", minWidth: 0 }}>
-          <div style={{ fontWeight: 800, marginBottom: 6, color: "#d7c9c2" }}>
-            صور المنتج (روابط)
-          </div>
-          {imageRows.map((row) => (
-            <div
+        {mediaPanelError ? (
+          <p className="admin-media-panel__error" role="alert">
+            {mediaPanelError}
+          </p>
+        ) : null}
+
+        {allImageUrlsEmpty ? (
+          <p className="admin-media-panel__empty">
+            أضيفي صورة واحدة على الأقل للمنتج — الصق روابط الصور (أو مسارات
+            عامة مثل /assets/…) في البطاقات أدناه.
+          </p>
+        ) : null}
+
+        {primaryEmptyButOthersFilled ? (
+          <p className="admin-hint" style={{ margin: "0 0 12px" }}>
+            الصورة المحددة كأساسية بلا رابط؛ عند الحفظ ستُعتمد أول صورة صالحة
+            تلقائيًا كأساسية، أو عيّني أساسية لصف يحتوي رابطًا.
+          </p>
+        ) : null}
+
+        <div className="admin-media-grid">
+          {imageRows.map((row, index) => (
+            <AdminProductMediaCard
               key={row.key}
-              style={{
-                display: "grid",
-                gap: 8,
-                marginBottom: 10,
-                padding: 10,
-                borderRadius: 10,
-                border: "1px solid rgba(255,255,255,0.1)",
+              row={row}
+              index={index}
+              total={imageRows.length}
+              urlError={mediaUrlErrors[row.key]}
+              primaryRadioName={primaryRadioName}
+              onUrlChange={(v) => {
+                setMediaPanelError(null);
+                setMediaUrlErrors((m) => {
+                  if (!m[row.key]) return m;
+                  const next = { ...m };
+                  delete next[row.key];
+                  return next;
+                });
+                setImageRows((rows) =>
+                  rows.map((r) => (r.key === row.key ? { ...r, url: v } : r)),
+                );
               }}
-            >
-              <label style={{ margin: 0 }}>
-                رابط الصورة
-                <input
-                  value={row.url}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setImageRows((rows) =>
-                      rows.map((r) =>
-                        r.key === row.key ? { ...r, url: v } : r,
-                      ),
-                    );
-                  }}
-                  placeholder="https://… أو /assets/…"
-                  required={row.isPrimary}
-                />
-              </label>
-              <label style={{ margin: 0 }}>
-                وصف بديل (alt) اختياري
-                <input
-                  value={row.alt}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setImageRows((rows) =>
-                      rows.map((r) =>
-                        r.key === row.key ? { ...r, alt: v } : r,
-                      ),
-                    );
-                  }}
-                />
-              </label>
-              <label
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 8,
-                  margin: 0,
-                }}
-              >
-                <input
-                  type="radio"
-                  name="primary-image"
-                  checked={row.isPrimary}
-                  onChange={() => setPrimaryKey(row.key)}
-                />
-                صورة أساسية (تظهر أولًا في المتجر)
-              </label>
-              <button
-                type="button"
-                onClick={() => removeImageRow(row.key)}
-                disabled={imageRows.length <= 1}
-              >
-                حذف هذه الصورة
-              </button>
-            </div>
+              onAltChange={(v) =>
+                setImageRows((rows) =>
+                  rows.map((r) => (r.key === row.key ? { ...r, alt: v } : r)),
+                )
+              }
+              onSetPrimary={() => setPrimaryKey(row.key)}
+              onRemove={() => removeImageRow(row.key)}
+              onMoveUp={() => moveImageRow(row.key, -1)}
+              onMoveDown={() => moveImageRow(row.key, 1)}
+              disableRemove={imageRows.length <= 1}
+            />
           ))}
-          <AdminButton type="button" variant="primary" onClick={addImageRow}>
-            + إضافة صورة
-          </AdminButton>
         </div>
-      </div>
+
+        <AdminButton type="button" variant="primary" onClick={addImageRow}>
+          + إضافة صورة
+        </AdminButton>
+      </section>
 
       <label>
         السعر (اختياري — رقم موجب)
