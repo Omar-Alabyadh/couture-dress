@@ -22,13 +22,28 @@ export type ProductColorView = {
   hex: string | null;
 };
 
+export type ProductImageView = {
+  id: string;
+  url: string;
+  alt: string | null;
+  isPrimary: boolean;
+  sortOrder: number;
+};
+
 /** AR: شكل عنصر المجموعة كما يحتاجه الواجهة. EN: Collection row shape for the UI layer. */
 export type CollectionItemView = {
   id: string;
   title: string;
   description: string | null;
+  /** نسخة احتياطية متوافقة مع البيانات القديمة — يُفضَّل الاعتماد على primaryImage / images */
   imageUrl: string;
   imageAlt: string;
+  images: ProductImageView[];
+  /** أول صورة أساسية إن وُجدت؛ وإلا تُشتق من imageUrl */
+  primaryImage: ProductImageView | null;
+  /** تمثيل عشري كنص للعرض و JSON */
+  price: string | null;
+  currency: string;
   category: CollectionCategory;
   sizes: string[];
   colors: ProductColorView[];

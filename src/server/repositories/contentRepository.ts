@@ -9,11 +9,21 @@ export type PublicProductFilters = {
   category?: string;
 };
 
+const imageInclude = {
+  orderBy: [
+    { sortOrder: "asc" as const },
+    { createdAt: "asc" as const },
+  ],
+};
+
 export async function listCollectionItems() {
   return prisma.collectionItem.findMany({
     where: { isPublished: true, deletedAt: null },
     orderBy: { createdAt: "desc" },
-    include: { colors: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } } },
+    include: {
+      colors: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } },
+      images: imageInclude,
+    },
   });
 }
 
@@ -49,7 +59,10 @@ export async function listPublicProducts(filters: PublicProductFilters) {
   return prisma.collectionItem.findMany({
     where: { AND: and },
     orderBy: { createdAt: "desc" },
-    include: { colors: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } } },
+    include: {
+      colors: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } },
+      images: imageInclude,
+    },
   });
 }
 
@@ -57,7 +70,10 @@ export async function listCollectionForAdmin() {
   return prisma.collectionItem.findMany({
     where: { deletedAt: null },
     orderBy: { createdAt: "desc" },
-    include: { colors: { orderBy: { sortOrder: "asc" } } },
+    include: {
+      colors: { orderBy: { sortOrder: "asc" } },
+      images: imageInclude,
+    },
   });
 }
 
@@ -65,7 +81,7 @@ export async function listTrashedCollection() {
   return prisma.collectionItem.findMany({
     where: { NOT: { deletedAt: null } },
     orderBy: { updatedAt: "desc" },
-    include: { colors: true },
+    include: { colors: true, images: imageInclude },
   });
 }
 

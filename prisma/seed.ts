@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, type Color } from "../src/generated/prisma/client";
+import { PrismaClient, type Color, Prisma } from "../src/generated/prisma/client";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -19,6 +19,7 @@ const seedItems = [
     category: "dresses",
     sizes: ["M", "L"],
     colorLabels: ["أسود", "بيج"],
+    price: "450",
   },
   {
     titleAr: "عباية فخمة",
@@ -28,6 +29,7 @@ const seedItems = [
     category: "abayas",
     sizes: ["L", "XL"],
     colorLabels: ["كحلي", "أسود"],
+    price: "520",
   },
   {
     titleAr: "طقم كاجوال",
@@ -37,6 +39,7 @@ const seedItems = [
     category: "casual",
     sizes: ["S", "M", "L"],
     colorLabels: ["بيج", "كحلي"],
+    price: "280",
   },
   {
     titleAr: "إكسسوارات",
@@ -46,6 +49,7 @@ const seedItems = [
     category: "accessories",
     sizes: ["—"],
     colorLabels: ["أحمر", "أسود"],
+    price: "120",
   },
 ];
 
@@ -79,10 +83,22 @@ async function main() {
         titleEn: item.titleEn,
         description: item.description,
         imageUrl: item.imageUrl,
+        price: new Prisma.Decimal(item.price),
+        currency: "LYD",
         category: item.category,
         isPublished: true,
         sizes: item.sizes,
         colors: connect.length ? { connect } : undefined,
+        images: {
+          create: [
+            {
+              url: item.imageUrl,
+              alt: item.titleEn ?? item.titleAr,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          ],
+        },
       },
     });
   }

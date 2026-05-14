@@ -8,6 +8,11 @@ import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import type { CollectionItemView, CollectionCategory } from "@/lib/types/collection";
 import { siteConfig, type PublicSocialUrls } from "@/lib/config/site";
 import { buildWhatsappLink } from "@/lib/whatsapp";
+import { buildProductOrderWhatsappMessage } from "@/lib/whatsapp/product-order-message";
+import { formatProductPriceDisplay } from "@/lib/product-price";
+import { PRODUCT_DELIVERY_NOTE } from "@/lib/config/product-display";
+import { ProductMediaCarousel } from "@/components/products/ProductMediaCarousel";
+import type { ProductSlide } from "@/components/products/ProductMediaCarousel";
 import Reveal from "@/components/motion/Reveal";
 import { useStickyHeader } from "@/components/motion/useStickyHeader";
 import SiteFooter from "@/components/sections/SiteFooter";
@@ -23,6 +28,25 @@ const categoryLabels: Record<Exclude<Category, "all">, string> = {
   casual: "كاجوال",
   accessories: "إكسسوارات",
 };
+
+function toProductSlides(item: CollectionItemView): ProductSlide[] {
+  if (item.images.length > 0) {
+    return [...item.images]
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id))
+      .map((im) => ({
+        id: im.id,
+        url: im.url,
+        alt: im.alt ?? item.imageAlt,
+      }));
+  }
+  return [
+    {
+      id: `legacy-${item.id}`,
+      url: item.imageUrl,
+      alt: item.imageAlt,
+    },
+  ];
+}
 
 function buildQuery(p: {
   q: string;
@@ -148,8 +172,12 @@ export default function ProductsPage({
     [colors],
   );
 
-  function order(title: string) {
-    const message = `مرحباً، أريد طلب/الاستفسار عن: ${title} من ${siteConfig.shopName}.`;
+  function orderProduct(item: CollectionItemView) {
+    const message = buildProductOrderWhatsappMessage({
+      productName: item.title,
+      price: item.price,
+      currency: item.currency,
+    });
     window.open(buildWhatsappLink(message), "_blank", "noopener,noreferrer");
   }
 
@@ -279,44 +307,58 @@ export default function ProductsPage({
                 variant="zoom"
                 delay={Math.min(idx * 60, 360)}
               >
-                <article className="item" data-cat={item.category}>
-                  <div className="item__media">
-                    <img src={item.imageUrl} alt={item.imageAlt} loading="lazy" />
+                <article className="item product-card" data-cat={item.category}>
+                  <div className="item__media item__media--product">
+                    <ProductMediaCarousel
+                      slides={toProductSlides(item)}
+                      productLabel={item.title}
+                    />
                   </div>
                   <div className="item__body">
                     <h3>{item.title}</h3>
-                    {item.description ? <p>{item.description}</p> : null}
-                    {item.sizes.length > 0 || item.colors.length > 0 ? (
-                      <p
-                        className="item__meta muted"
-                        style={{ fontSize: 13, margin: "0 0 6px" }}
-                      >
-                        {item.sizes.length > 0 ? (
-                          <span>المقاسات: {item.sizes.join("، ")}</span>
-                        ) : null}
-                        {item.sizes.length > 0 && item.colors.length > 0 ? " · " : null}
-                        {item.colors.length > 0 ? (
-                          <span>
-                            {item.colors.map((c) => (
-                              <span key={c.id}>
-                                {c.hex ? (
-                                  <span
-                                    className="color-swatch"
-                                    style={{ background: c.hex }}
-                                    title={c.label}
-                                  />
-                                ) : null}
-                                {c.label}{" "}
-                              </span>
-                            ))}
-                          </span>
-                        ) : null}
-                      </p>
+                    {item.description ? (
+                      <p className="product-card__desc">{item.description}</p>
                     ) : null}
+                    <p className="product-card__price">
+                      {formatProductPriceDisplay(item.price, item.currency)}
+                    </p>
+                    {item.colors.length > 0 ? (
+                      <div className="product-card__chips" aria-label="الألوان">
+                        {item.colors.map((c) => (
+                          <span key={c.id} className="product-chip">
+                            {c.hex ? (
+                              <span
+                                className="color-swatch"
+                                style={{
+                                  background: c.hex.startsWith("#")
+                                    ? c.hex
+                                    : `#${c.hex}`,
+                                }}
+                                title={c.label}
+                              />
+                            ) : null}
+                            {c.label}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                    {item.sizes.length > 0 ? (
+                      <div className="product-card__chips" aria-label="المقاسات">
+                        {item.sizes.map((z) => (
+                          <span key={z} className="product-chip">
+                            {z}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                    <p className="product-card__delivery">{PRODUCT_DELIVERY_NOTE}</p>
                     <button
                       className="btn btn--small btn--primary item__btn"
                       type="button"
-                      onClick={() => order(item.title)}
+                      data-track="whatsapp_click"
+                      data-product-id={item.id}
+                      data-product-name={item.title}
+                      onClick={() => orderProduct(item)}
                     >
                       اطلبي عبر واتساب
                     </button>

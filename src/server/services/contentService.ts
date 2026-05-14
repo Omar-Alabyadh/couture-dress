@@ -1,11 +1,13 @@
 import type {
   CollectionItem as PrismaCollectionItem,
   Color,
+  ProductImage,
 } from "@/generated/prisma/client";
 import type {
   CollectionCategory,
   CollectionItemView,
   ProductColorView,
+  ProductImageView,
 } from "@/lib/types/collection";
 import {
   listCollectionItems,
@@ -27,7 +29,18 @@ function mapColor(c: Color): ProductColorView {
 
 type RowWithColors = PrismaCollectionItem & {
   colors: Color[];
+  images: ProductImage[];
 };
+
+function mapProductImage(row: ProductImage): ProductImageView {
+  return {
+    id: row.id,
+    url: row.url,
+    alt: row.alt,
+    isPrimary: row.isPrimary,
+    sortOrder: row.sortOrder,
+  };
+}
 
 function mapCollectionItem(
   row: RowWithColors,
@@ -38,13 +51,26 @@ function mapCollectionItem(
     : "dresses";
 
   const colorRows = colorsOverride ?? row.colors;
+  const imageRows = [...(row.images ?? [])].sort(
+    (a, b) =>
+      a.sortOrder - b.sortOrder ||
+      a.createdAt.getTime() - b.createdAt.getTime(),
+  );
+  const images = imageRows.map(mapProductImage);
+  const primary =
+    images.find((i) => i.isPrimary) ?? images[0] ?? null;
+  const titleForAlt = row.titleEn?.trim() ? row.titleEn : row.titleAr;
 
   return {
     id: row.id,
     title: row.titleAr,
     description: row.description,
     imageUrl: row.imageUrl,
-    imageAlt: row.titleEn?.trim() ? row.titleEn : row.titleAr,
+    imageAlt: titleForAlt,
+    images,
+    primaryImage: primary,
+    price: row.price != null ? row.price.toString() : null,
+    currency: row.currency || "LYD",
     category,
     sizes: row.sizes ?? [],
     colors: (colorRows ?? []).map(mapColor),

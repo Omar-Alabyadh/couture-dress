@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/server/db/client";
 import { requireOwner } from "@/lib/api/admin-auth";
 import { logAudit } from "@/server/services/auditService";
 import { getClientIp } from "@/lib/api/get-client-ip";
+import { serializeProductForAdmin } from "@/lib/serializers/product-admin";
 import { isRecord } from "@/lib/validation/record";
 import {
   isSafeProductImageUrl,
@@ -10,9 +12,11 @@ import {
   isValidOptionalTitleEn,
   isValidTitleAr,
   normalizeColorIds,
+  normalizeProductImagesForSave,
   normalizeProductSizes,
+  parseCurrency,
+  parseOptionalPrice,
 } from "@/lib/validation/product-input";
-import type { Prisma } from "@/generated/prisma/client";
 
 const CATEGORIES = new Set(["dresses", "abayas", "casual", "accessories"]);
 
@@ -27,6 +31,9 @@ type PatchBody = {
   isPublished?: boolean;
   sizes?: string[];
   colorIds?: string[];
+  price?: string | null;
+  currency?: string;
+  images?: unknown;
 };
 
 function parsePatch(body: unknown): PatchBody | null {
@@ -54,6 +61,14 @@ function parsePatch(body: unknown): PatchBody | null {
       .map((c) => String(c).trim())
       .filter(Boolean);
   }
+  if (body.price !== undefined) {
+    out.price =
+      body.price === null || body.price === ""
+        ? null
+        : String(body.price);
+  }
+  if (body.currency !== undefined) out.currency = String(body.currency);
+  if (body.images !== undefined) out.images = body.images;
   return out;
 }
 
@@ -82,8 +97,15 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (p.description !== undefined && !isValidOptionalDescription(p.description)) {
     return NextResponse.json({ error: "وصف طويل جدًا" }, { status: 400 });
   }
-  if (p.imageUrl !== undefined && !isSafeProductImageUrl(p.imageUrl)) {
+  if (p.imageUrl !== undefined && !isSafeProductImageUrl(p.imageUrl.trim())) {
     return NextResponse.json({ error: "رابط صورة غير صالح" }, { status: 400 });
+  }
+  if (p.price !== undefined && p.price !== null && p.price !== "") {
+    const pr = parseOptionalPrice(p.price);
+    if (pr === "invalid") {
+      return NextResponse.json({ error: "سعر غير صالح" }, { status: 400 });
+    }
+    p.price = pr;
   }
   if (p.sizes !== undefined) {
     const normalized = normalizeProductSizes(p.sizes);
@@ -100,21 +122,93 @@ export async function PATCH(req: Request, ctx: Ctx) {
     p.colorIds = normalized;
   }
   try {
+    const existing = await prisma.collectionItem.findFirst({
+      where: { id, deletedAt: null },
+      include: { images: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+    }
+
     const data: Prisma.CollectionItemUpdateInput = {};
     if (p.titleAr !== undefined) data.titleAr = p.titleAr.trim();
     if (p.titleEn !== undefined) data.titleEn = p.titleEn;
     if (p.description !== undefined) data.description = p.description;
-    if (p.imageUrl !== undefined) data.imageUrl = p.imageUrl.trim();
     if (p.category !== undefined) data.category = p.category;
     if (p.isPublished !== undefined) data.isPublished = p.isPublished;
     if (p.sizes !== undefined) data.sizes = p.sizes;
     if (p.colorIds !== undefined) {
       data.colors = { set: p.colorIds.map((i) => ({ id: i })) };
     }
+    if (p.currency !== undefined) {
+      data.currency = parseCurrency(p.currency, existing.currency || "LYD");
+    }
+    if (p.price !== undefined) {
+      data.price =
+        p.price === null || p.price === ""
+          ? null
+          : new Prisma.Decimal(p.price);
+    }
+
+    const nextTitleAr =
+      p.titleAr !== undefined ? p.titleAr.trim() : existing.titleAr;
+    const nextTitleEn =
+      p.titleEn !== undefined ? p.titleEn : existing.titleEn;
+    const altBase =
+      nextTitleEn?.trim() ? nextTitleEn.trim() : nextTitleAr;
+
+    if (p.images !== undefined) {
+      const legacyUrl = (p.imageUrl ?? existing.imageUrl).trim();
+      const imgNorm = normalizeProductImagesForSave(
+        p.images,
+        legacyUrl,
+        altBase,
+      );
+      if (!imgNorm.ok) {
+        return NextResponse.json({ error: "صور غير صالحة" }, { status: 400 });
+      }
+      const primaryUrl =
+        imgNorm.rows.find((x) => x.isPrimary)?.url ?? imgNorm.rows[0]!.url;
+      data.imageUrl = primaryUrl;
+      data.images = {
+        deleteMany: {},
+        create: imgNorm.rows.map((im) => ({
+          url: im.url,
+          alt: im.alt,
+          isPrimary: im.isPrimary,
+          sortOrder: im.sortOrder,
+        })),
+      };
+    } else if (p.imageUrl !== undefined) {
+      const nu = p.imageUrl.trim();
+      data.imageUrl = nu;
+      const primaryRow =
+        existing.images.find((i) => i.isPrimary) ?? existing.images[0];
+      if (primaryRow) {
+        data.images = {
+          update: {
+            where: { id: primaryRow.id },
+            data: { url: nu, alt: altBase },
+          },
+        };
+      } else {
+        data.images = {
+          create: [
+            {
+              url: nu,
+              alt: altBase,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          ],
+        };
+      }
+    }
+
     const row = await prisma.collectionItem.update({
       where: { id, deletedAt: null },
       data,
-      include: { colors: true },
+      include: { colors: true, images: true },
     });
     await logAudit({
       userId: r.session!.user.id,
@@ -123,7 +217,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
       entityId: id,
       ip,
     });
-    return NextResponse.json({ data: row });
+    return NextResponse.json({ data: serializeProductForAdmin(row) });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "تعذر التحديث" }, { status: 400 });

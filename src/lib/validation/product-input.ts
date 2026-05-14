@@ -5,6 +5,15 @@ const MAX_IMAGE_URL = 2048;
 const MAX_SIZES = 40;
 const MAX_SIZE_TOKEN_LEN = 32;
 const MAX_COLOR_IDS = 60;
+export const MAX_PRODUCT_IMAGES = 24;
+export const MAX_IMAGE_ALT = 500;
+
+export type ProductImageInputRow = {
+  url: string;
+  alt?: string | null;
+  isPrimary?: boolean;
+  sortOrder?: number;
+};
 
 export function isSafeProductImageUrl(url: string): boolean {
   const t = url.trim();
@@ -37,6 +46,90 @@ export function normalizeProductSizes(sizes: string[]): string[] | null {
 export function normalizeColorIds(ids: string[]): string[] | null {
   if (ids.length > MAX_COLOR_IDS) return null;
   return ids.map((id) => id.trim()).filter(Boolean);
+}
+
+export function parseOptionalPrice(
+  value: unknown,
+): string | null | "invalid" {
+  if (value === null || value === undefined || value === "") return null;
+  const s =
+    typeof value === "number"
+      ? String(value)
+      : String(value).trim().replace(",", ".");
+  if (!s) return null;
+  if (!/^\d+(\.\d{1,2})?$/.test(s)) return "invalid";
+  const n = Number(s);
+  if (!Number.isFinite(n) || n <= 0 || n > 99999999.99) return "invalid";
+  return s;
+}
+
+export function parseCurrency(value: unknown, fallback = "LYD"): string {
+  const t = String(value ?? "").trim().toUpperCase();
+  if (!t) return fallback;
+  if (t.length > 8) return fallback;
+  if (!/^[A-Z0-9]{2,8}$/.test(t)) return fallback;
+  return t;
+}
+
+/** صفوف جاهزة لـ Prisma createMany — صورة أساسية واحدة بالضبط */
+export function normalizeProductImagesForSave(
+  imagesRaw: unknown,
+  legacyUrl: string,
+  legacyAlt: string,
+):
+  | { ok: true; rows: { url: string; alt: string | null; isPrimary: boolean; sortOrder: number }[] }
+  | { ok: false } {
+  const legacy = legacyUrl.trim();
+  if (!isSafeProductImageUrl(legacy)) return { ok: false };
+
+  let candidates: ProductImageInputRow[] = [];
+  if (Array.isArray(imagesRaw) && imagesRaw.length > 0) {
+    if (imagesRaw.length > MAX_PRODUCT_IMAGES) return { ok: false };
+    for (const raw of imagesRaw) {
+      if (!raw || typeof raw !== "object") return { ok: false };
+      const o = raw as Record<string, unknown>;
+      const url = String(o.url ?? "").trim();
+      if (!isSafeProductImageUrl(url)) return { ok: false };
+      const altRaw = o.alt != null ? String(o.alt) : null;
+      const alt =
+        altRaw && altRaw.trim()
+          ? altRaw.trim().slice(0, MAX_IMAGE_ALT)
+          : null;
+      candidates.push({
+        url,
+        alt,
+        isPrimary: Boolean(o.isPrimary),
+        sortOrder:
+          typeof o.sortOrder === "number" && Number.isFinite(o.sortOrder)
+            ? Math.trunc(o.sortOrder)
+            : 0,
+      });
+    }
+  } else {
+    candidates = [
+      {
+        url: legacy,
+        alt: legacyAlt.trim() ? legacyAlt.trim().slice(0, MAX_IMAGE_ALT) : null,
+        isPrimary: true,
+        sortOrder: 0,
+      },
+    ];
+  }
+
+  candidates = candidates.slice().sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const primaryIdx = Math.max(
+    0,
+    candidates.findIndex((c) => c.isPrimary) >= 0
+      ? candidates.findIndex((c) => c.isPrimary)
+      : 0,
+  );
+  const rows = candidates.map((c, i) => ({
+    url: c.url,
+    alt: c.alt ?? null,
+    isPrimary: i === primaryIdx,
+    sortOrder: i,
+  }));
+  return { ok: true, rows };
 }
 
 export function isValidTitleAr(s: string): boolean {

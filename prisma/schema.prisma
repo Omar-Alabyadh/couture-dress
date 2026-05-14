@@ -54,6 +54,9 @@ model CollectionItem {
   titleEn     String?
   description String?
   imageUrl    String
+  /// سعر بالدينار الليبي أو عملة `currency` — اختياري
+  price       Decimal?  @db.Decimal(12, 2)
+  currency    String    @default("LYD")
   category    String
   isPublished Boolean   @default(true)
   sizes       String[]  @default([])
@@ -61,9 +64,24 @@ model CollectionItem {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   colors      Color[]
+  images      ProductImage[]
 
   @@index([isPublished, deletedAt, category])
   @@index([titleAr])
+}
+
+/// صور متعددة لكل منتج — الحفاظ على `imageUrl` كنسخة احتياطية للواجهات القديمة
+model ProductImage {
+  id               String         @id @default(cuid())
+  collectionItemId String
+  collectionItem   CollectionItem @relation(fields: [collectionItemId], references: [id], onDelete: Cascade)
+  url              String
+  alt              String?
+  isPrimary        Boolean        @default(false)
+  sortOrder        Int            @default(0)
+  createdAt        DateTime       @default(now())
+
+  @@index([collectionItemId, sortOrder])
 }
 
 /// سجل تدقيق: للمراقبة والأمان
