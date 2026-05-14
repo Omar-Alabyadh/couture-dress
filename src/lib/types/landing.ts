@@ -79,7 +79,7 @@ export function defaultLandingContent(): LandingContent {
     ],
     contactTitle: "تواصل معنا",
     contactIntro:
-      "للحجز والاستفسار، راسلينا على واتساب أو اتركي رسالة وسنرد عليك.",
+      "للحجز والاستفسار، تواصلي معنا عبر الهاتف أو واتساب وسنرد عليك بكل اهتمام.",
     footerAr: "كوتور للأزياء",
     footerEn: "COUTURE",
   };

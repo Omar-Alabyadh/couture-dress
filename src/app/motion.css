@@ -1416,7 +1416,7 @@ select:focus-visible {
 
 @media (min-width: 981px) {
   .grid-2.grid-2--contact-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 0.46fr) minmax(0, 0.54fr);
     gap: 20px;
     align-items: start;
   }
@@ -1597,8 +1597,13 @@ select:focus-visible {
   filter: brightness(1.04);
 }
 
+/*
+ * Map card (.contact-map-card): structured for a future optional layer —
+ * ultra-soft animated burgundy ambient / cinematic light behind
+ * .contact-map-card__preview (not implemented; keep paint cost low until then).
+ */
 #contact .contact-map-card {
-  margin-top: 12px;
+  margin-top: 18px;
   padding: 12px;
   border-radius: 16px;
   border: 1px solid rgba(185, 133, 111, 0.2);
@@ -1805,7 +1810,10 @@ select:focus-visible {
 }
 
 #contact .form--contact-luxury {
-  padding: 14px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px 12px 14px;
   border-radius: 18px;
 }
 
@@ -1827,15 +1835,17 @@ select:focus-visible {
 }
 
 #contact .form--contact-luxury textarea {
-  min-height: 120px;
-  max-height: 130px;
+  min-height: 110px;
+  max-height: 120px;
   resize: vertical;
   line-height: 1.65;
 }
 
 #contact .form--contact-luxury .btn--primary.contact-form__submit {
   margin-top: 6px;
-  width: 100%;
+  width: fit-content;
+  max-width: min(320px, 100%);
+  align-self: flex-start;
   justify-content: center;
   font-weight: 950;
   letter-spacing: 0.02em;
@@ -1902,12 +1912,21 @@ select:focus-visible {
 
 #contact .form-hint--luxury {
   margin: 8px 0 0;
-  font-size: 11.5px;
-  font-weight: 550;
-  letter-spacing: 0.04em;
+  font-size: 0.78rem;
+  font-weight: 520;
+  letter-spacing: 0.07em;
   line-height: 1.65;
-  color: rgba(215, 201, 194, 0.52);
+  color: rgba(215, 201, 194, 0.72);
+  opacity: 0.58;
   max-width: 40ch;
+}
+
+@media (max-width: 720px) {
+  #contact .form--contact-luxury .btn--primary.contact-form__submit {
+    width: 100%;
+    max-width: none;
+    align-self: stretch;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
