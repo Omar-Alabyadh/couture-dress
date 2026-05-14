@@ -5,6 +5,11 @@ export type SiteBranch = {
   mapEmbedSrc: string;
   /** رابط خرائط جوجل الكامل (مثلاً maps.app.goo.gl) */
   mapOpenUrl?: string;
+  /** مركز المعاينة الثابتة للخريطة (lat, lng) — لصورة خفيفة بدل iframe */
+  mapCenterLat: number;
+  mapCenterLng: number;
+  /** اختياري: صورة معاينة مخصّصة بدل خدمة OSM الثابتة */
+  mapPreviewImage?: string;
 };
 
 const tripoliMapQuery = encodeURIComponent(
@@ -20,6 +25,8 @@ export const siteBranches: SiteBranch[] = [
     mapEmbedSrc:
       "https://www.google.com/maps?q=32.065307,20.086752&z=17&output=embed",
     mapOpenUrl: "https://maps.app.goo.gl/Limcfk7Sh7SLTTEi7?g_st=aw",
+    mapCenterLat: 32.065307,
+    mapCenterLng: 20.086752,
   },
   {
     id: "tripoli",
@@ -27,6 +34,8 @@ export const siteBranches: SiteBranch[] = [
     addressLine: "طرابلس - شارع بن عاشور الرئيسي",
     mapEmbedSrc: `https://www.google.com/maps?q=${tripoliMapQuery}&z=17&output=embed`,
     mapOpenUrl: "https://maps.app.goo.gl/Ux1aoXG8iNyiCWAG8?g_st=ic",
+    mapCenterLat: 32.8875,
+    mapCenterLng: 13.1912,
   },
 ];
 

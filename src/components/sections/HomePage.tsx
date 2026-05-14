@@ -22,6 +22,7 @@ import { clampHeroBgImageUrl } from "@/lib/validation/landing-asset-url";
 import { SocialLinks } from "@/components/SocialLinks";
 import type { PublicSocialUrls } from "@/lib/config/site";
 import { siteConfig } from "@/lib/config/site";
+import { buildStaticMapPreviewUrl } from "@/lib/maps/static-map-preview";
 import { buildWhatsappLink } from "@/lib/whatsapp";
 import Reveal from "@/components/motion/Reveal";
 import { useStickyHeader } from "@/components/motion/useStickyHeader";
@@ -83,6 +84,8 @@ export default function HomePage({
   const [mapBranchId, setMapBranchId] = useState(
     () => siteConfig.branches[0]?.id ?? "benghazi",
   );
+  const [showInlineMap, setShowInlineMap] = useState(false);
+  const [mapPreviewFailed, setMapPreviewFailed] = useState(false);
   const headerRef = useStickyHeader<HTMLElement>();
   const defaultMessage = `مرحباً، أريد الاستفسار عن موديلات ${siteConfig.shopName}.`;
   const defaultWhatsappLink = useMemo(
@@ -96,6 +99,21 @@ export default function HomePage({
       siteConfig.branches[0]!,
     [mapBranchId],
   );
+
+  const mapPreviewSrc = useMemo(() => {
+    if (mapBranch.mapPreviewImage) return mapBranch.mapPreviewImage;
+    return buildStaticMapPreviewUrl(mapBranch.mapCenterLat, mapBranch.mapCenterLng, {
+      width: 720,
+      height: 240,
+      zoom: 16,
+    });
+  }, [mapBranch]);
+
+  function selectBranch(branchId: string) {
+    setMapBranchId(branchId);
+    setShowInlineMap(false);
+    setMapPreviewFailed(false);
+  }
 
   const categorySpotlightItem = useMemo(() => {
     const map = new Map<CollectionCategory, CollectionItemView>();
@@ -365,16 +383,21 @@ export default function HomePage({
         </div>
       </section>
 
-      <section id="contact" className="section section--alt">
-        <div className="container grid-2">
+      <section id="contact" className="section section--alt section--contact">
+        <div className="container grid-2 grid-2--contact-editorial">
           <Reveal>
-            <h2 className="section__title">{landing.contactTitle}</h2>
-            <p className="section__text">{landing.contactIntro}</p>
+            <h2 className="section__title section__title--contact">
+              {landing.contactTitle}
+            </h2>
+            <p className="section__text section__text--contact">
+              {landing.contactIntro}
+            </p>
 
-            <div className="contact-card">
-              <div className="contact-row">
+            <div className="contact-card contact-card--luxury">
+              <div className="contact-row contact-row--whatsapp">
                 <span className="label">واتساب:</span>
                 <a
+                  className="contact-whatsapp-link"
                   href={defaultWhatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -382,88 +405,120 @@ export default function HomePage({
                   اضغطي هنا للتواصل
                 </a>
               </div>
-              <div className="contact-row">
+              <div className="contact-row contact-row--phone">
                 <span className="label">هاتف:</span>
                 <a href={`tel:${siteConfig.phone}`} dir="ltr">
                   +218 92 092 0500
                 </a>
               </div>
-              <div
-                className="contact-row"
-                style={{ alignItems: "center", flexWrap: "wrap" }}
-              >
+              <div className="contact-row contact-row--branches">
                 <span className="label">الفروع:</span>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    flexWrap: "wrap",
-                    flex: "1 1 auto",
-                    minWidth: 0,
-                  }}
-                >
+                <div className="contact-branch-picker">
                   {siteConfig.branches.map((branch) => (
                     <button
                       key={branch.id}
                       type="button"
-                      className={`btn btn--small ${
+                      className={`btn btn--small contact-branch-btn ${
                         mapBranchId === branch.id
-                          ? "btn--primary"
+                          ? "btn--primary contact-branch-btn--active"
                           : "btn--ghost"
                       }`}
-                      onClick={() => setMapBranchId(branch.id)}
+                      onClick={() => selectBranch(branch.id)}
                     >
                       {branch.title}
                     </button>
                   ))}
                 </div>
               </div>
-              <div
-                className="contact-row"
-                style={{
-                  marginTop: "14px",
-                  flexDirection: "column",
-                  alignItems: "stretch",
-                  gap: "6px",
-                }}
-              >
-                <span>{mapBranch.addressLine}</span>
-              </div>
-              <div
-                style={{
-                  marginTop: "12px",
-                  borderRadius: "16px",
-                  overflow: "hidden",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                }}
-              >
-                <iframe
-                  key={mapBranch.id}
-                  title={`خريطة ${mapBranch.title}`}
-                  src={mapBranch.mapEmbedSrc}
-                  width="100%"
-                  height={260}
-                  style={{ border: 0, borderRadius: "16px" }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
-              {mapBranch.mapOpenUrl ? (
-                <a
-                  href={mapBranch.mapOpenUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ display: "inline-block", marginTop: "10px" }}
+
+              <div className="contact-map-card" aria-labelledby="contact-map-heading">
+                <div
+                  className={`contact-map-card__preview${showInlineMap ? " contact-map-card__preview--embedded" : ""}`}
                 >
-                  فتح الموقع في خرائط جوجل — {mapBranch.title}
-                </a>
-              ) : null}
+                  {!showInlineMap ? (
+                    <>
+                      <div
+                        className={`contact-map-card__image-wrap${mapPreviewFailed ? " contact-map-card__image-wrap--fallback" : ""}`}
+                      >
+                        {!mapPreviewFailed ? (
+                          <img
+                            key={mapBranch.id}
+                            src={mapPreviewSrc}
+                            alt=""
+                            width={720}
+                            height={240}
+                            className="contact-map-card__img"
+                            loading="lazy"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                            onError={() => setMapPreviewFailed(true)}
+                          />
+                        ) : null}
+                        <div
+                          className="contact-map-card__pin"
+                          aria-hidden="true"
+                        />
+                      </div>
+                      <div className="contact-map-card__overlay" />
+                      <div className="contact-map-card__copy">
+                        <h3 id="contact-map-heading" className="contact-map-card__title">
+                          {mapBranch.title}
+                        </h3>
+                        <p className="contact-map-card__address">
+                          {mapBranch.addressLine}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="contact-map-card__iframe-shell">
+                      <p className="contact-map-card__iframe-caption">
+                        {mapBranch.title}
+                      </p>
+                      <iframe
+                        key={mapBranch.id}
+                        title={`خريطة ${mapBranch.title}`}
+                        src={mapBranch.mapEmbedSrc}
+                        width="100%"
+                        height={240}
+                        className="contact-map-card__iframe"
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                      <p className="contact-map-card__iframe-address">
+                        {mapBranch.addressLine}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="contact-map-card__actions">
+                  {mapBranch.mapOpenUrl ? (
+                    <a
+                      className="btn btn--small btn--ghost contact-map-card__cta-maps"
+                      href={mapBranch.mapOpenUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      افتحي الموقع في خرائط Google
+                    </a>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="btn btn--small btn--ghost contact-map-card__toggle-inline"
+                    onClick={() => setShowInlineMap((v) => !v)}
+                    aria-expanded={showInlineMap}
+                  >
+                    {showInlineMap
+                      ? "إخفاء الخريطة المدمجة"
+                      : "عرض الخريطة داخل الموقع"}
+                  </button>
+                </div>
+              </div>
             </div>
           </Reveal>
 
           <Reveal delay={120} variant="left">
-            <form className="form" id="contactForm" onSubmit={handleSubmit}>
+            <form className="form form--contact-luxury" id="contactForm" onSubmit={handleSubmit}>
               <h3>أرسلي رسالة</h3>
               <label htmlFor="name">الاسم</label>
               <input
@@ -487,15 +542,15 @@ export default function HomePage({
               <textarea
                 id="message"
                 name="message"
-                rows={5}
+                rows={3}
                 placeholder="اكتبي طلبك أو استفسارك..."
                 required
               />
 
               <button className="btn btn--primary" type="submit">
-                إرسال عبر واتساب
+                إرسال الرسالة عبر واتساب
               </button>
-              <p className="form-hint">
+              <p className="form-hint form-hint--luxury">
                 سيتم فتح واتساب تلقائيًا مع الرسالة جاهزة للإرسال.
               </p>
             </form>
