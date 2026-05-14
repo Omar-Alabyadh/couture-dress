@@ -204,7 +204,7 @@ export default function HomePage({
         </div>
       </main>
 
-      <section id="about" className="section">
+      <section id="about" className="section section--about">
         <div className="container grid-2">
           <Reveal>
             <h2 className="section__title">{landing.aboutTitle}</h2>
