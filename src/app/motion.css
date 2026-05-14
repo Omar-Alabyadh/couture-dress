@@ -1835,6 +1835,15 @@ select:focus-visible {
 #contact .form--contact-luxury textarea {
   padding: 10px 12px;
   border-radius: 12px;
+  direction: rtl;
+  text-align: right;
+}
+
+#contact .form--contact-luxury input::placeholder,
+#contact .form--contact-luxury textarea::placeholder {
+  direction: rtl;
+  text-align: right;
+  opacity: 0.72;
 }
 
 #contact .form--contact-luxury textarea {

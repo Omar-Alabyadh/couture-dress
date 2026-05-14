@@ -41,6 +41,7 @@ export const LANDING_SETTING_KEY = "landing_v1";
 /** نصوص contactIntro القديمة من لوحة التحكم — تُستبدل تلقائيًا بالنص الحالي في defaultLandingContent(). */
 const LEGACY_CONTACT_INTRO_VALUES = new Set<string>([
   "للحجز والاستفسار، راسلينا على واتساب أو اتركي رسالة وسنرد عليك.",
+  "للحجز والاستفسار، تواصلي معنا عبر الهاتف أو واتساب وسنرد عليك بكل اهتمام.",
 ]);
 
 function upgradeLegacyContactIntro(content: LandingContent): LandingContent {
@@ -94,7 +95,7 @@ export function defaultLandingContent(): LandingContent {
     ],
     contactTitle: "تواصل معنا",
     contactIntro:
-      "للحجز والاستفسار، تواصلي معنا عبر الهاتف أو واتساب وسنرد عليك بكل اهتمام.",
+      "للحجز والاستفسار، تواصلي معنا عبر الهاتف أو واتساب، وسنرد عليك بكل اهتمام.",
     footerAr: "كوتور للأزياء",
     footerEn: "COUTURE",
   };

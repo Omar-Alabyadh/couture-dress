@@ -535,6 +535,7 @@ export default function HomePage({
                 type="text"
                 id="name"
                 name="name"
+                dir="rtl"
                 placeholder="اسمك"
                 required
               />
@@ -544,6 +545,9 @@ export default function HomePage({
                 type="tel"
                 id="phone"
                 name="phone"
+                dir="rtl"
+                inputMode="tel"
+                autoComplete="tel"
                 placeholder="رقم الهاتف"
                 required
               />
@@ -553,6 +557,7 @@ export default function HomePage({
                 id="message"
                 name="message"
                 rows={3}
+                dir="rtl"
                 placeholder="اكتبي طلبك أو استفسارك..."
                 required
               />
