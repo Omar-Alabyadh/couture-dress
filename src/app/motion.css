@@ -438,6 +438,269 @@
 }
 
 /* =========================================================
+   Collection (#collection) — luxury ecommerce polish (home only)
+   ========================================================= */
+@keyframes collection-gallery-ambient {
+  0%,
+  100% {
+    opacity: 0.52;
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.66;
+    transform: translate3d(0.35%, 0, 0);
+  }
+}
+
+#collection {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+#collection::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 90% 55% at 50% 88%,
+      rgba(72, 17, 38, 0.16) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 72% 45% at 88% 8%,
+      rgba(185, 133, 111, 0.07) 0%,
+      transparent 52%
+    );
+}
+
+#collection .container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Section title — premium + soft diffused glow (no hard box) */
+#collection .section__head .section__title {
+  position: relative;
+  display: inline-block;
+  margin: 0 0 22px;
+  font-size: clamp(28px, 2.75vw, 36px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: rgba(246, 241, 238, 0.98);
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Crimson/gold spotlight — same language as About (من نحن) */
+#collection .section__title::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(120vw, 32rem);
+  height: clamp(5.5rem, 14vw, 8rem);
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 52% 48% at 50% 50%,
+    rgba(185, 133, 111, 0.22) 0%,
+    rgba(72, 17, 38, 0.32) 22%,
+    rgba(72, 17, 38, 0.14) 48%,
+    rgba(72, 17, 38, 0.05) 68%,
+    transparent 82%
+  );
+  filter: blur(28px);
+  opacity: 0.72;
+}
+
+#collection .section__head .section__text {
+  color: rgba(215, 201, 194, 0.88);
+  font-weight: 550;
+}
+
+#collection .tabs {
+  position: relative;
+  z-index: 1;
+  margin-top: 6px;
+  margin-bottom: 22px;
+  gap: 12px;
+}
+
+#collection .tab {
+  border-color: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.045);
+  transition:
+    transform 0.35s var(--motion-ease),
+    background 0.35s var(--motion-ease),
+    border-color 0.35s var(--motion-ease),
+    color 0.35s var(--motion-ease),
+    box-shadow 0.35s var(--motion-ease);
+}
+
+#collection .tab:hover {
+  transform: translateY(-2px);
+  border-color: rgba(185, 133, 111, 0.42);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+#collection .tab.active {
+  background: linear-gradient(
+    165deg,
+    rgba(72, 17, 38, 0.58) 0%,
+    rgba(72, 17, 38, 0.36) 100%
+  );
+  color: var(--accent-strong);
+  border-color: rgba(185, 133, 111, 0.52);
+  box-shadow:
+    0 10px 30px rgba(72, 17, 38, 0.45),
+    0 0 26px -8px rgba(185, 133, 111, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+#collection .tab:focus-visible {
+  outline: 2px solid rgba(185, 133, 111, 0.65);
+  outline-offset: 3px;
+}
+
+/* Horizontal ambient glow + depth under grid */
+#collection .gallery {
+  position: relative;
+  z-index: 1;
+  padding-bottom: 12px;
+}
+
+#collection .gallery::before {
+  content: "";
+  position: absolute;
+  inset-inline: -6%;
+  top: 12%;
+  bottom: -2%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 96% 62% at 50% 58%,
+    rgba(72, 17, 38, 0.22) 0%,
+    rgba(72, 17, 38, 0.09) 45%,
+    transparent 74%
+  );
+  animation: collection-gallery-ambient 48s var(--motion-ease-soft) infinite;
+}
+
+#collection .gallery::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 45%;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+  opacity: 0.55;
+}
+
+/* Product cards — depth, glass base, refined hover */
+#collection .item {
+  background:
+    linear-gradient(
+      168deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.02) 38%,
+      rgba(9, 6, 10, 0.38) 100%
+    ),
+    rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 14px 38px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 0 1px rgba(72, 17, 38, 0.14);
+}
+
+#collection .item:hover {
+  transform: translateY(-7px);
+  border-color: rgba(185, 133, 111, 0.42);
+  box-shadow:
+    0 28px 56px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(185, 133, 111, 0.15),
+    0 0 42px -12px rgba(72, 17, 38, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+#collection .item__media::after {
+  background:
+    linear-gradient(185deg, rgba(72, 17, 38, 0.18) 0%, transparent 45%),
+    linear-gradient(175deg, transparent 50%, rgba(9, 6, 10, 0.58) 100%);
+  opacity: 0.75;
+}
+
+#collection .item:hover .item__media::after {
+  opacity: 0.42;
+}
+
+#collection .item__media img {
+  filter: contrast(1.04) saturate(0.96) brightness(0.98);
+  transition: transform 0.85s var(--motion-ease);
+}
+
+#collection .item:hover .item__media img {
+  transform: scale(1.055);
+}
+
+#collection .item__body {
+  padding: 16px 14px 14px;
+  gap: 10px;
+}
+
+#collection .item__body h3 {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--accent-strong);
+}
+
+#collection .item__body p {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.65;
+  color: rgba(215, 201, 194, 0.82);
+}
+
+#collection .item__meta {
+  font-size: 12px !important;
+  font-weight: 550 !important;
+  color: rgba(215, 201, 194, 0.66) !important;
+  letter-spacing: 0.03em;
+  margin: 0 0 4px !important;
+}
+
+#collection .item__btn.btn {
+  margin-top: 6px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(72, 17, 38, 0.34);
+}
+
+@media (min-width: 720px) {
+  #collection .item__btn.btn {
+    padding: 9px 16px;
+  }
+}
+
+/* =========================================================
    Topbar — sticky shrink + refined hover underline
    ========================================================= */
 .topbar {
@@ -1887,6 +2150,9 @@ select:focus-visible {
     -webkit-background-clip: initial !important;
     background-clip: initial !important;
     color: var(--gold2) !important;
+    animation: none !important;
+  }
+  #collection .gallery::before {
     animation: none !important;
   }
 }
