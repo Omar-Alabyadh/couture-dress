@@ -503,7 +503,8 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(120vw, 32rem);
+  /* Never use 100vw+ widths: min(120vw, …) can exceed the viewport and causes horizontal scroll. */
+  width: min(32rem, calc(100vw - 48px));
   height: clamp(5.5rem, 14vw, 8rem);
   transform: translate(-50%, -50%);
   z-index: -1;
@@ -681,7 +682,9 @@
 #features.section--features {
   position: relative;
   isolation: isolate;
-  overflow: visible;
+  /* Clip blurred / glow layers without hiding vertical overflow of following sections */
+  overflow-x: clip;
+  max-width: 100%;
   padding-top: 40px;
   padding-bottom: 72px;
 }
@@ -693,7 +696,8 @@
   inset-inline-start: 50%;
   top: 0;
   transform: translateX(-50%);
-  width: min(94vw, 52rem);
+  /* Stay inside viewport so box-shadow bloom cannot widen the scrollable area */
+  width: min(52rem, calc(100vw - 48px));
   height: 1px;
   z-index: 2;
   pointer-events: none;
@@ -708,7 +712,7 @@
   );
   opacity: 0.88;
   box-shadow:
-    0 0 32px rgba(185, 133, 111, 0.2),
+    0 0 24px rgba(185, 133, 111, 0.18),
     0 0 1px rgba(255, 255, 255, 0.08);
 }
 
@@ -751,9 +755,9 @@
 #features .section__title::before {
   content: "";
   position: absolute;
-  left: 50%;
+  inset-inline-start: 50%;
   top: 50%;
-  width: min(120vw, 32rem);
+  width: min(32rem, calc(100vw - 48px));
   height: clamp(5.5rem, 14vw, 8rem);
   transform: translate(-50%, -50%);
   z-index: -1;
@@ -777,12 +781,15 @@
   isolation: isolate;
   margin-top: 6px;
   padding: 28px 0 8px;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .features-ambient::before {
   content: "";
   position: absolute;
-  inset: 4% -8% 2% -8%;
+  /* Negative inline inset + heavy blur painted past the box — caused page overflow */
+  inset: 4% 0 2% 0;
   z-index: 0;
   pointer-events: none;
   background:
@@ -1241,7 +1248,7 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(120vw, 32rem);
+  width: min(32rem, calc(100vw - 48px));
   height: clamp(5.5rem, 14vw, 8rem);
   transform: translate(-50%, -50%);
   z-index: -1;
