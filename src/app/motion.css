@@ -1113,12 +1113,13 @@ select:focus-visible {
   word-break: break-word;
 }
 
-/* Phone number: LTR isolate — row stays RTL so icon column matches other rows */
+/* Phone number: LTR isolate — align to physical right of column (next to icon in RTL) */
 .site-footer__contact-primary--num {
   unicode-bidi: isolate;
   direction: ltr;
-  text-align: start;
+  text-align: end;
   display: block;
+  width: 100%;
 }
 
 .site-footer__contact-row:not(.site-footer__contact-row--static):hover .site-footer__contact-primary,
