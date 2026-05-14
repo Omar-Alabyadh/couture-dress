@@ -384,16 +384,21 @@ export default function HomePage({
       </section>
 
       <section id="contact" className="section section--alt section--contact">
-        <div className="container grid-2 grid-2--contact-editorial">
+        <div className="container">
           <Reveal>
-            <h2 className="section__title section__title--contact">
-              {landing.contactTitle}
-            </h2>
-            <p className="section__text section__text--contact">
-              {landing.contactIntro}
-            </p>
+            <header className="contact-section-head">
+              <h2 className="section__title section__title--contact-head">
+                {landing.contactTitle}
+              </h2>
+              <p className="section__text section__text--contact-head">
+                {landing.contactIntro}
+              </p>
+            </header>
+          </Reveal>
 
-            <div className="contact-card contact-card--luxury">
+          <div className="grid-2 grid-2--contact-cards">
+            <Reveal>
+              <div className="contact-card contact-card--luxury">
               <div className="contact-row contact-row--whatsapp">
                 <span className="label">واتساب:</span>
                 <a
@@ -494,7 +499,7 @@ export default function HomePage({
                 <div className="contact-map-card__actions">
                   {mapBranch.mapOpenUrl ? (
                     <a
-                      className="btn btn--small btn--ghost contact-map-card__cta-maps"
+                      className="btn btn--small btn--contact-maps-cta contact-map-card__cta-maps"
                       href={mapBranch.mapOpenUrl}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -514,11 +519,11 @@ export default function HomePage({
                   </button>
                 </div>
               </div>
-            </div>
-          </Reveal>
+              </div>
+            </Reveal>
 
-          <Reveal delay={120} variant="left">
-            <form className="form form--contact-luxury" id="contactForm" onSubmit={handleSubmit}>
+            <Reveal delay={120} variant="left">
+              <form className="form form--contact-luxury" id="contactForm" onSubmit={handleSubmit}>
               <h3>أرسلي رسالة</h3>
               <label htmlFor="name">الاسم</label>
               <input
@@ -547,14 +552,18 @@ export default function HomePage({
                 required
               />
 
-              <button className="btn btn--primary" type="submit">
+              <button
+                className="btn btn--primary contact-form__submit"
+                type="submit"
+              >
                 إرسال الرسالة عبر واتساب
               </button>
               <p className="form-hint form-hint--luxury">
                 سيتم فتح واتساب تلقائيًا مع الرسالة جاهزة للإرسال.
               </p>
             </form>
-          </Reveal>
+            </Reveal>
+          </div>
         </div>
       </section>
 
