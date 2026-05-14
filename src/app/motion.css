@@ -698,20 +698,28 @@
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
 }
 
-/* Crimson/gold spotlight behind title */
+/* Crimson/gold spotlight behind title — wide diffuse glow (no hard “card” edge) */
 .section--about .section__title::before {
   content: "";
   position: absolute;
-  inset: -14px -8px -10px -28px;
+  left: 50%;
+  top: 50%;
+  width: min(120vw, 32rem);
+  height: clamp(5.5rem, 14vw, 8rem);
+  transform: translate(-50%, -50%);
   z-index: -1;
   pointer-events: none;
+  border-radius: 50%;
   background: radial-gradient(
-    ellipse 100% 120% at 50% 45%,
-    rgba(72, 17, 38, 0.42) 0%,
-    rgba(185, 133, 111, 0.12) 38%,
-    transparent 72%
+    ellipse 52% 48% at 50% 50%,
+    rgba(185, 133, 111, 0.22) 0%,
+    rgba(72, 17, 38, 0.32) 22%,
+    rgba(72, 17, 38, 0.14) 48%,
+    rgba(72, 17, 38, 0.05) 68%,
+    transparent 82%
   );
-  opacity: 0.85;
+  filter: blur(28px);
+  opacity: 0.72;
 }
 
 .section--about .section__text {
