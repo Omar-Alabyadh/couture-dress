@@ -41,10 +41,12 @@ export default function SiteFooter({
     <footer className="site-footer" aria-labelledby="site-footer-heading">
       <div className="site-footer__top-glow" aria-hidden="true" />
       <div className="site-footer__noise" aria-hidden="true" />
+      <div className="site-footer__ambient" aria-hidden="true" />
 
       <div className="container site-footer__inner">
         <Reveal>
           <div className="site-footer__cta">
+            <div className="site-footer__cta-ambient" aria-hidden="true" />
             <div className="site-footer__cta-text">
               <span className="site-footer__cta-eyebrow">خدمة شخصية</span>
               <h3 id="site-footer-heading" className="site-footer__cta-title">
@@ -177,13 +179,15 @@ export default function SiteFooter({
                   <a
                     href={`tel:${siteConfig.phone}`}
                     dir="ltr"
-                    className="site-footer__contact"
+                    className="site-footer__contact-row"
                   >
-                    <span className="site-footer__contact-icon">
+                    <span className="site-footer__contact-swatch">
                       <LuPhone aria-hidden />
                     </span>
-                    <span className="site-footer__contact-text">
-                      +218 92 092 0500
+                    <span className="site-footer__contact-body">
+                      <span className="site-footer__contact-primary">
+                        +218 92 092 0500
+                      </span>
                     </span>
                   </a>
                 </li>
@@ -192,32 +196,33 @@ export default function SiteFooter({
                     href={whatsappLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="site-footer__contact"
+                    className="site-footer__contact-row"
                   >
-                    <span className="site-footer__contact-icon site-footer__contact-icon--whats">
+                    <span className="site-footer__contact-swatch site-footer__contact-swatch--whats">
                       <SiWhatsapp aria-hidden />
                     </span>
-                    <span className="site-footer__contact-text">
-                      واتساب — تواصل سريع
+                    <span className="site-footer__contact-body">
+                      <span className="site-footer__contact-primary">
+                        واتساب — تواصل سريع
+                      </span>
                     </span>
                   </a>
                 </li>
                 {siteConfig.branches.map((branch) => (
-                  <li
-                    key={branch.id}
-                    className="site-footer__contact site-footer__contact--branch"
-                  >
-                    <span className="site-footer__contact-icon">
-                      <LuMapPin aria-hidden />
-                    </span>
-                    <span className="site-footer__contact-text">
-                      <strong className="site-footer__branch-title">
-                        {branch.title}
-                      </strong>
-                      <span className="site-footer__branch-addr">
-                        {branch.addressLine}
+                  <li key={branch.id}>
+                    <div className="site-footer__contact-row site-footer__contact-row--static">
+                      <span className="site-footer__contact-swatch">
+                        <LuMapPin aria-hidden />
                       </span>
-                    </span>
+                      <div className="site-footer__contact-body">
+                        <span className="site-footer__branch-title">
+                          {branch.title}
+                        </span>
+                        <span className="site-footer__branch-addr">
+                          {branch.addressLine}
+                        </span>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -247,8 +252,10 @@ export default function SiteFooter({
             className="site-footer__totop"
             aria-label="العودة لأعلى الصفحة"
           >
-            <span>للأعلى</span>
-            <LuArrowUp aria-hidden />
+            <span className="site-footer__totop-label">للأعلى</span>
+            <span className="site-footer__totop-icon" aria-hidden>
+              <LuArrowUp />
+            </span>
           </button>
         </div>
       </div>
