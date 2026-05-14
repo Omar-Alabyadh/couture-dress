@@ -267,7 +267,7 @@ export default function ProductsPage({
           {loading && !err ? (
             <p className="section__text">جارٍ التحميل…</p>
           ) : null}
-          <div className="gallery" style={{ marginTop: 8 }}>
+          <div className="gallery">
             {!loading && !err && items.length === 0 ? (
               <p className="section__text" style={{ gridColumn: "1 / -1" }}>
                 لا توجد نتائج. جرّبي تخفيف الفلتر.
