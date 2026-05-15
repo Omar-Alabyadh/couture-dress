@@ -15,6 +15,11 @@ enum UserRole {
   ENGINEER
 }
 
+enum BrandDesignerType {
+  BRAND
+  DESIGNER
+}
+
 model SiteSetting {
   id        String   @id @default(cuid())
   key       String   @unique
@@ -50,27 +55,65 @@ model Color {
 }
 
 model CollectionItem {
-  id          String    @id @default(cuid())
-  titleAr     String
-  titleEn     String?
-  description String?
-  imageUrl    String
+  id               String          @id @default(cuid())
+  titleAr          String
+  titleEn          String?
+  description      String?
+  imageUrl         String
   /// سعر بالدينار الليبي أو عملة `currency` — اختياري
-  price       Decimal?  @db.Decimal(12, 2)
-  currency    String    @default("LYD")
-  category    String
-  isPublished Boolean   @default(true)
+  price            Decimal?        @db.Decimal(12, 2)
+  currency         String          @default("LYD")
+  category         String
+  isPublished      Boolean         @default(true)
   /// Legacy compatibility — يُزامن مع المقاسات المتاحة من variants عند الحفظ من لوحة التحكم
-  sizes       String[]  @default([])
-  deletedAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  colors      Color[]
-  images      ProductImage[]
-  variants    ProductVariant[]
+  sizes            String[]        @default([])
+  deletedAt        DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  brandDesignerId  String?
+  brandDesigner    BrandDesigner?  @relation(fields: [brandDesignerId], references: [id], onDelete: SetNull)
+  colors           Color[]
+  images           ProductImage[]
+  variants         ProductVariant[]
 
   @@index([isPublished, deletedAt, category])
   @@index([titleAr])
+  @@index([brandDesignerId])
+}
+
+/// آراء العملاء — إدارة من الداشبورد، عرض عام للمنشور فقط
+model Testimonial {
+  id           String    @id @default(cuid())
+  customerName String
+  text         String
+  rating       Int       @default(5)
+  imageUrl     String?
+  isPublished  Boolean   @default(true)
+  sortOrder    Int       @default(0)
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([deletedAt, isPublished, sortOrder])
+}
+
+/// ماركات ومصممون — ارتباط اختياري بالمنتجات
+model BrandDesigner {
+  id              String             @id @default(cuid())
+  nameAr          String
+  nameEn          String?
+  type            BrandDesignerType
+  logoUrl         String?
+  descriptionAr   String?
+  descriptionEn   String?
+  isPublished     Boolean            @default(true)
+  sortOrder       Int                @default(0)
+  deletedAt       DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  collectionItems CollectionItem[]
+
+  @@index([deletedAt, sortOrder])
 }
 
 /// مقاس/لون لكل منتج مع التوفر والطلب الخاص — المصدر الرئيسي للعرض العام

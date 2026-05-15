@@ -1,7 +1,15 @@
 import HomePage from "@/components/sections/HomePage";
 import { readPublicSocialUrls } from "@/lib/config/site";
 import type { CollectionItemView } from "@/lib/types/collection";
-import { getPublicCollectionItemsForHome } from "@/server/services/contentService";
+import type {
+  PublicBrandStripItem,
+  PublicTestimonialHome,
+} from "@/lib/types/home-cms";
+import {
+  getPublicBrandStripForHome,
+  getPublicCollectionItemsForHome,
+  getPublicTestimonialsForHome,
+} from "@/server/services/contentService";
 import { getPublicLandingContent } from "@/server/services/landingService";
 import { defaultLandingContent } from "@/lib/types/landing";
 
@@ -17,12 +25,16 @@ export default async function SiteHomePage() {
         collectionItems={[]}
         landing={defaultLandingContent()}
         socialUrls={socialUrls}
+        testimonials={[]}
+        brandStrip={[]}
       />
     );
   }
 
   let collectionItems: CollectionItemView[] = [];
-  let landing;
+  let landing = defaultLandingContent();
+  let testimonials: PublicTestimonialHome[] = [];
+  let brandStrip: PublicBrandStripItem[] = [];
   try {
     collectionItems = await getPublicCollectionItemsForHome();
   } catch (error) {
@@ -35,6 +47,18 @@ export default async function SiteHomePage() {
     console.error("[SiteHomePage] Failed to load landing:", error);
     landing = defaultLandingContent();
   }
+  try {
+    testimonials = await getPublicTestimonialsForHome();
+  } catch (error) {
+    console.error("[SiteHomePage] Failed to load testimonials:", error);
+    testimonials = [];
+  }
+  try {
+    brandStrip = await getPublicBrandStripForHome();
+  } catch (error) {
+    console.error("[SiteHomePage] Failed to load brand strip:", error);
+    brandStrip = [];
+  }
 
   const socialUrls = readPublicSocialUrls();
 
@@ -43,6 +67,8 @@ export default async function SiteHomePage() {
       collectionItems={collectionItems}
       landing={landing}
       socialUrls={socialUrls}
+      testimonials={testimonials}
+      brandStrip={brandStrip}
     />
   );
 }

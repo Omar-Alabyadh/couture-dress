@@ -3,20 +3,30 @@ import type {
   Color,
   ProductImage,
   ProductVariant,
+  BrandDesigner,
 } from "@/generated/prisma/client";
 import type {
   CollectionCategory,
   CollectionItemView,
+  ProductBrandDesignerView,
   ProductColorView,
   ProductImageView,
   ProductVariantView,
 } from "@/lib/types/collection";
+import type {
+  PublicBrandStripItem,
+  PublicTestimonialHome,
+} from "@/lib/types/home-cms";
 import { isVariantSellable } from "@/lib/types/collection";
 import {
   listCollectionItems,
   listPublicProducts,
   type PublicProductFilters,
 } from "@/server/repositories/contentRepository";
+import {
+  listPublishedBrandDesignersForHomeStrip,
+  listPublishedTestimonials,
+} from "@/server/repositories/cmsRepository";
 import { prisma } from "@/server/db/client";
 
 const allowedCategories = new Set<CollectionCategory>([
@@ -30,11 +40,24 @@ function mapColor(c: Color): ProductColorView {
   return { id: c.id, label: c.label, hex: c.hex };
 }
 
+type BrandDesignerRel = Pick<
+  BrandDesigner,
+  "id" | "nameAr" | "nameEn" | "type" | "isPublished" | "deletedAt"
+> | null;
+
 type RowWithRelations = PrismaCollectionItem & {
   colors: Color[];
   images: ProductImage[];
   variants: ProductVariant[];
+  brandDesigner?: BrandDesignerRel;
 };
+
+function mapPublicBrandDesigner(
+  bd: BrandDesignerRel | undefined,
+): ProductBrandDesignerView | null {
+  if (!bd || bd.deletedAt || !bd.isPublished) return null;
+  return { id: bd.id, nameAr: bd.nameAr, type: bd.type };
+}
 
 function mapProductImage(row: ProductImage): ProductImageView {
   return {
@@ -150,6 +173,7 @@ function mapCollectionItem(
     variants,
     availableSizes,
     unavailableSizes,
+    brandDesigner: mapPublicBrandDesigner(row.brandDesigner),
   };
 }
 
@@ -187,4 +211,30 @@ export async function getFilterSizes(): Promise<string[]> {
     }
   }
   return Array.from(set).sort((a, b) => a.localeCompare(b, "ar"));
+}
+
+export async function getPublicTestimonialsForHome(): Promise<
+  PublicTestimonialHome[]
+> {
+  const rows = await listPublishedTestimonials();
+  return rows.map((r) => ({
+    id: r.id,
+    customerName: r.customerName,
+    text: r.text,
+    rating: r.rating,
+    imageUrl: r.imageUrl,
+  }));
+}
+
+export async function getPublicBrandStripForHome(): Promise<
+  PublicBrandStripItem[]
+> {
+  const rows = await listPublishedBrandDesignersForHomeStrip(14);
+  return rows.map((r) => ({
+    id: r.id,
+    nameAr: r.nameAr,
+    nameEn: r.nameEn,
+    type: r.type,
+    logoUrl: r.logoUrl,
+  }));
 }

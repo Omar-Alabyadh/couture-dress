@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { isSafeProductImageUrl } from "@/lib/validation/product-input";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
@@ -13,10 +13,18 @@ import {
   AdminErrorState,
   AdminLoadingState,
   AdminSectionHeader,
+  AdminSelect,
   AdminTable,
 } from "@/components/admin/AdminPrimitives";
 
 type ColorRow = { id: string; label: string; deletedAt: string | null };
+type BrandRow = {
+  id: string;
+  nameAr: string;
+  type: string;
+  deletedAt: string | null;
+  isPublished: boolean;
+};
 type ProductImageRow = {
   id: string;
   url: string;
@@ -44,6 +52,14 @@ type Product = {
   category: string;
   isPublished: boolean;
   sizes: string[];
+  brandDesignerId: string | null;
+  brandDesigner: {
+    id: string;
+    nameAr: string;
+    nameEn: string | null;
+    type: string;
+    deletedAt: string | null;
+  } | null;
   colors: { id: string; label: string; deletedAt?: string | null }[];
   images: ProductImageRow[];
   variants: ProductVariantRow[];
@@ -91,6 +107,7 @@ export default function AdminProductsPage() {
   const { requestConfirm } = useAdminConfirm();
   const [list, setList] = useState<Product[]>([]);
   const [colors, setColors] = useState<ColorRow[]>([]);
+  const [brands, setBrands] = useState<BrandRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -100,9 +117,10 @@ export default function AdminProductsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const [p, c] = await Promise.all([
+      const [p, c, b] = await Promise.all([
         fetch("/api/admin/products", { cache: "no-store" }),
         fetch("/api/admin/colors", { cache: "no-store" }),
+        fetch("/api/admin/brands", { cache: "no-store" }),
       ]);
       if (!p.ok) {
         const msg =
@@ -116,6 +134,10 @@ export default function AdminProductsPage() {
       if (c.ok) {
         const j2 = (await c.json()) as { data: ColorRow[] };
         setColors(j2.data);
+      }
+      if (b.ok) {
+        const j3 = (await b.json()) as { data: BrandRow[] };
+        setBrands(j3.data);
       }
     } catch {
       setLoadError("تعذر الاتصال بالخادم.");
@@ -184,6 +206,7 @@ export default function AdminProductsPage() {
           <ProductForm
             key="create-product"
             colors={colors}
+            brands={brands}
             onClose={() => setCreating(false)}
             onSaved={async () => {
               setCreating(false);
@@ -197,6 +220,7 @@ export default function AdminProductsPage() {
             key={editing.id}
             initial={editing}
             colors={colors}
+            brands={brands}
             onClose={() => setEditing(null)}
             onSaved={async () => {
               setEditing(null);
@@ -511,11 +535,13 @@ function AdminProductMediaCard({
 function ProductForm({
   initial,
   colors,
+  brands,
   onClose,
   onSaved,
 }: {
   initial?: Product;
   colors: ColorRow[];
+  brands: BrandRow[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
@@ -535,6 +561,9 @@ function ProductForm({
   );
   const [price, setPrice] = useState(initial?.price ?? "");
   const [currency, setCurrency] = useState(initial?.currency ?? "LYD");
+  const [brandDesignerId, setBrandDesignerId] = useState(
+    initial?.brandDesignerId ?? "",
+  );
   const [imageRows, setImageRows] = useState<LocalImageRow[]>(() =>
     initialImageRows(initial),
   );
@@ -543,6 +572,18 @@ function ProductForm({
   const [mediaUrlErrors, setMediaUrlErrors] = useState<Record<string, string>>(
     () => ({}),
   );
+
+  const brandSelectOptions = useMemo(() => {
+    const active = brands.filter((b) => !b.deletedAt && b.isPublished);
+    const curId = initial?.brandDesignerId;
+    if (curId) {
+      const cur = brands.find((b) => b.id === curId);
+      if (cur && !active.some((b) => b.id === cur.id)) {
+        return [cur, ...active];
+      }
+    }
+    return active;
+  }, [brands, initial?.brandDesignerId]);
 
   const primaryRow =
     imageRows.find((r) => r.isPrimary) ?? imageRows[0] ?? null;
@@ -654,6 +695,8 @@ function ProductForm({
       category,
       isPublished,
       colorIds: Array.from(colorIds),
+      brandDesignerId:
+        brandDesignerId.trim() === "" ? null : brandDesignerId.trim(),
       price: price.trim() === "" ? null : price.trim(),
       currency: currency.trim() || "LYD",
       images: imagesPayload,
@@ -777,6 +820,22 @@ function ProductForm({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
+      </label>
+
+      <label>
+        ماركة / مصمم (اختياري)
+        <AdminSelect
+          value={brandDesignerId}
+          onChange={(e) => setBrandDesignerId(e.target.value)}
+        >
+          <option value="">— بدون —</option>
+          {brandSelectOptions.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.type === "DESIGNER" ? "مصمم — " : "ماركة — "}
+              {b.nameAr}
+            </option>
+          ))}
+        </AdminSelect>
       </label>
 
       <section className="admin-media-panel" aria-labelledby="product-media-heading">

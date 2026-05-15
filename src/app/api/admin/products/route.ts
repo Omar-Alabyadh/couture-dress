@@ -25,6 +25,7 @@ import {
   type ProductWithColorsImagesVariants,
 } from "@/lib/serializers/product-admin";
 import { variantColorIdsExistOnDb } from "@/lib/products/validate-variant-colors";
+import { resolveBrandDesignerLinkForProduct } from "@/lib/products/resolve-brand-designer-id";
 
 const CATEGORIES = new Set(["dresses", "abayas", "casual", "accessories"]);
 
@@ -70,6 +71,7 @@ type CreateBody = {
   currency: string;
   images?: unknown;
   variants?: unknown;
+  brandDesignerId?: string | null;
 };
 
 function parseCreate(body: unknown): CreateBody | null {
@@ -113,6 +115,15 @@ function parseCreate(body: unknown): CreateBody | null {
   if (priceParsed === "invalid") return null;
   const currency = parseCurrency(body.currency, "LYD");
 
+  let brandDesignerId: string | null | undefined = undefined;
+  if (Object.prototype.hasOwnProperty.call(body, "brandDesignerId")) {
+    if (body.brandDesignerId === null || body.brandDesignerId === "") {
+      brandDesignerId = null;
+    } else {
+      brandDesignerId = String(body.brandDesignerId).trim() || null;
+    }
+  }
+
   return {
     titleAr,
     titleEn,
@@ -126,6 +137,7 @@ function parseCreate(body: unknown): CreateBody | null {
     currency,
     images: body.images,
     variants: body.variants,
+    brandDesignerId,
   };
 }
 
@@ -187,6 +199,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "لون غير صالح في أحد الصفوف." }, { status: 400 });
   }
 
+  let resolvedBrandId: string | undefined;
+  if (p.brandDesignerId !== undefined && p.brandDesignerId !== null) {
+    const link = await resolveBrandDesignerLinkForProduct(p.brandDesignerId);
+    if (link.kind === "invalid") {
+      return NextResponse.json(
+        { error: "ماركة أو مصمم غير صالح أو مؤرشف." },
+        { status: 400 },
+      );
+    }
+    if (link.kind === "connect") resolvedBrandId = link.id;
+  }
+
   const syncedSizes = legacySizesFromNormalizedVariants(variantRows);
 
   try {
@@ -201,6 +225,7 @@ export async function POST(req: Request) {
         currency: p.currency,
         category: p.category,
         isPublished: p.isPublished,
+        brandDesignerId: resolvedBrandId,
         sizes: syncedSizes,
         colors:
           colorIds.length > 0
@@ -225,7 +250,7 @@ export async function POST(req: Request) {
           })),
         },
       },
-      include: { colors: true, images: true, variants: true },
+      include: { colors: true, images: true, variants: true, brandDesigner: true },
     });
     await logAudit({
       userId: r.session!.user.id,

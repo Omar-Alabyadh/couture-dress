@@ -10,6 +10,8 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/manage/products", label: "المنتجات", ownerOnly: true },
   { href: "/admin/manage/colors", label: "الألوان", ownerOnly: true },
   { href: "/admin/manage/landing", label: "الصفحة الرئيسية", ownerOnly: true },
+  { href: "/admin/manage/testimonials", label: "آراء العملاء", ownerOnly: true },
+  { href: "/admin/manage/brands", label: "ماركات ومصممين", ownerOnly: true },
   { href: "/admin/manage/trash", label: "الأرشيف (محذوف)", ownerOnly: true },
   { href: "/admin/audit", label: "سجل التدقيق", ownerOnly: false },
 ];

@@ -24,6 +24,7 @@ import {
   type NormalizedProductVariantInput,
 } from "@/lib/validation/product-input";
 import { variantColorIdsExistOnDb } from "@/lib/products/validate-variant-colors";
+import { resolveBrandDesignerLinkForProduct } from "@/lib/products/resolve-brand-designer-id";
 
 const CATEGORIES = new Set(["dresses", "abayas", "casual", "accessories"]);
 
@@ -42,6 +43,7 @@ type PatchBody = {
   currency?: string;
   images?: unknown;
   variants?: unknown;
+  brandDesignerId?: unknown;
 };
 
 function parsePatch(body: unknown): PatchBody | null {
@@ -78,6 +80,9 @@ function parsePatch(body: unknown): PatchBody | null {
   if (body.currency !== undefined) out.currency = String(body.currency);
   if (body.images !== undefined) out.images = body.images;
   if (body.variants !== undefined) out.variants = body.variants;
+  if (Object.prototype.hasOwnProperty.call(body, "brandDesignerId")) {
+    out.brandDesignerId = body.brandDesignerId;
+  }
   return out;
 }
 
@@ -256,10 +261,25 @@ export async function PATCH(req: Request, ctx: Ctx) {
       }
     }
 
+    if (p.brandDesignerId !== undefined) {
+      const link = await resolveBrandDesignerLinkForProduct(p.brandDesignerId);
+      if (link.kind === "invalid") {
+        return NextResponse.json(
+          { error: "ماركة أو مصمم غير صالح أو مؤرشف." },
+          { status: 400 },
+        );
+      }
+      if (link.kind === "clear") {
+        data.brandDesigner = { disconnect: true };
+      } else {
+        data.brandDesigner = { connect: { id: link.id } };
+      }
+    }
+
     const row = await prisma.collectionItem.update({
       where: { id, deletedAt: null },
       data,
-      include: { colors: true, images: true, variants: true },
+      include: { colors: true, images: true, variants: true, brandDesigner: true },
     });
     await logAudit({
       userId: r.session!.user.id,

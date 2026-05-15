@@ -21,6 +21,14 @@ export type AdminProductJson = {
   category: string;
   isPublished: boolean;
   sizes: string[];
+  brandDesignerId: string | null;
+  brandDesigner: {
+    id: string;
+    nameAr: string;
+    nameEn: string | null;
+    type: string;
+    deletedAt: string | null;
+  } | null;
   colors: { id: string; label: string; deletedAt?: string | null }[];
   images: {
     id: string;
@@ -33,7 +41,7 @@ export type AdminProductJson = {
 };
 
 export type ProductWithColorsImagesVariants = Prisma.CollectionItemGetPayload<{
-  include: { colors: true; images: true; variants: true };
+  include: { colors: true; images: true; variants: true; brandDesigner: true };
 }>;
 
 export function serializeProductForAdmin(
@@ -43,6 +51,7 @@ export function serializeProductForAdmin(
     (a, b) =>
       a.sortOrder - b.sortOrder || a.id.localeCompare(b.id),
   );
+  const bd = row.brandDesigner;
   return {
     id: row.id,
     titleAr: row.titleAr,
@@ -54,6 +63,16 @@ export function serializeProductForAdmin(
     category: row.category,
     isPublished: row.isPublished,
     sizes: row.sizes ?? [],
+    brandDesignerId: row.brandDesignerId ?? null,
+    brandDesigner: bd
+      ? {
+          id: bd.id,
+          nameAr: bd.nameAr,
+          nameEn: bd.nameEn,
+          type: bd.type,
+          deletedAt: bd.deletedAt ? bd.deletedAt.toISOString() : null,
+        }
+      : null,
     colors: row.colors.map((c) => ({
       id: c.id,
       label: c.label,

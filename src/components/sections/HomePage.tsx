@@ -32,6 +32,12 @@ import Reveal from "@/components/motion/Reveal";
 import { useStickyHeader } from "@/components/motion/useStickyHeader";
 import { MobileNavShell } from "@/components/layout/MobileNavShell";
 import SiteFooter from "@/components/sections/SiteFooter";
+import HomeTestimonialsSection from "@/components/sections/HomeTestimonialsSection";
+import HomeBrandStripSection from "@/components/sections/HomeBrandStripSection";
+import type {
+  PublicBrandStripItem,
+  PublicTestimonialHome,
+} from "@/lib/types/home-cms";
 
 const HOME_CATEGORY_FALLBACK_IMAGE = "/assets/hero.jpeg";
 
@@ -73,12 +79,16 @@ type HomePageProps = {
   landing?: LandingContent;
   /** روابط التواصل كما قرأها الخادم — تُمرَّر للعميل لتفادي اختلاف SSR عن الحزمة */
   socialUrls: PublicSocialUrls;
+  testimonials?: PublicTestimonialHome[];
+  brandStrip?: PublicBrandStripItem[];
 };
 
 export default function HomePage({
   collectionItems,
   landing: landingProp,
   socialUrls,
+  testimonials = [],
+  brandStrip = [],
 }: HomePageProps) {
   const landing = landingProp ?? defaultLandingContent();
   const heroBgSafe = clampHeroBgImageUrl(
@@ -422,6 +432,11 @@ export default function HomePage({
           </div>
         </div>
       </section>
+
+      {testimonials.length > 0 ? (
+        <HomeTestimonialsSection items={testimonials} />
+      ) : null}
+      {brandStrip.length > 0 ? <HomeBrandStripSection items={brandStrip} /> : null}
 
       <section id="contact" className="section section--alt section--contact">
         <div className="container">

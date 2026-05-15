@@ -426,6 +426,14 @@ export default function ProductsPage({
                   </div>
                   <div className="item__body">
                     <h3>{item.title}</h3>
+                    {item.brandDesigner ? (
+                      <p className="product-card__brand">
+                        {item.brandDesigner.type === "BRAND"
+                          ? "ماركة"
+                          : "مصمّم"}
+                        : {item.brandDesigner.nameAr}
+                      </p>
+                    ) : null}
                     {item.description ? (
                       <p className="product-card__desc">{item.description}</p>
                     ) : null}

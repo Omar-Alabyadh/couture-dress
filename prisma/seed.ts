@@ -1,6 +1,11 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, type Color, Prisma } from "../src/generated/prisma/client";
+import {
+  PrismaClient,
+  type Color,
+  Prisma,
+  BrandDesignerType,
+} from "../src/generated/prisma/client";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -61,8 +66,52 @@ const seedColors = [
 ];
 
 async function main() {
+  await prisma.testimonial.deleteMany({});
   await prisma.collectionItem.deleteMany({});
+  await prisma.brandDesigner.deleteMany({});
   await prisma.color.deleteMany({});
+
+  const demoBrand = await prisma.brandDesigner.create({
+    data: {
+      nameAr: "دار عرض تجريبي",
+      nameEn: "Demo Atelier",
+      type: BrandDesignerType.DESIGNER,
+      logoUrl: "/assets/logo-square.png",
+      isPublished: true,
+      sortOrder: 0,
+      deletedAt: null,
+    },
+  });
+  await prisma.brandDesigner.create({
+    data: {
+      nameAr: "ماركة تجريبية",
+      type: BrandDesignerType.BRAND,
+      isPublished: true,
+      sortOrder: 1,
+      deletedAt: null,
+    },
+  });
+
+  await prisma.testimonial.createMany({
+    data: [
+      {
+        customerName: "عميلة — تجريبي",
+        text: "تجربة ممتازة وجودة راقية. النص للعرض التجريبي فقط.",
+        rating: 5,
+        isPublished: true,
+        sortOrder: 0,
+        deletedAt: null,
+      },
+      {
+        customerName: "عميلة — تجريبي ٢",
+        text: "خدمة مهنية واهتمام بالتفاصيل.",
+        rating: 5,
+        isPublished: true,
+        sortOrder: 1,
+        deletedAt: null,
+      },
+    ],
+  });
 
   const colors: Color[] = [];
   for (const c of seedColors) {
@@ -87,6 +136,8 @@ async function main() {
         currency: "LYD",
         category: item.category,
         isPublished: true,
+        brandDesignerId:
+          item.category === "dresses" ? demoBrand.id : undefined,
         sizes: item.sizes,
         colors: connect.length ? { connect } : undefined,
         images: {

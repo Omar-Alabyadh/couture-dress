@@ -23,6 +23,15 @@ const variantInclude = {
   ],
 };
 
+const brandDesignerSelect = {
+  id: true,
+  nameAr: true,
+  nameEn: true,
+  type: true,
+  isPublished: true,
+  deletedAt: true,
+} as const;
+
 export async function listCollectionItems() {
   return prisma.collectionItem.findMany({
     where: { isPublished: true, deletedAt: null },
@@ -31,6 +40,7 @@ export async function listCollectionItems() {
       colors: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } },
       images: imageInclude,
       variants: variantInclude,
+      brandDesigner: { select: brandDesignerSelect },
     },
   });
 }
@@ -85,6 +95,7 @@ export async function listPublicProducts(filters: PublicProductFilters) {
       colors: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } },
       images: imageInclude,
       variants: variantInclude,
+      brandDesigner: { select: brandDesignerSelect },
     },
   });
 }
@@ -97,6 +108,7 @@ export async function listCollectionForAdmin() {
       colors: { orderBy: { sortOrder: "asc" } },
       images: imageInclude,
       variants: variantInclude,
+      brandDesigner: { select: brandDesignerSelect },
     },
   });
 }

@@ -48,6 +48,12 @@ export function isVariantSellable(v: Pick<ProductVariantView, "isAvailable" | "q
   return v.isAvailable && v.quantity > 0;
 }
 
+export type ProductBrandDesignerView = {
+  id: string;
+  nameAr: string;
+  type: "BRAND" | "DESIGNER";
+};
+
 /** AR: شكل عنصر المجموعة كما يحتاجه الواجهة. EN: Collection row shape for the UI layer. */
 export type CollectionItemView = {
   id: string;
@@ -72,4 +78,6 @@ export type CollectionItemView = {
   availableSizes: string[];
   /** Distinct size tokens present on non-sellable variants */
   unavailableSizes: string[];
+  /** ماركة أو مصمم مرتبط — يظهر بخفة في الواجهة عند توفره ونشره */
+  brandDesigner: ProductBrandDesignerView | null;
 };
