@@ -23,7 +23,11 @@ import { SocialLinks } from "@/components/SocialLinks";
 import type { PublicSocialUrls } from "@/lib/config/site";
 import { siteConfig } from "@/lib/config/site";
 import { buildStaticMapPreviewUrl } from "@/lib/maps/static-map-preview";
-import { buildWhatsappLink } from "@/lib/whatsapp";
+import {
+  buildSiteWhatsappUrl,
+  buildWhatsappMessage,
+} from "@/lib/communication/whatsapp";
+import { getShopName } from "@/lib/customer-service";
 import Reveal from "@/components/motion/Reveal";
 import { useStickyHeader } from "@/components/motion/useStickyHeader";
 import { MobileNavShell } from "@/components/layout/MobileNavShell";
@@ -89,10 +93,12 @@ export default function HomePage({
   const [showInlineMap, setShowInlineMap] = useState(false);
   const [mapPreviewFailed, setMapPreviewFailed] = useState(false);
   const headerRef = useStickyHeader<HTMLElement>();
-  const defaultMessage = `مرحباً، أريد الاستفسار عن موديلات ${siteConfig.shopName}.`;
   const defaultWhatsappLink = useMemo(
-    () => buildWhatsappLink(defaultMessage),
-    [defaultMessage],
+    () =>
+      buildSiteWhatsappUrl(
+        buildWhatsappMessage("product_inquiry", { shopName: getShopName() }),
+      ),
+    [],
   );
 
   const mapBranch = useMemo(
@@ -141,13 +147,15 @@ export default function HomePage({
 
     // AR: نبقي نفس تجربة الموقع الحالية بإرسال الرسالة إلى واتساب مباشرة.
     // EN: Keep the same UX by forwarding contact form data to WhatsApp.
-    const whatsappMessage = `مرحباً، هذه رسالة من موقع ${siteConfig.shopName}:
-الاسم: ${name}
-الهاتف: ${phone}
-الرسالة: ${message}`;
+    const whatsappMessage = buildWhatsappMessage("contact_inquiry", {
+      shopName: getShopName(),
+      name,
+      phone,
+      message,
+    });
 
     window.open(
-      buildWhatsappLink(whatsappMessage),
+      buildSiteWhatsappUrl(whatsappMessage),
       "_blank",
       "noopener,noreferrer",
     );
@@ -438,6 +446,8 @@ export default function HomePage({
                   href={defaultWhatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
+                  data-whatsapp-template="product_inquiry"
+                  data-whatsapp-source="home_quick_link"
                 >
                   اضغطي هنا للتواصل
                 </a>
@@ -560,6 +570,7 @@ export default function HomePage({
                 id="contactForm"
                 dir="rtl"
                 onSubmit={handleSubmit}
+                data-whatsapp-template="contact_inquiry"
               >
               <h3>أرسلي رسالة</h3>
               <label htmlFor="name">الاسم</label>
@@ -612,6 +623,8 @@ export default function HomePage({
       <SiteFooter
         socialUrls={socialUrls}
         whatsappLink={defaultWhatsappLink}
+        whatsappLinkTemplate="product_inquiry"
+        whatsappLinkSource="home_footer"
         brandAr={landing.footerAr}
         brandEn={landing.footerEn}
       />

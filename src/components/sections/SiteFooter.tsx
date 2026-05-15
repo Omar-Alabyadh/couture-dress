@@ -29,6 +29,9 @@ function snapshotFooterAccordionMq() {
 export type SiteFooterProps = {
   socialUrls: PublicSocialUrls;
   whatsappLink: string;
+  /** Optional template id for analytics (see `WhatsappTemplateKind` in communication layer). */
+  whatsappLinkTemplate?: string;
+  whatsappLinkSource?: string;
   brandAr?: string;
   brandEn?: string;
   /** Tagline shown beside the logo. */
@@ -38,6 +41,8 @@ export type SiteFooterProps = {
 export default function SiteFooter({
   socialUrls,
   whatsappLink,
+  whatsappLinkTemplate,
+  whatsappLinkSource,
   brandAr = "كوتور للأزياء",
   brandEn = "COUTURE",
   tagline = "دار أزياء نسائية فاخرة — قطع مختارة بعناية، فرعا بنغازي وطرابلس.",
@@ -104,6 +109,8 @@ export default function SiteFooter({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="ابدئي محادثة واتساب"
+              data-whatsapp-template={whatsappLinkTemplate}
+              data-whatsapp-source={whatsappLinkSource}
             >
               <SiWhatsapp aria-hidden className="site-footer__cta-btn-icon" />
               <span>ابدئي محادثة واتساب</span>
@@ -331,6 +338,8 @@ export default function SiteFooter({
                           target="_blank"
                           rel="noopener noreferrer"
                           className="site-footer__contact-row"
+                          data-whatsapp-template={whatsappLinkTemplate}
+                          data-whatsapp-source={whatsappLinkSource}
                         >
                           <span className="site-footer__contact-swatch site-footer__contact-swatch--whats">
                             <SiWhatsapp aria-hidden />

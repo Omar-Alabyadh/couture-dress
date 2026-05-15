@@ -11,9 +11,14 @@ import type {
   ProductVariantView,
 } from "@/lib/types/collection";
 import { isVariantSellable } from "@/lib/types/collection";
-import { siteConfig, type PublicSocialUrls } from "@/lib/config/site";
-import { buildWhatsappLink } from "@/lib/whatsapp";
-import { buildProductOrderWhatsappMessage } from "@/lib/whatsapp/product-order-message";
+import type { PublicSocialUrls } from "@/lib/config/site";
+import type { WhatsappTemplateKind } from "@/lib/communication/whatsapp";
+import {
+  buildProductWhatsappBody,
+  buildSiteWhatsappUrl,
+  buildWhatsappMessage,
+} from "@/lib/communication/whatsapp";
+import { getShopName } from "@/lib/customer-service";
 import { formatProductPriceDisplay } from "@/lib/product-price";
 import { PRODUCT_DELIVERY_NOTE } from "@/lib/config/product-display";
 import { ProductMediaCarousel } from "@/components/products/ProductMediaCarousel";
@@ -83,6 +88,22 @@ function displayVariantsForProduct(item: CollectionItemView): ProductVariantView
     allowSpecialOrder: false,
     sortOrder: i,
   }));
+}
+
+function productWhatsappTemplateKind(
+  item: CollectionItemView,
+  selectedVariantId: string | null,
+): WhatsappTemplateKind {
+  const rows = displayVariantsForProduct(item);
+  const v = selectedVariantId
+    ? rows.find((r) => r.id === selectedVariantId) ?? null
+    : null;
+  const sellable = v ? isVariantSellable(v) : false;
+  const special = Boolean(v && !sellable && v.allowSpecialOrder);
+  const unavailableNoSpecial = Boolean(v && !sellable && !v.allowSpecialOrder);
+  if (special) return "special_order";
+  if (unavailableNoSpecial) return "unavailable_size_inquiry";
+  return "product_order";
 }
 
 type ProductsPageProps = {
@@ -163,7 +184,10 @@ export default function ProductsPage({
   }, [refetch]);
 
   const defaultWhatsapp = useMemo(
-    () => buildWhatsappLink(`أريد الاستفسار عن موديلات ${siteConfig.shopName}.`),
+    () =>
+      buildSiteWhatsappUrl(
+        buildWhatsappMessage("product_inquiry", { shopName: getShopName() }),
+      ),
     [],
   );
 
@@ -205,8 +229,8 @@ export default function ProductsPage({
     const sellable = v ? isVariantSellable(v) : false;
     const special = Boolean(v && !sellable && v.allowSpecialOrder);
     const unavailableNoSpecial = Boolean(v && !sellable && !v.allowSpecialOrder);
-    const message = buildProductOrderWhatsappMessage({
-      productName: item.title,
+    const message = buildProductWhatsappBody({
+      productTitle: item.title,
       price: item.price,
       currency: item.currency,
       selectedSize: v?.size ?? null,
@@ -214,7 +238,7 @@ export default function ProductsPage({
       specialOrderMode: special,
       unavailableNoSpecial: unavailableNoSpecial && !special,
     });
-    window.open(buildWhatsappLink(message), "_blank", "noopener,noreferrer");
+    window.open(buildSiteWhatsappUrl(message), "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -489,6 +513,10 @@ export default function ProductsPage({
                       data-track="whatsapp_click"
                       data-product-id={item.id}
                       data-product-name={item.title}
+                      data-whatsapp-template={productWhatsappTemplateKind(
+                        item,
+                        selectedVariantByProduct[item.id] ?? null,
+                      )}
                       onClick={() =>
                         orderProduct(
                           item,
@@ -509,6 +537,8 @@ export default function ProductsPage({
       <SiteFooter
         socialUrls={socialUrls}
         whatsappLink={defaultWhatsapp}
+        whatsappLinkTemplate="product_inquiry"
+        whatsappLinkSource="products_footer"
       />
     </>
   );

@@ -89,6 +89,7 @@ export function readPublicSocialUrls(): PublicSocialUrls {
 }
 
 export const siteConfig = {
+  /** TODO(Phase-4+): optional admin-managed overrides via SiteSetting / API. */
   shopName: "كوتور للأزياء - COUTURE",
   whatsappNumber: "218920920500",
   phone: "+218920920500",
