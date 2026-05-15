@@ -335,7 +335,7 @@ html::-webkit-scrollbar-corner {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
 }
 
-.testimonial-card__avatar-ring--monogram {
+.testimonial-card__avatar-ring--icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -352,11 +352,12 @@ html::-webkit-scrollbar-corner {
   object-fit: cover;
 }
 
-.testimonial-card__monogram {
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: rgba(255, 236, 224, 0.92);
+.testimonial-card__avatar-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+  color: rgba(220, 198, 172, 0.72);
+  stroke-width: 1.75;
 }
 
 .testimonial-card__meta {

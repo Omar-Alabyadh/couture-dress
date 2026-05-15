@@ -1,5 +1,5 @@
 import type { PublicTestimonialHome } from "@/lib/types/home-cms";
-import { nameInitials } from "@/lib/home/initials";
+import { LuUser } from "react-icons/lu";
 import Reveal from "@/components/motion/Reveal";
 
 function Stars({ rating }: { rating: number }) {
@@ -27,7 +27,6 @@ function TestimonialAvatar({
   name: string;
   imageUrl: string | null;
 }) {
-  const initials = nameInitials(name, 2);
   if (imageUrl?.trim()) {
     return (
       <div className="testimonial-card__avatar">
@@ -46,10 +45,8 @@ function TestimonialAvatar({
   }
   return (
     <div className="testimonial-card__avatar" aria-hidden>
-      <div className="testimonial-card__avatar-ring testimonial-card__avatar-ring--monogram">
-        <span className="testimonial-card__monogram" aria-hidden>
-          {initials}
-        </span>
+      <div className="testimonial-card__avatar-ring testimonial-card__avatar-ring--icon">
+        <LuUser className="testimonial-card__avatar-icon" aria-hidden />
       </div>
     </div>
   );
