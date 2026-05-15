@@ -50,8 +50,9 @@ tabs.forEach((tab) => {
   });
 });
 
-// Order buttons
-document.querySelectorAll(".item__btn").forEach((btn) => {
+// Order buttons — legacy static `index.html` only: scoped to #collection so Next.js
+// `/products` cards (React + centralized templates) are not double-handled.
+document.querySelectorAll("#collection .item__btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     const title = btn.dataset.title || "قطعة";
     const msg = `مرحباً، أريد طلب/الاستفسار عن: ${title} من ${SHOP_NAME}.`;

@@ -695,6 +695,9 @@
     color: rgba(215, 201, 194, 0.78);
     line-height: 1.5;
   }
+  .product-card .product-card__order-btn{
+    margin-top: 6px;
+  }
   @media (max-width: 720px){
     .product-media__arrow{
       opacity: 0.42;

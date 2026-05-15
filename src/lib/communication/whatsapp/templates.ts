@@ -1,6 +1,6 @@
 /** Reusable Arabic fragments — expand for i18n later. */
 
-export const AR_GREETING_COUTURE = "مرحبًا كوتور ✨";
+export const AR_GREETING_COUTURE = "مرحبًا كوتور";
 
 export function arPlaceholderLine(): string {
   return "_______________";

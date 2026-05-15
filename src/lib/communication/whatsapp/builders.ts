@@ -55,7 +55,7 @@ export function buildProductWhatsappBody(ctx: ProductWhatsappContext): string {
       `المقاس المطلوب: ${size}`,
       `اللون: ${color}`,
       "",
-      "يرجى تأكيد إمكانية التنفيذ والمدة 🙏",
+      "يرجى تأكيد إمكانية التنفيذ والمدة.",
       ...extra,
     ]);
   }
@@ -87,7 +87,7 @@ export function buildProductWhatsappBody(ctx: ProductWhatsappContext): string {
     `المقاس المطلوب: ${size}`,
     `اللون المطلوب: ${color}`,
     "",
-    "وأريد معرفة تفاصيل التوصيل 🚚",
+    "وأريد معرفة تفاصيل التوصيل.",
     ...extra,
   ]);
 }

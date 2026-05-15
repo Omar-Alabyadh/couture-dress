@@ -508,7 +508,7 @@ export default function ProductsPage({
                     ) : null}
                     <p className="product-card__delivery">{PRODUCT_DELIVERY_NOTE}</p>
                     <button
-                      className="btn btn--small btn--primary item__btn"
+                      className="btn btn--small btn--primary product-card__order-btn"
                       type="button"
                       data-track="whatsapp_click"
                       data-product-id={item.id}
