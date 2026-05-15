@@ -1,13 +1,57 @@
 import type { PublicTestimonialHome } from "@/lib/types/home-cms";
+import { nameInitials } from "@/lib/home/initials";
 import Reveal from "@/components/motion/Reveal";
 
-function Stars({ n }: { n: number }) {
-  const c = Math.max(1, Math.min(5, Math.floor(n)));
+function Stars({ rating }: { rating: number }) {
+  const filled = Math.max(1, Math.min(5, Math.floor(rating)));
   return (
-    <span className="home-testimonials__stars" aria-label={`تقييم ${c} من 5`}>
-      {"★".repeat(c)}
-      <span className="home-testimonials__stars-muted">{"★".repeat(5 - c)}</span>
+    <span
+      className="testimonial-card__stars"
+      role="img"
+      aria-label={`تقييم ${filled} من 5`}
+    >
+      <span className="testimonial-card__stars-filled" aria-hidden>
+        {"★".repeat(filled)}
+      </span>
+      <span className="testimonial-card__stars-muted" aria-hidden>
+        {"★".repeat(5 - filled)}
+      </span>
     </span>
+  );
+}
+
+function TestimonialAvatar({
+  name,
+  imageUrl,
+}: {
+  name: string;
+  imageUrl: string | null;
+}) {
+  const initials = nameInitials(name, 2);
+  if (imageUrl?.trim()) {
+    return (
+      <div className="testimonial-card__avatar">
+        <div className="testimonial-card__avatar-ring">
+          {/* eslint-disable-next-line @next/next/no-img-element -- CMS image URLs */}
+          <img
+            src={imageUrl}
+            alt={`صورة ${name}`}
+            className="testimonial-card__avatar-img"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="testimonial-card__avatar" aria-hidden>
+      <div className="testimonial-card__avatar-ring testimonial-card__avatar-ring--monogram">
+        <span className="testimonial-card__monogram" aria-hidden>
+          {initials}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -17,41 +61,49 @@ export default function HomeTestimonialsSection({
   items: PublicTestimonialHome[];
 }) {
   if (items.length === 0) return null;
+
+  const count = Math.min(items.length, 9);
+
   return (
     <section
-      className="section home-testimonials"
+      className="section testimonials-section"
       aria-labelledby="home-testimonials-title"
+      data-count={count}
     >
-      <div className="container">
+      <div className="container testimonials-section__container">
         <Reveal>
-          <h2 id="home-testimonials-title" className="home-testimonials__title">
-            آراء العملاء
-          </h2>
+          <header className="testimonials-section__head">
+            <h2 id="home-testimonials-title" className="testimonials-section__title">
+              آراء العملاء
+            </h2>
+            <p className="testimonials-section__subtitle">
+              كلمات من عميلاتنا تعكس تجربة كوتور الحقيقية.
+            </p>
+          </header>
         </Reveal>
-        <div className="home-testimonials__scroller">
+
+        <div className="testimonials-section__track" role="list">
           {items.map((t, idx) => (
-            <Reveal key={t.id} variant="zoom" delay={Math.min(idx * 50, 300)}>
-              <article className="home-testimonials__card">
-                <header className="home-testimonials__head">
-                  {t.imageUrl ? (
-                    <div className="home-testimonials__avatar-wrap">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={t.imageUrl}
-                        alt=""
-                        className="home-testimonials__avatar"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
-                    <div className="home-testimonials__avatar-wrap home-testimonials__avatar-wrap--empty" />
-                  )}
-                  <div>
-                    <p className="home-testimonials__name">{t.customerName}</p>
-                    <Stars n={t.rating} />
+            <Reveal
+              key={t.id}
+              className="testimonials-section__cell"
+              variant="zoom"
+              delay={Math.min(idx * 55, 280)}
+            >
+              <article className="testimonial-card" role="listitem">
+                <header className="testimonial-card__head">
+                  <TestimonialAvatar
+                    name={t.customerName}
+                    imageUrl={t.imageUrl}
+                  />
+                  <div className="testimonial-card__meta">
+                    <p className="testimonial-card__name">{t.customerName}</p>
+                    <Stars rating={t.rating} />
                   </div>
                 </header>
-                <p className="home-testimonials__text">{t.text}</p>
+                <blockquote className="testimonial-card__quote">
+                  <p className="testimonial-card__text">{t.text}</p>
+                </blockquote>
               </article>
             </Reveal>
           ))}
