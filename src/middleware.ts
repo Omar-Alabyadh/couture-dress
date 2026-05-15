@@ -2,10 +2,7 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type { UserRole } from "@/generated/prisma/client";
-
-function authSecret() {
-  return process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
-}
+import { resolveAuthSecret } from "@/lib/auth-secret";
 
 function isGet(req: NextRequest) {
   return req.method === "GET" || req.method === "HEAD";
@@ -34,7 +31,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const t = await getToken({ req, secret: authSecret() });
+  const t = await getToken({ req, secret: resolveAuthSecret() });
   if (!t) {
     if (p.startsWith("/api/admin")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
