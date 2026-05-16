@@ -3,7 +3,11 @@ import Google from "next-auth/providers/google";
 import { prisma } from "@/server/db/client";
 import { resolveAuthSecret } from "@/lib/auth-secret";
 import {
+  getEngineerEmails,
+  getOwnerEmails,
+  isAllowlistConfigured,
   isAllowedAppUser,
+  resolveOAuthSignInEmail,
   resolveRoleForEmail,
 } from "@/lib/auth-allowlist";
 import { logAudit } from "@/server/services/auditService";
@@ -28,17 +32,35 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    async signIn({ user, account }) {
-      const email = user?.email;
-      if (!isAllowedAppUser(email)) {
+    async signIn({ user, account, profile }) {
+      const email = resolveOAuthSignInEmail(user, profile);
+      if (!email || !isAllowedAppUser(email)) {
+        if (process.env.AUTH_SIGNIN_DEBUG === "1") {
+          console.warn("[auth] signIn denied", {
+            hasUserEmail: Boolean(user?.email?.trim()),
+            hasProfileEmail: Boolean(
+              profile &&
+                typeof profile === "object" &&
+                typeof (profile as { email?: unknown }).email === "string",
+            ),
+            allowlistConfigured: isAllowlistConfigured(),
+            ownerCount: getOwnerEmails().length,
+            engineerCount: getEngineerEmails().length,
+          });
+        }
+        if (!isAllowlistConfigured()) {
+          console.error(
+            "[auth] signIn denied: OWNER_EMAIL / OWNER_EMAILS / ENGINEER_EMAILS not configured",
+          );
+        }
         return false;
       }
-      const role = resolveRoleForEmail(email!);
+      const role = resolveRoleForEmail(email);
       try {
         const row = await prisma.user.upsert({
-          where: { email: email!.toLowerCase() },
+          where: { email },
           create: {
-            email: email!.toLowerCase(),
+            email,
             name: user.name,
             image: user.image,
             role,
