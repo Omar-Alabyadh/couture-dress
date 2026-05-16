@@ -16,6 +16,7 @@ import {
   AdminSelect,
   AdminTable,
 } from "@/components/admin/AdminPrimitives";
+import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
 
 type ColorRow = { id: string; label: string; deletedAt: string | null };
 type BrandRow = {
@@ -490,6 +491,16 @@ function AdminProductMediaCard({
           style={{ textAlign: "left" }}
         />
       </label>
+      <MediaPickerButton
+        label="اختر من مكتبة الوسائط"
+        variant="secondary"
+        defaultUsageType="PRODUCT_IMAGE"
+        defaultFolder="products"
+        onSelect={(asset) => {
+          onUrlChange(asset.url);
+          if (!row.alt.trim() && asset.alt) onAltChange(asset.alt);
+        }}
+      />
       {inlineUrlMsg ? (
         <p className="admin-media-inline-error">{inlineUrlMsg}</p>
       ) : null}

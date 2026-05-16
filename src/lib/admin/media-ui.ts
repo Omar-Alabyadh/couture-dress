@@ -17,6 +17,53 @@ export const DEFAULT_MEDIA_UI_FILTERS: MediaUIFilters = {
   q: "",
 };
 
+/** Subset returned when an admin form picks a media asset from the library. */
+export type MediaPickerSelection = {
+  id: string;
+  url: string;
+  alt: string | null;
+  usageType: MediaUsageType;
+  folder: string;
+};
+
+export function toMediaPickerSelection(
+  asset: MediaAssetDto,
+): MediaPickerSelection {
+  return {
+    id: asset.id,
+    url: asset.url,
+    alt: asset.alt,
+    usageType: asset.usageType,
+    folder: asset.folder,
+  };
+}
+
+/** Safely set `heroBgImage` in landing JSON when the editor content parses. */
+export function tryInsertLandingHeroBgImage(
+  rawJson: string,
+  url: string,
+): { ok: true; next: string } | { ok: false } {
+  try {
+    const parsed = JSON.parse(rawJson) as Record<string, unknown>;
+    parsed.heroBgImage = url;
+    return { ok: true, next: JSON.stringify(parsed, null, 2) };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export function createPickerFilters(
+  usageType?: MediaUsageType,
+  folder?: string,
+): MediaUIFilters {
+  return {
+    usageType: usageType ?? "",
+    folder: folder ?? "",
+    archived: "false",
+    q: "",
+  };
+}
+
 export const MEDIA_USAGE_OPTIONS: { value: MediaUsageType | ""; label: string }[] =
   [
     { value: "", label: "كل الأنواع" },

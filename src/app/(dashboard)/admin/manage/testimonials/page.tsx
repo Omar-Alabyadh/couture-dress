@@ -17,6 +17,7 @@ import {
   AdminTable,
   AdminTextarea,
 } from "@/components/admin/AdminPrimitives";
+import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
 
 type Testimonial = {
   id: string;
@@ -203,6 +204,12 @@ export default function AdminTestimonialsPage() {
               placeholder="https://… أو /assets/…"
             />
           </AdminField>
+          <MediaPickerButton
+            label="اختر صورة من مكتبة الوسائط"
+            defaultUsageType="TESTIMONIAL_AVATAR"
+            defaultFolder="testimonials"
+            onSelect={(asset) => setImageUrl(asset.url)}
+          />
           <AdminField label="الترتيب" htmlFor="tm-sort">
             <AdminInput
               id="tm-sort"

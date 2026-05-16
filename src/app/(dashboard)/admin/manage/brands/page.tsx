@@ -18,6 +18,7 @@ import {
   AdminTable,
   AdminTextarea,
 } from "@/components/admin/AdminPrimitives";
+import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
 
 type Brand = {
   id: string;
@@ -137,6 +138,12 @@ function BrandEditPanel({
             placeholder="https://… أو /assets/…"
           />
         </AdminField>
+        <MediaPickerButton
+          label="اختر شعار من مكتبة الوسائط"
+          defaultUsageType="BRAND_LOGO"
+          defaultFolder="brands"
+          onSelect={(asset) => setLogoUrl(asset.url)}
+        />
         <AdminField label="وصف عربي (اختياري)">
           <AdminTextarea
             rows={2}
@@ -339,6 +346,12 @@ export default function AdminBrandsPage() {
               dir="ltr"
             />
           </AdminField>
+          <MediaPickerButton
+            label="اختر شعار من مكتبة الوسائط"
+            defaultUsageType="BRAND_LOGO"
+            defaultFolder="brands"
+            onSelect={(asset) => setLogoUrl(asset.url)}
+          />
           <AdminField label="وصف عربي (اختياري)">
             <AdminTextarea
               rows={2}

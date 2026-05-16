@@ -16,6 +16,11 @@ import {
   AdminSectionHeader,
   AdminTextarea,
 } from "@/components/admin/AdminPrimitives";
+import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
+import {
+  copyTextToClipboard,
+  tryInsertLandingHeroBgImage,
+} from "@/lib/admin/media-ui";
 
 export default function AdminLandingPage() {
   const { pushToast } = useAdminToast();
@@ -65,6 +70,33 @@ export default function AdminLandingPage() {
 
         {!loading && !err ? (
           <>
+            <div className="admin-landing-media-helper">
+              <p className="admin-hint" style={{ margin: "0 0 8px" }}>
+                لصورة الخلفية <code dir="ltr">heroBgImage</code>: إن كان JSON صالحًا
+                يُحدَّث المفتاح تلقائيًا؛ وإلا يُنسخ الرابط إلى الحافظة.
+              </p>
+              <MediaPickerButton
+                label="اختيار صورة heroBgImage من المكتبة"
+                title="صورة الصفحة الرئيسية"
+                defaultUsageType="LANDING_IMAGE"
+                defaultFolder="landing"
+                onSelect={async (asset) => {
+                  const inserted = tryInsertLandingHeroBgImage(raw, asset.url);
+                  if (inserted.ok) {
+                    setRaw(inserted.next);
+                    pushToast("تم تحديث heroBgImage في JSON.", "success");
+                    return;
+                  }
+                  const ok = await copyTextToClipboard(asset.url);
+                  pushToast(
+                    ok
+                      ? "JSON غير صالح — تم نسخ الرابط. ألصقيه يدويًا في heroBgImage."
+                      : "JSON غير صالح — انسخي الرابط يدويًا من المكتبة.",
+                    ok ? "success" : "error",
+                  );
+                }}
+              />
+            </div>
             <AdminTextarea
               className="admin-json"
               value={raw}
