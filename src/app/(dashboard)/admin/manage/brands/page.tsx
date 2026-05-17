@@ -16,6 +16,7 @@ import {
   AdminSectionHeader,
   AdminSelect,
   AdminTable,
+  AdminTd,
   AdminTextarea,
 } from "@/components/admin/AdminPrimitives";
 import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
@@ -284,7 +285,7 @@ export default function AdminBrandsPage() {
   }
 
   return (
-    <div dir="rtl" style={{ maxWidth: 960 }}>
+    <div className="admin-page admin-page--wide" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="ماركات ومصممون"
@@ -381,9 +382,11 @@ export default function AdminBrandsPage() {
               onChange={(e) => setSortOrder(e.target.value)}
             />
           </AdminField>
-          <AdminButton type="submit" variant="primary" style={{ width: 160 }}>
-            إضافة
-          </AdminButton>
+          <div className="admin-form__submit-row">
+            <AdminButton type="submit" variant="primary">
+              إضافة
+            </AdminButton>
+          </div>
         </form>
 
         {!loading && !loadError && list.filter((x) => !x.deletedAt).length === 0 ? (
@@ -408,13 +411,13 @@ export default function AdminBrandsPage() {
             <tbody>
               {list.map((b) => (
                 <tr key={b.id} style={{ opacity: b.deletedAt ? 0.45 : 1 }}>
-                  <td style={{ width: 56 }}>
+                  <AdminTd label="">
                     <BrandLogoThumb url={b.logoUrl} />
-                  </td>
-                  <td>{b.nameAr}</td>
-                  <td>{typeLabel(b.type)}</td>
-                  <td>{b.sortOrder}</td>
-                  <td>
+                  </AdminTd>
+                  <AdminTd label="الاسم">{b.nameAr}</AdminTd>
+                  <AdminTd label="النوع">{typeLabel(b.type)}</AdminTd>
+                  <AdminTd label="ترتيب">{b.sortOrder}</AdminTd>
+                  <AdminTd label="نشر">
                     {b.deletedAt ? (
                       "—"
                     ) : (
@@ -426,35 +429,37 @@ export default function AdminBrandsPage() {
                         {b.isPublished ? "إخفاء" : "نشر"}
                       </AdminButton>
                     )}
-                  </td>
-                  <td>
-                    {b.deletedAt ? (
-                      <AdminButton
-                        type="button"
-                        variant="primary"
-                        onClick={() => void restoreRow(b)}
-                      >
-                        استرجاع
-                      </AdminButton>
-                    ) : (
-                      <>
+                  </AdminTd>
+                  <AdminTd label="إجراءات" className="admin-table__cell--actions">
+                    <div className="admin-table__actions">
+                      {b.deletedAt ? (
                         <AdminButton
                           type="button"
-                          variant="ghost"
-                          onClick={() => setEditing(b)}
+                          variant="primary"
+                          onClick={() => void restoreRow(b)}
                         >
-                          تعديل
-                        </AdminButton>{" "}
-                        <AdminButton
-                          type="button"
-                          variant="danger"
-                          onClick={() => void archiveRow(b)}
-                        >
-                          أرشفة
+                          استرجاع
                         </AdminButton>
-                      </>
-                    )}
-                  </td>
+                      ) : (
+                        <>
+                          <AdminButton
+                            type="button"
+                            variant="ghost"
+                            onClick={() => setEditing(b)}
+                          >
+                            تعديل
+                          </AdminButton>
+                          <AdminButton
+                            type="button"
+                            variant="danger"
+                            onClick={() => void archiveRow(b)}
+                          >
+                            أرشفة
+                          </AdminButton>
+                        </>
+                      )}
+                    </div>
+                  </AdminTd>
                 </tr>
               ))}
             </tbody>

@@ -15,6 +15,7 @@ import {
   AdminSectionHeader,
   AdminSelect,
   AdminTable,
+  AdminTd,
 } from "@/components/admin/AdminPrimitives";
 import { MediaPicker, MediaPickerButton } from "@/components/admin/media/MediaPicker";
 
@@ -176,7 +177,7 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div dir="rtl" style={{ maxWidth: 960 }}>
+    <div className="admin-page admin-page--wide" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="المنتجات"
@@ -257,44 +258,48 @@ export default function AdminProductsPage() {
                 const thumb = primaryProductThumbSrc(p);
                 return (
                 <tr key={p.id}>
-                  <td style={{ width: 56, verticalAlign: "middle" }}>
+                  <AdminTd label="">
                     <AdminProductThumbCell src={thumb} />
-                  </td>
-                  <td>{p.titleAr}</td>
-                  <td>{cats.find((c) => c.v === p.category)?.l ?? p.category}</td>
-                  <td style={{ fontSize: 12 }}>
+                  </AdminTd>
+                  <AdminTd label="العنوان">{p.titleAr}</AdminTd>
+                  <AdminTd label="تصنيف">
+                    {cats.find((c) => c.v === p.category)?.l ?? p.category}
+                  </AdminTd>
+                  <AdminTd label="مقاسات" style={{ fontSize: 12 }}>
                     {p.variants?.length
                       ? p.variants.map((v) => v.size).join("، ")
                       : p.sizes.join("، ")}
-                  </td>
-                  <td style={{ fontSize: 12 }}>
+                  </AdminTd>
+                  <AdminTd label="السعر" style={{ fontSize: 12 }}>
                     {p.price != null && p.price !== ""
                       ? `${p.price} ${p.currency || "LYD"}`
                       : "—"}
-                  </td>
-                  <td style={{ fontSize: 12 }}>
+                  </AdminTd>
+                  <AdminTd label="ألوان" style={{ fontSize: 12 }}>
                     {p.colors.map((c) => c.label).join("، ")}
-                  </td>
-                  <td>{p.isPublished ? "نعم" : "لا"}</td>
-                  <td>
-                    <AdminButton
-                      type="button"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditing(p);
-                        setCreating(false);
-                      }}
-                    >
-                      تعديل
-                    </AdminButton>{" "}
-                    <AdminButton
-                      type="button"
-                      variant="danger"
-                      onClick={() => void confirmSoftDelete(p)}
-                    >
-                      حذف
-                    </AdminButton>
-                  </td>
+                  </AdminTd>
+                  <AdminTd label="نشر">{p.isPublished ? "نعم" : "لا"}</AdminTd>
+                  <AdminTd label="إجراءات" className="admin-table__cell--actions">
+                    <div className="admin-table__actions">
+                      <AdminButton
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditing(p);
+                          setCreating(false);
+                        }}
+                      >
+                        تعديل
+                      </AdminButton>
+                      <AdminButton
+                        type="button"
+                        variant="danger"
+                        onClick={() => void confirmSoftDelete(p)}
+                      >
+                        حذف
+                      </AdminButton>
+                    </div>
+                  </AdminTd>
                 </tr>
               );
               })}
@@ -965,7 +970,7 @@ function ProductForm({
           ))}
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+        <div className="admin-product-form-actions" style={{ marginTop: 8 }}>
           <AdminButton type="button" variant="primary" onClick={addImageRow}>
             + إضافة صورة
           </AdminButton>
@@ -1225,10 +1230,10 @@ function ProductForm({
         />
         منشور
       </label>
-      <p>
+      <p className="admin-product-form-actions">
         <AdminButton type="submit" variant="primary" disabled={loading}>
           {loading ? "…" : "حفظ"}
-        </AdminButton>{" "}
+        </AdminButton>
         <AdminButton type="button" variant="secondary" onClick={onClose}>
           إلغاء
         </AdminButton>

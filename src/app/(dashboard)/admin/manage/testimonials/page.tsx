@@ -15,6 +15,7 @@ import {
   AdminLoadingState,
   AdminSectionHeader,
   AdminTable,
+  AdminTd,
   AdminTextarea,
 } from "@/components/admin/AdminPrimitives";
 import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
@@ -138,7 +139,7 @@ export default function AdminTestimonialsPage() {
   }
 
   return (
-    <div dir="rtl" style={{ maxWidth: 880 }}>
+    <div className="admin-page admin-page--wide" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="آراء العملاء"
@@ -233,9 +234,11 @@ export default function AdminTestimonialsPage() {
               onChange={(e) => setSortOrder(e.target.value)}
             />
           </AdminField>
-          <AdminButton type="submit" variant="primary" style={{ width: 160 }}>
-            إضافة
-          </AdminButton>
+          <div className="admin-form__submit-row">
+            <AdminButton type="submit" variant="primary">
+              إضافة
+            </AdminButton>
+          </div>
         </form>
 
         {!loading && !loadError && list.filter((x) => !x.deletedAt).length === 0 ? (
@@ -263,12 +266,12 @@ export default function AdminTestimonialsPage() {
                   key={t.id}
                   style={{ opacity: t.deletedAt ? 0.45 : 1 }}
                 >
-                  <td>{t.customerName}</td>
-                  <td style={{ fontSize: 12, maxWidth: 280 }}>
+                  <AdminTd label="العميلة">{t.customerName}</AdminTd>
+                  <AdminTd label="مقتطف" className="admin-table__cell--full" style={{ fontSize: 12 }}>
                     {t.text.length > 120 ? `${t.text.slice(0, 120)}…` : t.text}
-                  </td>
-                  <td>{t.rating}</td>
-                  <td style={{ width: 120 }}>
+                  </AdminTd>
+                  <AdminTd label="تقييم">{t.rating}</AdminTd>
+                  <AdminTd label="ترتيب">
                     {t.deletedAt ? (
                       t.sortOrder
                     ) : (
@@ -280,11 +283,11 @@ export default function AdminTestimonialsPage() {
                           if (e.target.value === String(t.sortOrder)) return;
                           void patchSortOrder(t, e.target.value);
                         }}
-                        style={{ width: 88 }}
+                        style={{ maxWidth: "100%" }}
                       />
                     )}
-                  </td>
-                  <td>
+                  </AdminTd>
+                  <AdminTd label="نشر">
                     {t.deletedAt ? (
                       "—"
                     ) : (
@@ -296,8 +299,8 @@ export default function AdminTestimonialsPage() {
                         {t.isPublished ? "إخفاء" : "نشر"}
                       </AdminButton>
                     )}
-                  </td>
-                  <td>
+                  </AdminTd>
+                  <AdminTd label="إجراءات" className="admin-table__cell--actions">
                     {t.deletedAt ? (
                       <AdminButton
                         type="button"
@@ -315,7 +318,7 @@ export default function AdminTestimonialsPage() {
                         أرشفة
                       </AdminButton>
                     )}
-                  </td>
+                  </AdminTd>
                 </tr>
               ))}
             </tbody>

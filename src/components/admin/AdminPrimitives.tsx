@@ -6,6 +6,7 @@ import type {
   ReactNode,
   SelectHTMLAttributes,
   TableHTMLAttributes,
+  TdHTMLAttributes,
   TextareaHTMLAttributes,
 } from "react";
 
@@ -112,14 +113,36 @@ export function AdminSelect({
 export function AdminTable({
   children,
   className = "",
+  responsiveCards = true,
   ...rest
-}: TableHTMLAttributes<HTMLTableElement>) {
+}: TableHTMLAttributes<HTMLTableElement> & { responsiveCards?: boolean }) {
   return (
     <div className="admin-table-wrap">
-      <table className={`admin-table ${className}`.trim()} {...rest}>
+      <table
+        className={`admin-table${responsiveCards ? " admin-table--cards" : ""} ${className}`.trim()}
+        {...rest}
+      >
         {children}
       </table>
     </div>
+  );
+}
+
+export function AdminTd({
+  label,
+  className = "",
+  children,
+  ...rest
+}: TdHTMLAttributes<HTMLTableCellElement> & { label: string }) {
+  const visual = label === "";
+  return (
+    <td
+      data-label={label}
+      className={`${visual ? "admin-table__cell--visual " : ""}${className}`.trim()}
+      {...rest}
+    >
+      {children}
+    </td>
   );
 }
 

@@ -9,6 +9,7 @@ import {
   AdminLoadingState,
   AdminSectionHeader,
   AdminTable,
+  AdminTd,
 } from "@/components/admin/AdminPrimitives";
 
 type Row = {
@@ -55,7 +56,7 @@ export default function AuditPage() {
   }, [load]);
 
   return (
-    <div dir="rtl" style={{ overflow: "auto" }}>
+    <div className="admin-page admin-page--audit" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="سجل التدقيق"
@@ -83,9 +84,11 @@ export default function AuditPage() {
             <tbody>
               {rows.map((a) => (
                 <tr key={a.id}>
-                  <td>{new Date(a.createdAt).toLocaleString("ar-LY")}</td>
-                  <td>{a.action}</td>
-                  <td>
+                  <AdminTd label="الوقت">
+                    {new Date(a.createdAt).toLocaleString("ar-LY")}
+                  </AdminTd>
+                  <AdminTd label="الفعل">{a.action}</AdminTd>
+                  <AdminTd label="النوع">
                     {a.entityType}{" "}
                     {a.entityId ? (
                       <>
@@ -93,17 +96,23 @@ export default function AuditPage() {
                         <span style={{ opacity: 0.7 }}>{a.entityId}</span>
                       </>
                     ) : null}
-                  </td>
-                  <td>
+                  </AdminTd>
+                  <AdminTd label="المستخدم">
                     {a.user?.name ?? "—"} <br />
                     <span style={{ opacity: 0.7 }}>{a.user?.email}</span>
-                  </td>
-                  <td style={{ direction: "ltr" }}>{a.ip ?? "—"}</td>
-                  <td style={{ maxWidth: 200, fontSize: 10, direction: "ltr" }}>
+                  </AdminTd>
+                  <AdminTd label="IP" style={{ direction: "ltr" }}>
+                    {a.ip ?? "—"}
+                  </AdminTd>
+                  <AdminTd
+                    label="تفاصيل"
+                    className="admin-table__cell--full"
+                    style={{ fontSize: 10, direction: "ltr" }}
+                  >
                     {a.metadata != null
                       ? JSON.stringify(a.metadata).slice(0, 180)
                       : "—"}
-                  </td>
+                  </AdminTd>
                 </tr>
               ))}
             </tbody>

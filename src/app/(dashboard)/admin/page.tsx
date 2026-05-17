@@ -11,7 +11,7 @@ export default async function AdminDashboard() {
     redirect("/admin/audit");
   }
   return (
-    <div style={{ maxWidth: 600 }} dir="rtl">
+    <div className="admin-page admin-page--narrow" dir="rtl">
       <h1 style={{ margin: "0 0 0.4rem" }}>مرحبًا {s.user.name ?? s.user.email}</h1>
       <p className="admin-hint">
         هنا تتحكّمين بكل الموقع: المنتجات، الألوان، الصفحة الرئيسية، والسجل. الحذف

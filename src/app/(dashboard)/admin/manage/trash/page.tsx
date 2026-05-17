@@ -13,6 +13,7 @@ import {
   AdminLoadingState,
   AdminSectionHeader,
   AdminTable,
+  AdminTd,
 } from "@/components/admin/AdminPrimitives";
 
 type TrashEntityType =
@@ -96,7 +97,7 @@ export default function AdminTrashPage() {
   }
 
   return (
-    <div className="admin-page" dir="rtl" style={{ maxWidth: 900 }}>
+    <div className="admin-page admin-page--wide" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="الأرشيف الموحّد"
@@ -137,15 +138,15 @@ export default function AdminTrashPage() {
                 const key = `${row.entityType}:${row.id}`;
                 return (
                   <tr key={key}>
-                    <td>{TYPE_LABELS[row.entityType]}</td>
-                    <td>{row.label}</td>
-                    <td>
+                    <AdminTd label="النوع">{TYPE_LABELS[row.entityType]}</AdminTd>
+                    <AdminTd label="الاسم">{row.label}</AdminTd>
+                    <AdminTd label="تاريخ الأرشفة">
                       {new Date(row.archivedAt).toLocaleString("ar-LY")}
-                    </td>
-                    <td>
+                    </AdminTd>
+                    <AdminTd label="المصدر">
                       <Link href={row.moduleHref}>{row.moduleLabel}</Link>
-                    </td>
-                    <td>
+                    </AdminTd>
+                    <AdminTd label="إجراءات" className="admin-table__cell--actions">
                       <AdminButton
                         type="button"
                         variant="primary"
@@ -154,7 +155,7 @@ export default function AdminTrashPage() {
                       >
                         استرجاع
                       </AdminButton>
-                    </td>
+                    </AdminTd>
                   </tr>
                 );
               })}

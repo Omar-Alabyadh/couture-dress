@@ -55,7 +55,7 @@ export default function AdminLandingPage() {
   }, [load]);
 
   return (
-    <div dir="rtl" style={{ maxWidth: 900 }}>
+    <div className="admin-page admin-page--wide" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="الصفحة الرئيسية (JSON)"

@@ -57,6 +57,31 @@ export function AdminChrome({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.innerWidth > MOBILE_NAV_MAX) return;
+    const id = requestAnimationFrame(() => setSidebarOpen(false));
+    return () => cancelAnimationFrame(id);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isMobileViewport || !sidebarOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isMobileViewport, sidebarOpen]);
+
+  useEffect(() => {
+    if (!isMobileViewport || !sidebarOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isMobileViewport, sidebarOpen]);
+
   if (isLogin) {
     return <>{children}</>;
   }
@@ -75,7 +100,7 @@ export function AdminChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <AdminFeedbackProviders>
-      <div className="admin-canvas">
+      <div className="admin-canvas" dir="rtl">
         <div
           className={`admin-backdrop${sidebarOpen && isMobileViewport ? " admin-backdrop--visible" : ""}`}
           role="presentation"
@@ -96,6 +121,7 @@ export function AdminChrome({ children }: { children: React.ReactNode }) {
         <aside
           id="admin-sidebar-nav"
           className={`admin-sidebar${sidebarOpen ? " admin-sidebar--open" : ""}`}
+          aria-hidden={isMobileViewport && !sidebarOpen}
         >
           <p className="admin-brand admin-hide-mobile">لوحة التحكم</p>
           <nav className="admin-sidebar__nav" aria-label="التنقل الرئيسي">

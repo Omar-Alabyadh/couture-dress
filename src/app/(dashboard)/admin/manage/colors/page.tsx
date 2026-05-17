@@ -15,6 +15,7 @@ import {
   AdminLoadingState,
   AdminSectionHeader,
   AdminTable,
+  AdminTd,
 } from "@/components/admin/AdminPrimitives";
 
 type Color = {
@@ -100,7 +101,7 @@ export default function AdminColorsPage() {
   }
 
   return (
-    <div dir="rtl" style={{ maxWidth: 640 }}>
+    <div className="admin-page admin-page--narrow" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="ألوان الفلتر"
@@ -155,9 +156,11 @@ export default function AdminColorsPage() {
               dir="ltr"
             />
           </AdminField>
-          <AdminButton type="submit" variant="primary" style={{ width: 160 }}>
-            إضافة
-          </AdminButton>
+          <div className="admin-form__submit-row">
+            <AdminButton type="submit" variant="primary">
+              إضافة
+            </AdminButton>
+          </div>
         </form>
 
         {!loading && !loadError && list.length === 0 ? (
@@ -185,20 +188,21 @@ export default function AdminColorsPage() {
                     opacity: c.deletedAt ? 0.5 : 1,
                   }}
                 >
-                  <td
+                  <AdminTd
+                    label=""
                     style={{
                       width: 20,
                       background: c.hex ? `#${c.hex}` : "transparent",
                     }}
                   />
-                  <td>
+                  <AdminTd label="لون">
                     {c.label}
                     {c.deletedAt ? " (مُؤرشف)" : null}
-                  </td>
-                  <td dir="ltr" style={{ fontSize: 12 }}>
+                  </AdminTd>
+                  <AdminTd label="Hex" dir="ltr" style={{ fontSize: 12 }}>
                     {c.hex ? `#${c.hex}` : "—"}
-                  </td>
-                  <td>
+                  </AdminTd>
+                  <AdminTd label="إجراءات" className="admin-table__cell--actions">
                     {c.deletedAt ? (
                       <AdminButton
                         type="button"
@@ -216,7 +220,7 @@ export default function AdminColorsPage() {
                         أرشفة
                       </AdminButton>
                     )}
-                  </td>
+                  </AdminTd>
                 </tr>
               ))}
             </tbody>
