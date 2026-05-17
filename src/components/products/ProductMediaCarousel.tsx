@@ -37,6 +37,26 @@ type ProductMediaCarouselProps = {
   productLabel: string;
 };
 
+function ProductSlideImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <p className="product-media__fallback" role="img" aria-label={alt}>
+        لا تتوفر معاينة
+      </p>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export function ProductMediaCarousel({
   slides,
   productLabel,
@@ -97,7 +117,7 @@ export function ProductMediaCarousel({
     return (
       <div className="product-media product-media--single">
         <div className="product-media__frame">
-          <img src={slide.url} alt={slide.alt} loading="lazy" />
+          <ProductSlideImage src={slide.url} alt={slide.alt} />
         </div>
       </div>
     );
@@ -120,7 +140,7 @@ export function ProductMediaCarousel({
               id={`${baseId}-slide-${i}`}
               className="product-media__slide"
             >
-              <img src={s.url} alt={s.alt} loading="lazy" />
+              <ProductSlideImage src={s.url} alt={s.alt} />
             </figure>
           ))}
         </div>
@@ -156,21 +176,21 @@ export function ProductMediaCarousel({
             />
           </svg>
         </button>
-      </div>
-      <div className="product-media__dots" role="tablist" aria-label="مؤشر الصور">
-        {slides.map((s, i) => (
-          <button
-            key={s.id}
-            type="button"
-            role="tab"
-            aria-selected={i === index}
-            aria-controls={`${baseId}-slide-${i}`}
-            id={`${baseId}-tab-${i}`}
-            className={`product-media__dot${i === index ? " product-media__dot--active" : ""}`}
-            aria-label={`الصورة ${i + 1} من ${slides.length}`}
-            onClick={() => scrollToIndex(i)}
-          />
-        ))}
+        <div className="product-media__dots" role="tablist" aria-label="مؤشر الصور">
+          {slides.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              role="tab"
+              aria-selected={i === index}
+              aria-controls={`${baseId}-slide-${i}`}
+              id={`${baseId}-tab-${i}`}
+              className={`product-media__dot${i === index ? " product-media__dot--active" : ""}`}
+              aria-label={`الصورة ${i + 1} من ${slides.length}`}
+              onClick={() => scrollToIndex(i)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
