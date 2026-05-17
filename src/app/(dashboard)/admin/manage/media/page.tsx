@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { SortDirection } from "@/lib/admin/list-client";
 import { useSearchParams } from "next/navigation";
 import type { MediaUsageType } from "@/generated/prisma/client";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
@@ -43,6 +44,7 @@ export default function AdminMediaLibraryPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [statsRefreshKey, setStatsRefreshKey] = useState(0);
+  const [sort, setSort] = useState<SortDirection>("newest");
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -138,6 +140,16 @@ export default function AdminMediaLibraryPage() {
     setStatsRefreshKey((k) => k + 1);
   }, []);
 
+  const sortedItems = useMemo(() => {
+    const copy = [...items];
+    copy.sort((a, b) => {
+      const ta = new Date(a.createdAt).getTime();
+      const tb = new Date(b.createdAt).getTime();
+      return sort === "newest" ? tb - ta : ta - tb;
+    });
+    return copy;
+  }, [items, sort]);
+
   return (
     <div className="admin-page" dir="rtl">
       <AdminSectionHeader
@@ -165,11 +177,13 @@ export default function AdminMediaLibraryPage() {
         <MediaLibraryStatsStrip refreshKey={statsRefreshKey} />
         <MediaFilters
           filters={filters}
+          sort={sort}
+          onSortChange={setSort}
           disabled={loading && items.length === 0}
           onChange={setFilters}
         />
         <MediaGrid
-          items={items}
+          items={sortedItems}
           loading={loading}
           loadingMore={loadingMore}
           error={loadError}

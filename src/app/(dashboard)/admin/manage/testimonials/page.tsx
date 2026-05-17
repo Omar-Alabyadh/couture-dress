@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminListToolbar } from "@/components/admin/AdminListToolbar";
+import {
+  normalizeSearch,
+  paginateList,
+  sortByDateString,
+  type SortDirection,
+} from "@/lib/admin/list-client";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
@@ -29,7 +36,16 @@ type Testimonial = {
   isPublished: boolean;
   sortOrder: number;
   deletedAt: string | null;
+  createdAt: string;
 };
+
+const PAGE_SIZE = 12;
+const TESTIMONIAL_STATUS_OPTIONS = [
+  { value: "all", label: "كل الحالات" },
+  { value: "published", label: "منشور" },
+  { value: "draft", label: "مسودة" },
+  { value: "archived", label: "مؤرشف" },
+];
 
 export default function AdminTestimonialsPage() {
   const { pushToast } = useAdminToast();
@@ -42,6 +58,10 @@ export default function AdminTestimonialsPage() {
   const [sortOrder, setSortOrder] = useState("0");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sort, setSort] = useState<SortDirection>("newest");
+  const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -137,6 +157,31 @@ export default function AdminTestimonialsPage() {
     pushToast("تم حفظ الترتيب.", "success");
     await load();
   }
+
+  const filteredList = useMemo(() => {
+    const q = normalizeSearch(search);
+    let rows = [...list];
+    if (q) {
+      rows = rows.filter(
+        (t) =>
+          t.customerName.toLowerCase().includes(q) ||
+          t.text.toLowerCase().includes(q),
+      );
+    }
+    if (statusFilter === "archived") {
+      rows = rows.filter((t) => t.deletedAt);
+    } else if (statusFilter === "published") {
+      rows = rows.filter((t) => !t.deletedAt && t.isPublished);
+    } else if (statusFilter === "draft") {
+      rows = rows.filter((t) => !t.deletedAt && !t.isPublished);
+    }
+    return sortByDateString(rows, sort);
+  }, [list, search, statusFilter, sort]);
+
+  const paginated = useMemo(
+    () => paginateList(filteredList, page, PAGE_SIZE),
+    [filteredList, page],
+  );
 
   return (
     <div className="admin-page admin-page--wide" dir="rtl">
@@ -249,7 +294,32 @@ export default function AdminTestimonialsPage() {
         ) : null}
 
         {!loadError && list.length > 0 ? (
-          <AdminTable style={{ marginTop: 20 }}>
+          <>
+            <AdminListToolbar
+              searchValue={search}
+              onSearchChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+              searchPlaceholder="بحث بالاسم أو النص…"
+              sort={sort}
+              onSortChange={(v) => {
+                setSort(v);
+                setPage(1);
+              }}
+              page={paginated.page}
+              totalPages={paginated.totalPages}
+              total={paginated.total}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+              statusFilter={statusFilter}
+              onStatusFilterChange={(v) => {
+                setStatusFilter(v);
+                setPage(1);
+              }}
+              statusOptions={TESTIMONIAL_STATUS_OPTIONS}
+            />
+          <AdminTable style={{ marginTop: 12 }}>
             <thead>
               <tr>
                 <th>العميلة</th>
@@ -261,7 +331,7 @@ export default function AdminTestimonialsPage() {
               </tr>
             </thead>
             <tbody>
-              {list.map((t) => (
+              {paginated.items.map((t) => (
                 <tr
                   key={t.id}
                   style={{ opacity: t.deletedAt ? 0.45 : 1 }}
@@ -323,6 +393,7 @@ export default function AdminTestimonialsPage() {
               ))}
             </tbody>
           </AdminTable>
+          </>
         ) : null}
       </AdminCard>
     </div>

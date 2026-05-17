@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { isSafeProductImageUrl } from "@/lib/validation/product-input";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
@@ -17,7 +17,26 @@ import {
   AdminTable,
   AdminTd,
 } from "@/components/admin/AdminPrimitives";
-import { MediaPicker, MediaPickerButton } from "@/components/admin/media/MediaPicker";
+import { AdminListToolbar } from "@/components/admin/AdminListToolbar";
+import { ProductStatusBadge } from "@/components/admin/ProductStatusBadge";
+import {
+  ProductGalleryEditor,
+  type LocalImageRow,
+} from "@/components/admin/products/ProductGalleryEditor";
+import {
+  ProductVariantEditor,
+  type VariantFormRow,
+} from "@/components/admin/products/ProductVariantEditor";
+import {
+  deriveProductAdminStatus,
+  type ProductAdminStatus,
+} from "@/lib/admin/product-status";
+import {
+  normalizeSearch,
+  paginateList,
+  sortByDateString,
+  type SortDirection,
+} from "@/lib/admin/list-client";
 
 type ColorRow = { id: string; label: string; deletedAt: string | null };
 type BrandRow = {
@@ -53,6 +72,7 @@ type Product = {
   currency: string;
   category: string;
   isPublished: boolean;
+  deletedAt: string | null;
   sizes: string[];
   brandDesignerId: string | null;
   brandDesigner: {
@@ -65,7 +85,18 @@ type Product = {
   colors: { id: string; label: string; deletedAt?: string | null }[];
   images: ProductImageRow[];
   variants: ProductVariantRow[];
+  createdAt: string;
+  updatedAt: string;
 };
+
+const PAGE_SIZE = 12;
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "كل الحالات" },
+  { value: "DRAFT", label: "مسودة" },
+  { value: "PUBLISHED", label: "منشور" },
+  { value: "OUT_OF_STOCK", label: "غير متوفر" },
+  { value: "ARCHIVED", label: "مؤرشف" },
+];
 
 const cats = [
   { v: "dresses", l: "فساتين" },
@@ -114,6 +145,10 @@ export default function AdminProductsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sort, setSort] = useState<SortDirection>("newest");
+  const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -172,9 +207,40 @@ export default function AdminProductsPage() {
       pushToast(msg, "error");
       return;
     }
-    pushToast("نُقل المنتج إلى الأرشيف.", "success");
+    pushToast("تمت أرشفة المنتج ويمكن استرجاعه من الأرشيف.", "success");
     await load();
   }
+
+  const filteredList = useMemo(() => {
+    const q = normalizeSearch(search);
+    let rows = [...list];
+    if (q) {
+      rows = rows.filter(
+        (p) =>
+          p.titleAr.toLowerCase().includes(q) ||
+          (p.titleEn?.toLowerCase().includes(q) ?? false) ||
+          (p.description?.toLowerCase().includes(q) ?? false),
+      );
+    }
+    if (statusFilter !== "all") {
+      rows = rows.filter(
+        (p) =>
+          deriveProductAdminStatus({
+            isPublished: p.isPublished,
+            deletedAt: p.deletedAt,
+            variants: p.variants,
+            sizes: p.sizes,
+          }) === statusFilter,
+      );
+    }
+    rows = sortByDateString(rows, sort);
+    return rows;
+  }, [list, search, statusFilter, sort]);
+
+  const paginated = useMemo(
+    () => paginateList(filteredList, page, PAGE_SIZE),
+    [filteredList, page],
+  );
 
   return (
     <div className="admin-page admin-page--wide" dir="rtl">
@@ -240,21 +306,52 @@ export default function AdminProductsPage() {
         ) : null}
 
         {!loadError && list.length > 0 ? (
+          <>
+            <AdminListToolbar
+              searchValue={search}
+              onSearchChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+              searchPlaceholder="بحث بالعنوان أو الوصف…"
+              sort={sort}
+              onSortChange={(v) => {
+                setSort(v);
+                setPage(1);
+              }}
+              page={paginated.page}
+              totalPages={paginated.totalPages}
+              total={paginated.total}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+              statusFilter={statusFilter}
+              onStatusFilterChange={(v) => {
+                setStatusFilter(v);
+                setPage(1);
+              }}
+              statusOptions={STATUS_FILTER_OPTIONS}
+            />
           <AdminTable style={{ marginTop: 12 }}>
             <thead>
               <tr>
                 <th aria-label="معاينة">صورة</th>
                 <th>العنوان</th>
+                <th>الحالة</th>
                 <th>تصنيف</th>
                 <th>مقاسات</th>
                 <th>السعر</th>
                 <th>ألوان</th>
-                <th>نشر</th>
                 <th>—</th>
               </tr>
             </thead>
             <tbody>
-              {list.map((p) => {
+              {paginated.items.map((p) => {
+                const status = deriveProductAdminStatus({
+                  isPublished: p.isPublished,
+                  deletedAt: p.deletedAt,
+                  variants: p.variants,
+                  sizes: p.sizes,
+                });
                 const thumb = primaryProductThumbSrc(p);
                 return (
                 <tr key={p.id}>
@@ -262,6 +359,9 @@ export default function AdminProductsPage() {
                     <AdminProductThumbCell src={thumb} />
                   </AdminTd>
                   <AdminTd label="العنوان">{p.titleAr}</AdminTd>
+                  <AdminTd label="الحالة">
+                    <ProductStatusBadge status={status} />
+                  </AdminTd>
                   <AdminTd label="تصنيف">
                     {cats.find((c) => c.v === p.category)?.l ?? p.category}
                   </AdminTd>
@@ -278,7 +378,6 @@ export default function AdminProductsPage() {
                   <AdminTd label="ألوان" style={{ fontSize: 12 }}>
                     {p.colors.map((c) => c.label).join("، ")}
                   </AdminTd>
-                  <AdminTd label="نشر">{p.isPublished ? "نعم" : "لا"}</AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
                     <div className="admin-table__actions">
                       <AdminButton
@@ -305,27 +404,12 @@ export default function AdminProductsPage() {
               })}
             </tbody>
           </AdminTable>
+          </>
         ) : null}
       </AdminCard>
     </div>
   );
 }
-
-type LocalImageRow = {
-  key: string;
-  url: string;
-  alt: string;
-  isPrimary: boolean;
-};
-
-type VariantFormRow = {
-  key: string;
-  size: string;
-  colorId: string;
-  quantity: string;
-  isAvailable: boolean;
-  allowSpecialOrder: boolean;
-};
 
 function newKey() {
   return `img-${Math.random().toString(36).slice(2, 11)}`;
@@ -391,163 +475,6 @@ function initialVariantRows(initial?: Product): VariantFormRow[] {
   ];
 }
 
-function AdminProductMediaCard({
-  row,
-  index,
-  total,
-  urlError,
-  primaryRadioName,
-  onUrlChange,
-  onAltChange,
-  onSetPrimary,
-  onRemove,
-  onMoveUp,
-  onMoveDown,
-  disableRemove,
-}: {
-  row: LocalImageRow;
-  index: number;
-  total: number;
-  urlError?: string;
-  primaryRadioName: string;
-  onUrlChange: (v: string) => void;
-  onAltChange: (v: string) => void;
-  onSetPrimary: () => void;
-  onRemove: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  disableRemove: boolean;
-}) {
-  const url = row.url.trim();
-  const [failedForUrl, setFailedForUrl] = useState<string | null>(null);
-  const loadFailed = Boolean(url && failedForUrl === url);
-  const unsafe = url.length > 0 && !isSafeProductImageUrl(url);
-  const inlineUrlMsg =
-    urlError ??
-    (unsafe ? "الرابط يجب أن يبدأ بـ https:// أو http:// أو / (مسار عام فقط)." : undefined);
-
-  return (
-    <div
-      className={`admin-media-card${row.isPrimary ? " admin-media-card--primary" : ""}`}
-    >
-      {row.isPrimary ? (
-        <span className="admin-media-card__badge">صورة أساسية</span>
-      ) : null}
-      <div className="admin-media-card__preview">
-        {url.length === 0 ? (
-          <span className="admin-media-card__preview-placeholder">
-            معاينة الصورة — أضيفي رابطًا صالحًا
-          </span>
-        ) : null}
-        {url.length > 0 && unsafe ? (
-          <span className="admin-media-card__preview-error">
-            لا يمكن عرض معاينة — رابط غير مسموح
-          </span>
-        ) : null}
-        {url.length > 0 && !unsafe ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element -- admin media preview */}
-            <img
-              src={url}
-              alt={row.alt.trim() || "معاينة"}
-              onError={() => setFailedForUrl(url)}
-              style={{ visibility: loadFailed ? "hidden" : "visible" }}
-            />
-            {loadFailed ? (
-              <span className="admin-media-card__preview-error">
-                تعذر تحميل الصورة. تحققي من الرابط أو الصلاحيات.
-              </span>
-            ) : null}
-          </>
-        ) : null}
-      </div>
-
-      <div className="admin-media-card__toolbar">
-        <span className="admin-media-card__order">
-          الترتيب {index + 1} / {total}
-        </span>
-        <AdminButton
-          type="button"
-          variant="ghost"
-          disabled={index === 0}
-          onClick={onMoveUp}
-          aria-label="نقل الصورة لأعلى"
-        >
-          ↑
-        </AdminButton>
-        <AdminButton
-          type="button"
-          variant="ghost"
-          disabled={index >= total - 1}
-          onClick={onMoveDown}
-          aria-label="نقل الصورة لأسفل"
-        >
-          ↓
-        </AdminButton>
-      </div>
-
-      <label style={{ margin: 0 }}>
-        رابط الصورة
-        <input
-          value={row.url}
-          onChange={(e) => onUrlChange(e.target.value)}
-          placeholder="https://… أو /assets/…"
-          dir="ltr"
-          style={{ textAlign: "left" }}
-        />
-      </label>
-      <MediaPickerButton
-        label="اختر من مكتبة الوسائط"
-        variant="secondary"
-        defaultUsageType="PRODUCT_IMAGE"
-        defaultFolder="products"
-        onSelect={(asset) => {
-          onUrlChange(asset.url);
-          if (!row.alt.trim() && asset.alt) onAltChange(asset.alt);
-        }}
-      />
-      {inlineUrlMsg ? (
-        <p className="admin-media-inline-error">{inlineUrlMsg}</p>
-      ) : null}
-
-      <label style={{ margin: 0 }}>
-        وصف بديل (alt) اختياري
-        <input
-          value={row.alt}
-          onChange={(e) => onAltChange(e.target.value)}
-        />
-      </label>
-
-      <label
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 8,
-          margin: 0,
-        }}
-      >
-        <input
-          type="radio"
-          name={primaryRadioName}
-          checked={row.isPrimary}
-          onChange={onSetPrimary}
-        />
-        تعيين كصورة أساسية
-      </label>
-
-      <AdminButton
-        type="button"
-        variant="ghost"
-        onClick={onRemove}
-        disabled={disableRemove}
-      >
-        إزالة
-      </AdminButton>
-    </div>
-  );
-}
-
 function ProductForm({
   initial,
   colors,
@@ -562,8 +489,6 @@ function ProductForm({
   onSaved: () => void | Promise<void>;
 }) {
   const { pushToast } = useAdminToast();
-  const formDomId = useId();
-  const primaryRadioName = `primary-image-${formDomId.replace(/:/g, "")}`;
   const [titleAr, setTitleAr] = useState(initial?.titleAr ?? "");
   const [titleEn, setTitleEn] = useState(initial?.titleEn ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -588,10 +513,6 @@ function ProductForm({
   const [mediaUrlErrors, setMediaUrlErrors] = useState<Record<string, string>>(
     () => ({}),
   );
-  const [libraryPickerRowKey, setLibraryPickerRowKey] = useState<string | null>(
-    null,
-  );
-
   const brandSelectOptions = useMemo(() => {
     const active = brands.filter((b) => !b.deletedAt && b.isPublished);
     const curId = initial?.brandDesignerId;
@@ -603,15 +524,6 @@ function ProductForm({
     }
     return active;
   }, [brands, initial?.brandDesignerId]);
-
-  const primaryRow =
-    imageRows.find((r) => r.isPrimary) ?? imageRows[0] ?? null;
-  const primaryEmptyButOthersFilled = Boolean(
-    primaryRow &&
-      !primaryRow.url.trim() &&
-      imageRows.some((r) => r.url.trim().length > 0),
-  );
-  const allImageUrlsEmpty = imageRows.every((r) => !r.url.trim());
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -733,6 +645,7 @@ function ProductForm({
           pushToast(msg, "error");
           return;
         }
+        pushToast("تم حفظ المنتج بنجاح.", "success");
       } else {
         const r = await fetch("/api/admin/products", {
           method: "POST",
@@ -744,6 +657,7 @@ function ProductForm({
           pushToast(msg, "error");
           return;
         }
+        pushToast("تم إنشاء المنتج بنجاح.", "success");
       }
       await onSaved();
     } catch {
@@ -753,108 +667,14 @@ function ProductForm({
     }
   };
 
-  function setPrimaryKey(key: string) {
-    setImageRows((rows) =>
-      rows.map((r) => ({ ...r, isPrimary: r.key === key })),
-    );
-  }
-
-  function moveImageRow(key: string, dir: -1 | 1) {
-    setImageRows((rows) => {
-      const i = rows.findIndex((r) => r.key === key);
-      if (i < 0) return rows;
-      const j = i + dir;
-      if (j < 0 || j >= rows.length) return rows;
-      const next = [...rows];
-      const a = next[i]!;
-      const b = next[j]!;
-      next[i] = b;
-      next[j] = a;
-      return next;
-    });
-  }
-
-  function addImageRow() {
-    setImageRows((rows) => [
-      ...rows,
-      { key: newKey(), url: "", alt: "", isPrimary: false },
-    ]);
-  }
-
-  function addImageFromLibrary() {
-    const key = newKey();
-    setImageRows((rows) => {
-      const hasAnyUrl = rows.some((r) => r.url.trim().length > 0);
-      return [
-        ...rows,
-        {
-          key,
-          url: "",
-          alt: "",
-          isPrimary: !hasAnyUrl && rows.length === 0,
-        },
-      ];
-    });
-    setLibraryPickerRowKey(key);
-  }
-
-  function applyLibrarySelection(
-    rowKey: string,
-    asset: { url: string; alt: string | null },
-  ) {
-    setMediaPanelError(null);
-    setImageRows((rows) => {
-      const hasOtherUrls = rows.some(
-        (r) => r.key !== rowKey && r.url.trim().length > 0,
-      );
-      return rows.map((r) => {
-        if (r.key === rowKey) {
-          return {
-            ...r,
-            url: asset.url,
-            alt: r.alt.trim() || (asset.alt?.trim() ?? ""),
-            isPrimary: !hasOtherUrls,
-          };
-        }
-        if (!hasOtherUrls) {
-          return { ...r, isPrimary: false };
-        }
-        return r;
-      });
-    });
-  }
-
-  function removeImageRow(key: string) {
-    setImageRows((rows) => {
-      if (rows.length <= 1) return rows;
-      const next = rows.filter((r) => r.key !== key);
-      if (!next.some((r) => r.isPrimary)) {
-        next[0] = { ...next[0]!, isPrimary: true };
-      }
-      return next;
-    });
-  }
-
-  function addVariantRow() {
-    setVariantRows((rows) => [
-      ...rows,
-      {
-        key: newVariantKey(),
-        size: "",
-        colorId: "",
-        quantity: "1",
-        isAvailable: true,
-        allowSpecialOrder: false,
-      },
-    ]);
-  }
-
-  function removeVariantRow(key: string) {
-    setVariantRows((rows) => {
-      if (rows.length <= 1) return rows;
-      return rows.filter((r) => r.key !== key);
-    });
-  }
+  const formStatus = deriveProductAdminStatus({
+    isPublished,
+    variants: variantRows.map((r) => ({
+      isAvailable: r.isAvailable,
+      quantity: parseInt(r.quantity, 10) || 0,
+    })),
+    sizes: [],
+  });
 
   return (
     <form
@@ -862,7 +682,10 @@ function ProductForm({
       className="admin-form admin-form--wide"
       style={{ margin: "0.5rem 0 1.2rem" }}
     >
-      <h3>{initial ? "تعديل" : "جديد"}</h3>
+      <div className="admin-form__title-row">
+        <h3>{initial ? "تعديل" : "جديد"}</h3>
+        <ProductStatusBadge status={formStatus} />
+      </div>
       <label>
         العنوان (عربي)
         <input
@@ -900,99 +723,14 @@ function ProductForm({
         </AdminSelect>
       </label>
 
-      <section className="admin-media-panel" aria-labelledby="product-media-heading">
-        <h4 id="product-media-heading" className="admin-media-panel__title">
-          صور المنتج
-        </h4>
-        <div className="admin-media-panel__guidance">
-          <strong>إرشادات التصوير للملابس</strong>
-          <ul>
-            <li>النسبة المثالية: 4:5 (عرض × ارتفاع)</li>
-            <li>أفضل مقاس: 1200×1500 بكسل — الحد الأدنى: 800×1000</li>
-            <li>الصور العمودية أوضح لعرض القصّة والتفاصيل</li>
-            <li>استخدمي إضاءة موحدة وخلفية هادئة</li>
-            <li>تجنّبي الصور الأفقية الواسعة ولقطات الشاشة قدر الإمكان</li>
-          </ul>
-        </div>
-
-        {mediaPanelError ? (
-          <p className="admin-media-panel__error" role="alert">
-            {mediaPanelError}
-          </p>
-        ) : null}
-
-        {allImageUrlsEmpty ? (
-          <p className="admin-media-panel__empty">
-            أضيفي صورة واحدة على الأقل للمنتج — الصق روابط الصور (أو مسارات
-            عامة مثل /assets/…) في البطاقات أدناه.
-          </p>
-        ) : null}
-
-        {primaryEmptyButOthersFilled ? (
-          <p className="admin-hint" style={{ margin: "0 0 12px" }}>
-            الصورة المحددة كأساسية بلا رابط؛ عند الحفظ ستُعتمد أول صورة صالحة
-            تلقائيًا كأساسية، أو عيّني أساسية لصف يحتوي رابطًا.
-          </p>
-        ) : null}
-
-        <div className="admin-media-grid">
-          {imageRows.map((row, index) => (
-            <AdminProductMediaCard
-              key={row.key}
-              row={row}
-              index={index}
-              total={imageRows.length}
-              urlError={mediaUrlErrors[row.key]}
-              primaryRadioName={primaryRadioName}
-              onUrlChange={(v) => {
-                setMediaPanelError(null);
-                setMediaUrlErrors((m) => {
-                  if (!m[row.key]) return m;
-                  const next = { ...m };
-                  delete next[row.key];
-                  return next;
-                });
-                setImageRows((rows) =>
-                  rows.map((r) => (r.key === row.key ? { ...r, url: v } : r)),
-                );
-              }}
-              onAltChange={(v) =>
-                setImageRows((rows) =>
-                  rows.map((r) => (r.key === row.key ? { ...r, alt: v } : r)),
-                )
-              }
-              onSetPrimary={() => setPrimaryKey(row.key)}
-              onRemove={() => removeImageRow(row.key)}
-              onMoveUp={() => moveImageRow(row.key, -1)}
-              onMoveDown={() => moveImageRow(row.key, 1)}
-              disableRemove={imageRows.length <= 1}
-            />
-          ))}
-        </div>
-
-        <div className="admin-product-form-actions" style={{ marginTop: 8 }}>
-          <AdminButton type="button" variant="primary" onClick={addImageRow}>
-            + إضافة صورة
-          </AdminButton>
-          <AdminButton type="button" variant="secondary" onClick={addImageFromLibrary}>
-            إضافة صورة من المكتبة
-          </AdminButton>
-        </div>
-
-        {libraryPickerRowKey ? (
-          <MediaPicker
-            open
-            onClose={() => setLibraryPickerRowKey(null)}
-            title="صورة منتج من المكتبة"
-            defaultUsageType="PRODUCT_IMAGE"
-            defaultFolder="products"
-            onSelect={(asset) => {
-              applyLibrarySelection(libraryPickerRowKey, asset);
-              setLibraryPickerRowKey(null);
-            }}
-          />
-        ) : null}
-      </section>
+      <ProductGalleryEditor
+        rows={imageRows}
+        urlErrors={mediaUrlErrors}
+        panelError={mediaPanelError}
+        onRowsChange={setImageRows}
+        onUrlErrorsChange={setMediaUrlErrors}
+        onPanelErrorChange={setMediaPanelError}
+      />
 
       <label>
         السعر (اختياري — رقم موجب)
@@ -1027,165 +765,7 @@ function ProductForm({
         </select>
       </label>
 
-      <div
-        style={{
-          marginTop: 14,
-          padding: "12px 12px",
-          borderRadius: 12,
-          border: "1px solid rgba(185,133,111,0.35)",
-        }}
-      >
-        <div style={{ fontWeight: 800, marginBottom: 8, color: "#d7c9c2" }}>
-          المقاسات والتوفر
-        </div>
-        <p className="admin-hint" style={{ marginTop: 0 }}>
-          الكمية 0 أو إلغاء «متاح» يظهر المقاس للزبائن كغير متوفر. «طلب خاص»
-          يسمح برسالة واتساب لطلب غير متوفر.
-        </p>
-        {variantRows.map((row) => {
-          const qtyNum = parseInt(row.quantity.trim(), 10);
-          const qtyZero = Number.isFinite(qtyNum) && qtyNum <= 0;
-          const sellableHint =
-            qtyZero && row.isAvailable
-              ? "الكمية 0 — لن يظهر هذا المقاس متاحًا للزبائن حتى تزيدي الكمية أو تفعّلي «طلب خاص»."
-              : qtyZero
-                ? "الكمية 0 — غير متوفر للبيع."
-                : null;
-          return (
-          <div
-            key={row.key}
-            style={{
-              display: "grid",
-              gap: 8,
-              marginBottom: 10,
-              padding: 10,
-              borderRadius: 10,
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
-          >
-            <label style={{ margin: 0 }}>
-              المقاس
-              <input
-                value={row.size}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setVariantRows((rows) =>
-                    rows.map((r) =>
-                      r.key === row.key ? { ...r, size: v } : r,
-                    ),
-                  );
-                }}
-                required
-              />
-            </label>
-            <label style={{ margin: 0 }}>
-              الكمية
-              <input
-                type="number"
-                min={0}
-                value={row.quantity}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setVariantRows((rows) =>
-                    rows.map((r) =>
-                      r.key === row.key ? { ...r, quantity: v } : r,
-                    ),
-                  );
-                }}
-              />
-            </label>
-            <label style={{ margin: 0 }}>
-              لون (اختياري)
-              <select
-                value={row.colorId}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setVariantRows((rows) =>
-                    rows.map((r) =>
-                      r.key === row.key ? { ...r, colorId: v } : r,
-                    ),
-                  );
-                }}
-              >
-                <option value="">— بدون —</option>
-                {colors.map((c) => {
-                  const archived = Boolean(c.deletedAt);
-                  if (archived && row.colorId !== c.id) return null;
-                  return (
-                    <option key={c.id} value={c.id}>
-                      {c.label}
-                      {archived ? " (مؤرشف)" : ""}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
-            <label
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-                margin: 0,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={row.isAvailable}
-                onChange={(e) => {
-                  const v = e.target.checked;
-                  setVariantRows((rows) =>
-                    rows.map((r) =>
-                      r.key === row.key ? { ...r, isAvailable: v } : r,
-                    ),
-                  );
-                }}
-              />
-              متاح للبيع
-            </label>
-            <label
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-                margin: 0,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={row.allowSpecialOrder}
-                onChange={(e) => {
-                  const v = e.target.checked;
-                  setVariantRows((rows) =>
-                    rows.map((r) =>
-                      r.key === row.key ? { ...r, allowSpecialOrder: v } : r,
-                    ),
-                  );
-                }}
-              />
-              طلب خاص عبر واتساب عند عدم التوفر
-            </label>
-            {sellableHint ? (
-              <p className="admin-hint" style={{ margin: 0, color: "#e8b4a0" }}>
-                {sellableHint}
-              </p>
-            ) : null}
-            <AdminButton
-              type="button"
-              variant="ghost"
-              onClick={() => removeVariantRow(row.key)}
-              disabled={variantRows.length <= 1}
-            >
-              حذف الصف
-            </AdminButton>
-          </div>
-          );
-        })}
-        <AdminButton type="button" variant="secondary" onClick={addVariantRow}>
-          + صف مقاس
-        </AdminButton>
-      </div>
+      <ProductVariantEditor rows={variantRows} colors={colors} onChange={setVariantRows} />
 
       <div>
         <div style={{ fontWeight: 800, fontSize: "0.9rem", color: "#d7c9c2" }}>

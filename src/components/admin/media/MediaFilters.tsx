@@ -7,6 +7,7 @@ import {
   AdminSelect,
 } from "@/components/admin/AdminPrimitives";
 import type { MediaUIFilters } from "@/lib/admin/media-ui";
+import type { SortDirection } from "@/lib/admin/list-client";
 import {
   DEFAULT_MEDIA_UI_FILTERS,
   MEDIA_ARCHIVED_OPTIONS,
@@ -18,10 +19,12 @@ import type { MediaUsageType } from "@/generated/prisma/client";
 type Props = {
   filters: MediaUIFilters;
   onChange: (next: MediaUIFilters) => void;
+  sort: SortDirection;
+  onSortChange: (v: SortDirection) => void;
   disabled?: boolean;
 };
 
-export function MediaFilters({ filters, onChange, disabled }: Props) {
+export function MediaFilters({ filters, onChange, sort, onSortChange, disabled }: Props) {
   return (
     <div className="admin-media-lib-filters" role="search">
       <AdminField label="نوع الاستخدام" htmlFor="media-filter-usage">
@@ -78,6 +81,18 @@ export function MediaFilters({ filters, onChange, disabled }: Props) {
               {o.label}
             </option>
           ))}
+        </AdminSelect>
+      </AdminField>
+
+      <AdminField label="ترتيب" htmlFor="media-filter-sort">
+        <AdminSelect
+          id="media-filter-sort"
+          value={sort}
+          disabled={disabled}
+          onChange={(e) => onSortChange(e.target.value as SortDirection)}
+        >
+          <option value="newest">الأحدث أولًا</option>
+          <option value="oldest">الأقدم أولًا</option>
         </AdminSelect>
       </AdminField>
 

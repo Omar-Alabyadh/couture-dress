@@ -20,6 +20,7 @@ export type AdminProductJson = {
   currency: string;
   category: string;
   isPublished: boolean;
+  deletedAt: string | null;
   sizes: string[];
   brandDesignerId: string | null;
   brandDesigner: {
@@ -38,6 +39,8 @@ export type AdminProductJson = {
     sortOrder: number;
   }[];
   variants: ProductVariantAdminJson[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type ProductWithColorsImagesVariants = Prisma.CollectionItemGetPayload<{
@@ -62,6 +65,7 @@ export function serializeProductForAdmin(
     currency: row.currency || "LYD",
     category: row.category,
     isPublished: row.isPublished,
+    deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
     sizes: row.sizes ?? [],
     brandDesignerId: row.brandDesignerId ?? null,
     brandDesigner: bd
@@ -100,5 +104,7 @@ export function serializeProductForAdmin(
       allowSpecialOrder: v.allowSpecialOrder,
       sortOrder: v.sortOrder,
     })),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
   };
 }

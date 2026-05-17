@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminListToolbar } from "@/components/admin/AdminListToolbar";
+import {
+  normalizeSearch,
+  paginateList,
+  sortByDateString,
+  type SortDirection,
+} from "@/lib/admin/list-client";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
@@ -32,7 +39,16 @@ type Brand = {
   isPublished: boolean;
   sortOrder: number;
   deletedAt: string | null;
+  createdAt: string;
 };
+
+const PAGE_SIZE = 12;
+const BRAND_STATUS_OPTIONS = [
+  { value: "all", label: "كل الحالات" },
+  { value: "published", label: "منشور" },
+  { value: "draft", label: "مسودة" },
+  { value: "archived", label: "مؤرشف" },
+];
 
 function typeLabel(t: Brand["type"]) {
   return t === "BRAND" ? "ماركة" : "مصمم";
@@ -202,6 +218,10 @@ export default function AdminBrandsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Brand | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sort, setSort] = useState<SortDirection>("newest");
+  const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -283,6 +303,32 @@ export default function AdminBrandsPage() {
     pushToast(b.isPublished ? "أُخفيت عن العامة." : "أُعلنت للعامة.", "success");
     await load();
   }
+
+  const filteredList = useMemo(() => {
+    const q = normalizeSearch(search);
+    let rows = [...list];
+    if (q) {
+      rows = rows.filter(
+        (b) =>
+          b.nameAr.toLowerCase().includes(q) ||
+          (b.nameEn?.toLowerCase().includes(q) ?? false) ||
+          (b.descriptionAr?.toLowerCase().includes(q) ?? false),
+      );
+    }
+    if (statusFilter === "archived") {
+      rows = rows.filter((b) => b.deletedAt);
+    } else if (statusFilter === "published") {
+      rows = rows.filter((b) => !b.deletedAt && b.isPublished);
+    } else if (statusFilter === "draft") {
+      rows = rows.filter((b) => !b.deletedAt && !b.isPublished);
+    }
+    return sortByDateString(rows, sort);
+  }, [list, search, statusFilter, sort]);
+
+  const paginated = useMemo(
+    () => paginateList(filteredList, page, PAGE_SIZE),
+    [filteredList, page],
+  );
 
   return (
     <div className="admin-page admin-page--wide" dir="rtl">
@@ -397,7 +443,32 @@ export default function AdminBrandsPage() {
         ) : null}
 
         {!loadError && list.length > 0 ? (
-          <AdminTable style={{ marginTop: 20 }}>
+          <>
+            <AdminListToolbar
+              searchValue={search}
+              onSearchChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
+              searchPlaceholder="بحث بالاسم…"
+              sort={sort}
+              onSortChange={(v) => {
+                setSort(v);
+                setPage(1);
+              }}
+              page={paginated.page}
+              totalPages={paginated.totalPages}
+              total={paginated.total}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+              statusFilter={statusFilter}
+              onStatusFilterChange={(v) => {
+                setStatusFilter(v);
+                setPage(1);
+              }}
+              statusOptions={BRAND_STATUS_OPTIONS}
+            />
+          <AdminTable style={{ marginTop: 12 }}>
             <thead>
               <tr>
                 <th aria-label="شعار">شعار</th>
@@ -409,7 +480,7 @@ export default function AdminBrandsPage() {
               </tr>
             </thead>
             <tbody>
-              {list.map((b) => (
+              {paginated.items.map((b) => (
                 <tr key={b.id} style={{ opacity: b.deletedAt ? 0.45 : 1 }}>
                   <AdminTd label="">
                     <BrandLogoThumb url={b.logoUrl} />
@@ -464,6 +535,7 @@ export default function AdminBrandsPage() {
               ))}
             </tbody>
           </AdminTable>
+          </>
         ) : null}
       </AdminCard>
 
