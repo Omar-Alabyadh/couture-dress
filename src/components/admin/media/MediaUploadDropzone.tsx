@@ -180,6 +180,12 @@ export function MediaUploadDropzone({
         </p>
       ) : null}
 
+      {uploading && progress ? (
+        <p className="admin-upload-progress" role="status" aria-live="polite">
+          {progress}
+        </p>
+      ) : null}
+
       <AdminButton
         type="button"
         variant="secondary"
