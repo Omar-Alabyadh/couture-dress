@@ -70,7 +70,7 @@ export async function listPublicProducts(filters: PublicProductFilters) {
     const sz = filters.size.trim();
     and.push({
       OR: [
-        { sizes: { has: sz } },
+        { variants: { none: {} }, sizes: { has: sz } },
         {
           variants: {
             some: {
@@ -85,7 +85,21 @@ export async function listPublicProducts(filters: PublicProductFilters) {
   }
   if (filters.colorId) {
     and.push({
-      colors: { some: { id: filters.colorId, deletedAt: null } },
+      OR: [
+        {
+          variants: { none: {} },
+          colors: { some: { id: filters.colorId, deletedAt: null } },
+        },
+        {
+          variants: {
+            some: {
+              colorId: filters.colorId,
+              isAvailable: true,
+              quantity: { gt: 0 },
+            },
+          },
+        },
+      ],
     });
   }
   return prisma.collectionItem.findMany({

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { MediaUsageType } from "@/generated/prisma/client";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
@@ -23,8 +24,14 @@ const SEARCH_DEBOUNCE_MS = 350;
 export default function AdminMediaLibraryPage() {
   const { pushToast } = useAdminToast();
   const { requestConfirm } = useAdminConfirm();
+  const searchParams = useSearchParams();
 
-  const [filters, setFilters] = useState<MediaUIFilters>(DEFAULT_MEDIA_UI_FILTERS);
+  const [filters, setFilters] = useState<MediaUIFilters>(() => {
+    if (searchParams.get("archived") === "true") {
+      return { ...DEFAULT_MEDIA_UI_FILTERS, archived: "true" };
+    }
+    return DEFAULT_MEDIA_UI_FILTERS;
+  });
   const [debouncedFilters, setDebouncedFilters] =
     useState<MediaUIFilters>(DEFAULT_MEDIA_UI_FILTERS);
   const [uploadUsageType, setUploadUsageType] =

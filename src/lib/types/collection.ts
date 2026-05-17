@@ -48,6 +48,16 @@ export function isVariantSellable(v: Pick<ProductVariantView, "isAvailable" | "q
   return v.isAvailable && v.quantity > 0;
 }
 
+/** Product has at least one sellable variant, or legacy sizes with no variant rows. */
+export function isProductSellable(
+  item: Pick<CollectionItemView, "variants" | "sizes">,
+): boolean {
+  if (item.variants.length > 0) {
+    return item.variants.some(isVariantSellable);
+  }
+  return (item.sizes ?? []).some((s) => s.trim().length > 0);
+}
+
 export type ProductBrandDesignerView = {
   id: string;
   nameAr: string;
@@ -78,6 +88,8 @@ export type CollectionItemView = {
   availableSizes: string[];
   /** Distinct size tokens present on non-sellable variants */
   unavailableSizes: string[];
+  /** At least one sellable variant (or legacy sizes when no variants) */
+  inStock: boolean;
   /** ماركة أو مصمم مرتبط — يظهر بخفة في الواجهة عند توفره ونشره */
   brandDesigner: ProductBrandDesignerView | null;
 };

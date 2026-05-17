@@ -61,6 +61,21 @@ export default function AdminColorsPage() {
     });
   }, [load]);
 
+  async function restoreColor(c: Color) {
+    const r = await fetch(`/api/admin/colors/${c.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restore: true }),
+    });
+    if (!r.ok) {
+      const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+      pushToast(msg, "error");
+      return;
+    }
+    pushToast("تم الاسترجاع.", "success");
+    await load();
+  }
+
   async function archiveColor(c: Color) {
     const ok = await requestConfirm({
       title: "أرشفة اللون",
@@ -184,7 +199,15 @@ export default function AdminColorsPage() {
                     {c.hex ? `#${c.hex}` : "—"}
                   </td>
                   <td>
-                    {c.deletedAt ? null : (
+                    {c.deletedAt ? (
+                      <AdminButton
+                        type="button"
+                        variant="primary"
+                        onClick={() => void restoreColor(c)}
+                      >
+                        استرجاع
+                      </AdminButton>
+                    ) : (
                       <AdminButton
                         type="button"
                         variant="danger"

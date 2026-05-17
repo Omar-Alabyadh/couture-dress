@@ -29,6 +29,27 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 400 });
   }
 
+  if (json.restore === true) {
+    try {
+      const row = await prisma.testimonial.update({
+        where: { id },
+        data: { deletedAt: null },
+      });
+      await logAudit({
+        userId: r.session!.user.id,
+        action: "RESTORE",
+        entityType: "Testimonial",
+        entityId: id,
+        metadata: { customerName: row.customerName },
+        ip,
+      });
+      return NextResponse.json({ data: row });
+    } catch (e) {
+      console.error(e);
+      return NextResponse.json({ error: "تعذر الاسترجاع" }, { status: 400 });
+    }
+  }
+
   if (json.softDelete === true) {
     try {
       const row = await prisma.testimonial.update({

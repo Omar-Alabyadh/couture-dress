@@ -680,7 +680,7 @@ function ProductForm({
         size: sz,
         colorId: row.colorId.trim() ? row.colorId.trim() : null,
         quantity: q,
-        isAvailable: row.isAvailable,
+        isAvailable: q > 0 && row.isAvailable,
         allowSpecialOrder: row.allowSpecialOrder,
       });
     }
@@ -1037,7 +1037,16 @@ function ProductForm({
           الكمية 0 أو إلغاء «متاح» يظهر المقاس للزبائن كغير متوفر. «طلب خاص»
           يسمح برسالة واتساب لطلب غير متوفر.
         </p>
-        {variantRows.map((row) => (
+        {variantRows.map((row) => {
+          const qtyNum = parseInt(row.quantity.trim(), 10);
+          const qtyZero = Number.isFinite(qtyNum) && qtyNum <= 0;
+          const sellableHint =
+            qtyZero && row.isAvailable
+              ? "الكمية 0 — لن يظهر هذا المقاس متاحًا للزبائن حتى تزيدي الكمية أو تفعّلي «طلب خاص»."
+              : qtyZero
+                ? "الكمية 0 — غير متوفر للبيع."
+                : null;
+          return (
           <div
             key={row.key}
             style={{
@@ -1152,6 +1161,11 @@ function ProductForm({
               />
               طلب خاص عبر واتساب عند عدم التوفر
             </label>
+            {sellableHint ? (
+              <p className="admin-hint" style={{ margin: 0, color: "#e8b4a0" }}>
+                {sellableHint}
+              </p>
+            ) : null}
             <AdminButton
               type="button"
               variant="ghost"
@@ -1161,7 +1175,8 @@ function ProductForm({
               حذف الصف
             </AdminButton>
           </div>
-        ))}
+          );
+        })}
         <AdminButton type="button" variant="secondary" onClick={addVariantRow}>
           + صف مقاس
         </AdminButton>

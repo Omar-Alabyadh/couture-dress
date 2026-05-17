@@ -69,6 +69,21 @@ export default function AdminTestimonialsPage() {
     });
   }, [load]);
 
+  async function restoreRow(t: Testimonial) {
+    const r = await fetch(`/api/admin/testimonials/${t.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restore: true }),
+    });
+    if (!r.ok) {
+      const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+      pushToast(msg, "error");
+      return;
+    }
+    pushToast("تم الاسترجاع.", "success");
+    await load();
+  }
+
   async function archiveRow(t: Testimonial) {
     const ok = await requestConfirm({
       title: "أرشفة الرأي",
@@ -284,7 +299,13 @@ export default function AdminTestimonialsPage() {
                   </td>
                   <td>
                     {t.deletedAt ? (
-                      "(مؤرشف)"
+                      <AdminButton
+                        type="button"
+                        variant="primary"
+                        onClick={() => void restoreRow(t)}
+                      >
+                        استرجاع
+                      </AdminButton>
                     ) : (
                       <AdminButton
                         type="button"

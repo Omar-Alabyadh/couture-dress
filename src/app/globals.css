@@ -620,6 +620,21 @@ html::-webkit-scrollbar-corner {
   }
 }
 
+.product-card__stock {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.product-card__stock--out {
+  color: #c9a090;
+}
+
+.product-card__order-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .product-card__brand {
   margin: 0 0 6px;
   font-size: 0.72rem;

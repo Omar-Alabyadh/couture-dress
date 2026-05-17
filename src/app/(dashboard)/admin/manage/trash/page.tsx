@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
@@ -14,30 +15,49 @@ import {
   AdminTable,
 } from "@/components/admin/AdminPrimitives";
 
-type Row = {
+type TrashEntityType =
+  | "product"
+  | "brand"
+  | "testimonial"
+  | "color"
+  | "media";
+
+type TrashRow = {
+  entityType: TrashEntityType;
   id: string;
-  titleAr: string;
-  deletedAt: string | null;
-  updatedAt: string;
+  label: string;
+  archivedAt: string;
+  moduleHref: string;
+  moduleLabel: string;
+  field: string;
+};
+
+const TYPE_LABELS: Record<TrashEntityType, string> = {
+  product: "منتج",
+  brand: "ماركة / مصمم",
+  testimonial: "رأي عميل",
+  color: "لون",
+  media: "وسيط",
 };
 
 export default function AdminTrashPage() {
   const { pushToast } = useAdminToast();
-  const [list, setList] = useState<Row[]>([]);
+  const [list, setList] = useState<TrashRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const r = await fetch("/api/admin/trash/products", { cache: "no-store" });
+      const r = await fetch("/api/admin/trash", { cache: "no-store" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         setLoadError(msg);
         setList([]);
       } else {
-        const j = (await r.json()) as { data: Row[] };
+        const j = (await r.json()) as { data: TrashRow[] };
         setList(j.data);
       }
     } catch {
@@ -54,13 +74,39 @@ export default function AdminTrashPage() {
     });
   }, [load]);
 
+  async function restoreRow(row: TrashRow) {
+    const key = `${row.entityType}:${row.id}`;
+    setRestoringId(key);
+    try {
+      const r = await fetch("/api/admin/trash/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entityType: row.entityType, id: row.id }),
+      });
+      if (!r.ok) {
+        const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+        pushToast(msg, "error");
+        return;
+      }
+      pushToast("تم الاسترجاع.", "success");
+      await load();
+    } finally {
+      setRestoringId(null);
+    }
+  }
+
   return (
-    <div dir="rtl" style={{ maxWidth: 720 }}>
+    <div className="admin-page" dir="rtl" style={{ maxWidth: 900 }}>
       <AdminCard>
         <AdminSectionHeader
-          title="أرشيف المنتجات (محذوفة ناعمًا)"
-          description="استرجاع المنتج يعيده إلى القائمة النشطة."
+          title="الأرشيف الموحّد"
+          description="استرجاع المحتوى المؤرشف دون حذف نهائي. وسائط Supabase تُدار أيضًا من مكتبة الوسائط (فلتر «مؤرشفة»)."
         />
+
+        <p className="admin-hint" style={{ marginBottom: 12 }}>
+          <Link href="/admin/manage/media">مكتبة الوسائط</Link>
+          {" — للوسائط المؤرشفة والمعاينة."}
+        </p>
 
         {loadError ? (
           <AdminErrorState message={loadError} onRetry={() => void load()} />
@@ -69,50 +115,49 @@ export default function AdminTrashPage() {
         {loading && !loadError ? <AdminLoadingState /> : null}
 
         {!loading && !loadError && list.length === 0 ? (
-          <AdminEmptyState title="فارغ." description="لا توجد منتجات في الأرشيف." />
+          <AdminEmptyState
+            title="الأرشيف فارغ"
+            description="لا توجد عناصر مؤرشفة حاليًا."
+          />
         ) : null}
 
         {!loading && !loadError && list.length > 0 ? (
           <AdminTable style={{ marginTop: 10 }}>
             <thead>
               <tr>
-                <th>عنوان</th>
-                <th>توقيت الحذف</th>
+                <th>النوع</th>
+                <th>الاسم</th>
+                <th>تاريخ الأرشفة</th>
+                <th>المصدر</th>
                 <th>—</th>
               </tr>
             </thead>
             <tbody>
-              {list.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.titleAr}</td>
-                  <td>
-                    {p.deletedAt
-                      ? new Date(p.deletedAt).toLocaleString("ar-LY")
-                      : "—"}
-                  </td>
-                  <td>
-                    <AdminButton
-                      type="button"
-                      variant="primary"
-                      onClick={async () => {
-                        const r = await fetch(`/api/admin/products/${p.id}/restore`, {
-                          method: "POST",
-                        });
-                        if (!r.ok) {
-                          const msg =
-                            (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
-                          pushToast(msg, "error");
-                          return;
-                        }
-                        pushToast("تم استرجاع المنتج.", "success");
-                        await load();
-                      }}
-                    >
-                      استرجاع
-                    </AdminButton>
-                  </td>
-                </tr>
-              ))}
+              {list.map((row) => {
+                const key = `${row.entityType}:${row.id}`;
+                return (
+                  <tr key={key}>
+                    <td>{TYPE_LABELS[row.entityType]}</td>
+                    <td>{row.label}</td>
+                    <td>
+                      {new Date(row.archivedAt).toLocaleString("ar-LY")}
+                    </td>
+                    <td>
+                      <Link href={row.moduleHref}>{row.moduleLabel}</Link>
+                    </td>
+                    <td>
+                      <AdminButton
+                        type="button"
+                        variant="primary"
+                        disabled={restoringId === key}
+                        onClick={() => void restoreRow(row)}
+                      >
+                        استرجاع
+                      </AdminButton>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </AdminTable>
         ) : null}

@@ -229,6 +229,21 @@ export default function AdminBrandsPage() {
     });
   }, [load]);
 
+  async function restoreRow(b: Brand) {
+    const r = await fetch(`/api/admin/brands/${b.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restore: true }),
+    });
+    if (!r.ok) {
+      const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+      pushToast(msg, "error");
+      return;
+    }
+    pushToast("تم الاسترجاع.", "success");
+    await load();
+  }
+
   async function archiveRow(b: Brand) {
     const ok = await requestConfirm({
       title: "أرشفة السجل",
@@ -414,7 +429,13 @@ export default function AdminBrandsPage() {
                   </td>
                   <td>
                     {b.deletedAt ? (
-                      "(مؤرشف)"
+                      <AdminButton
+                        type="button"
+                        variant="primary"
+                        onClick={() => void restoreRow(b)}
+                      >
+                        استرجاع
+                      </AdminButton>
                     ) : (
                       <>
                         <AdminButton

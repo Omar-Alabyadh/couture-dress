@@ -219,8 +219,9 @@ export function normalizeProductVariantsInput(
     if (!Number.isFinite(quantity) || quantity < 0 || quantity > 999_999) {
       return { ok: false };
     }
-    const isAvailable = Boolean(o.isAvailable);
+    let isAvailable = Boolean(o.isAvailable);
     const allowSpecialOrder = Boolean(o.allowSpecialOrder);
+    if (quantity <= 0) isAvailable = false;
     const key = `${size.toLowerCase()}__${colorId ?? ""}`;
     if (seen.has(key)) return { ok: false };
     seen.add(key);

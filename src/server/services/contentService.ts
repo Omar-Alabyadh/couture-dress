@@ -17,7 +17,7 @@ import type {
   PublicBrandStripItem,
   PublicTestimonialHome,
 } from "@/lib/types/home-cms";
-import { isVariantSellable } from "@/lib/types/collection";
+import { isProductSellable, isVariantSellable } from "@/lib/types/collection";
 import {
   listCollectionItems,
   listPublicProducts,
@@ -173,6 +173,7 @@ function mapCollectionItem(
     variants,
     availableSizes,
     unavailableSizes,
+    inStock: isProductSellable({ variants, sizes: row.sizes ?? [] }),
     brandDesigner: mapPublicBrandDesigner(row.brandDesigner),
   };
 }
@@ -196,18 +197,24 @@ export async function getFilterSizes(): Promise<string[]> {
     where: { isPublished: true, deletedAt: null },
     select: {
       sizes: true,
-      variants: { select: { size: true } },
+      variants: {
+        where: { isAvailable: true, quantity: { gt: 0 } },
+        select: { size: true },
+      },
     },
   });
   const set = new Set<string>();
   for (const r of rows) {
-    for (const v of r.variants) {
-      const t = v.size.trim();
-      if (t) set.add(t);
-    }
-    for (const z of r.sizes) {
-      const t = z.trim();
-      if (t) set.add(t);
+    if (r.variants.length > 0) {
+      for (const v of r.variants) {
+        const t = v.size.trim();
+        if (t) set.add(t);
+      }
+    } else {
+      for (const z of r.sizes) {
+        const t = z.trim();
+        if (t) set.add(t);
+      }
     }
   }
   return Array.from(set).sort((a, b) => a.localeCompare(b, "ar"));

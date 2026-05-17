@@ -90,6 +90,53 @@ function displayVariantsForProduct(item: CollectionItemView): ProductVariantView
   }));
 }
 
+function productHasSpecialOrderOption(item: CollectionItemView): boolean {
+  return displayVariantsForProduct(item).some(
+    (v) => !isVariantSellable(v) && v.allowSpecialOrder,
+  );
+}
+
+function defaultVariantIdForProduct(item: CollectionItemView): string | null {
+  const rows = displayVariantsForProduct(item);
+  const sellable = rows.find(isVariantSellable);
+  if (sellable) return sellable.id;
+  const special = rows.find((v) => !isVariantSellable(v) && v.allowSpecialOrder);
+  return special?.id ?? rows[0]?.id ?? null;
+}
+
+function canOrderProduct(
+  item: CollectionItemView,
+  selectedVariantId: string | null,
+): boolean {
+  if (!item.inStock && !productHasSpecialOrderOption(item)) return false;
+  const rows = displayVariantsForProduct(item);
+  if (rows.length === 0) return item.inStock;
+  const v = selectedVariantId
+    ? rows.find((r) => r.id === selectedVariantId) ?? null
+    : null;
+  if (!v) return item.inStock || productHasSpecialOrderOption(item);
+  if (isVariantSellable(v)) return true;
+  return Boolean(v.allowSpecialOrder);
+}
+
+function orderButtonLabel(
+  item: CollectionItemView,
+  selectedVariantId: string | null,
+): string {
+  if (!item.inStock && !productHasSpecialOrderOption(item)) {
+    return "غير متوفر حاليًا";
+  }
+  const rows = displayVariantsForProduct(item);
+  const v = selectedVariantId
+    ? rows.find((r) => r.id === selectedVariantId) ?? null
+    : null;
+  if (v && !isVariantSellable(v) && v.allowSpecialOrder) {
+    return "طلب خاص عبر واتساب";
+  }
+  if (v && !isVariantSellable(v)) return "استفسار عبر واتساب";
+  return "اطلبي عبر واتساب";
+}
+
 function productWhatsappTemplateKind(
   item: CollectionItemView,
   selectedVariantId: string | null,
@@ -411,7 +458,12 @@ export default function ProductsPage({
                 لا توجد نتائج. جرّبي تخفيف الفلتر.
               </p>
             ) : null}
-            {items.map((item, idx) => (
+            {items.map((item, idx) => {
+              const selectedId =
+                selectedVariantByProduct[item.id] ??
+                defaultVariantIdForProduct(item);
+              const orderEnabled = canOrderProduct(item, selectedId);
+              return (
               <Reveal
                 key={item.id}
                 variant="zoom"
@@ -440,6 +492,11 @@ export default function ProductsPage({
                     <p className="product-card__price">
                       {formatProductPriceDisplay(item.price, item.currency)}
                     </p>
+                    {!item.inStock ? (
+                      <p className="product-card__stock product-card__stock--out">
+                        غير متوفر حاليًا
+                      </p>
+                    ) : null}
                     {item.colors.length > 0 ? (
                       <div className="product-card__chips" aria-label="الألوان">
                         {item.colors.map((c) => (
@@ -467,8 +524,7 @@ export default function ProductsPage({
                       >
                         {displayVariantsForProduct(item).map((v) => {
                           const sellable = isVariantSellable(v);
-                          const selected =
-                            selectedVariantByProduct[item.id] === v.id;
+                          const selected = selectedId === v.id;
                           const cls = [
                             "product-size-pill",
                             selected ? "product-size-pill--selected" : "",
@@ -518,26 +574,23 @@ export default function ProductsPage({
                     <button
                       className="btn btn--small btn--primary product-card__order-btn"
                       type="button"
+                      disabled={!orderEnabled}
                       data-track="whatsapp_click"
                       data-product-id={item.id}
                       data-product-name={item.title}
                       data-whatsapp-template={productWhatsappTemplateKind(
                         item,
-                        selectedVariantByProduct[item.id] ?? null,
+                        selectedId,
                       )}
-                      onClick={() =>
-                        orderProduct(
-                          item,
-                          selectedVariantByProduct[item.id] ?? null,
-                        )
-                      }
+                      onClick={() => orderProduct(item, selectedId)}
                     >
-                      اطلبي عبر واتساب
+                      {orderButtonLabel(item, selectedId)}
                     </button>
                   </div>
                 </article>
               </Reveal>
-            ))}
+              );
+            })}
           </div>
         </div>
       </main>
