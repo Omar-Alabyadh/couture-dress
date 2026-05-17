@@ -7,6 +7,7 @@ import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import { AdminCard, AdminSectionHeader } from "@/components/admin/AdminPrimitives";
 import { MediaFilters } from "@/components/admin/media/MediaFilters";
 import { MediaGrid } from "@/components/admin/media/MediaGrid";
+import { MediaLibraryStatsStrip } from "@/components/admin/media/MediaLibraryStatsStrip";
 import { MediaUploadDropzone } from "@/components/admin/media/MediaUploadDropzone";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import {
@@ -34,6 +35,7 @@ export default function AdminMediaLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [statsRefreshKey, setStatsRefreshKey] = useState(0);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -94,16 +96,40 @@ export default function AdminMediaLibraryPage() {
   }, [fetchPage]);
 
   const handleConfirmArchive = useCallback(
-    async (asset: MediaAssetDto) =>
-      requestConfirm({
+    async (asset: MediaAssetDto) => {
+      let message = `هل تريدين أرشفة «${asset.originalFilename}»؟ لن يُحذف من التخزين في هذه المرحلة.`;
+      try {
+        const r = await fetch(`/api/admin/media/${asset.id}/usage`, {
+          cache: "no-store",
+        });
+        if (r.ok) {
+          const j = (await r.json()) as {
+            data: { totalReferences: number };
+          };
+          const n = j.data.totalReferences;
+          if (n > 0) {
+            message = `هذه الصورة مستخدمة في ${n} موضع. أرشفتها قد تكسر الصور في الموقع.\n\nهل تريدين المتابعة؟`;
+          } else {
+            message = `هذه الصورة غير مستخدمة حاليًا.\n\nهل تريدين أرشفتها؟`;
+          }
+        }
+      } catch {
+        /* keep default message */
+      }
+      return requestConfirm({
         title: "أرشفة الوسيط",
-        message: `هل تريدين أرشفة «${asset.originalFilename}»؟ لن يُحذف من التخزين في هذه المرحلة.`,
+        message,
         confirmLabel: "أرشِفي",
         cancelLabel: "إلغاء",
         destructive: true,
-      }),
+      });
+    },
     [requestConfirm],
   );
+
+  const bumpStats = useCallback(() => {
+    setStatsRefreshKey((k) => k + 1);
+  }, []);
 
   return (
     <div className="admin-page" dir="rtl">
@@ -122,12 +148,14 @@ export default function AdminMediaLibraryPage() {
               "success",
             );
             await refreshList();
+            bumpStats();
           }}
         />
       </AdminCard>
 
       <AdminCard className="admin-media-lib-layout">
         <h2 className="admin-media-lib-section-title">تصفية وعرض</h2>
+        <MediaLibraryStatsStrip refreshKey={statsRefreshKey} />
         <MediaFilters
           filters={filters}
           disabled={loading && items.length === 0}
@@ -143,7 +171,10 @@ export default function AdminMediaLibraryPage() {
           onLoadMore={() => {
             if (nextCursor) void fetchPage(nextCursor, true);
           }}
-          onUpdated={refreshList}
+          onUpdated={async () => {
+            await refreshList();
+            bumpStats();
+          }}
           onToast={(message, kind) => pushToast(message, kind)}
           onConfirmArchive={handleConfirmArchive}
         />

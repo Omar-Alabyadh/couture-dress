@@ -16,7 +16,7 @@ import {
   AdminSelect,
   AdminTable,
 } from "@/components/admin/AdminPrimitives";
-import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
+import { MediaPicker, MediaPickerButton } from "@/components/admin/media/MediaPicker";
 
 type ColorRow = { id: string; label: string; deletedAt: string | null };
 type BrandRow = {
@@ -583,6 +583,9 @@ function ProductForm({
   const [mediaUrlErrors, setMediaUrlErrors] = useState<Record<string, string>>(
     () => ({}),
   );
+  const [libraryPickerRowKey, setLibraryPickerRowKey] = useState<string | null>(
+    null,
+  );
 
   const brandSelectOptions = useMemo(() => {
     const active = brands.filter((b) => !b.deletedAt && b.isPublished);
@@ -773,6 +776,49 @@ function ProductForm({
     ]);
   }
 
+  function addImageFromLibrary() {
+    const key = newKey();
+    setImageRows((rows) => {
+      const hasAnyUrl = rows.some((r) => r.url.trim().length > 0);
+      return [
+        ...rows,
+        {
+          key,
+          url: "",
+          alt: "",
+          isPrimary: !hasAnyUrl && rows.length === 0,
+        },
+      ];
+    });
+    setLibraryPickerRowKey(key);
+  }
+
+  function applyLibrarySelection(
+    rowKey: string,
+    asset: { url: string; alt: string | null },
+  ) {
+    setMediaPanelError(null);
+    setImageRows((rows) => {
+      const hasOtherUrls = rows.some(
+        (r) => r.key !== rowKey && r.url.trim().length > 0,
+      );
+      return rows.map((r) => {
+        if (r.key === rowKey) {
+          return {
+            ...r,
+            url: asset.url,
+            alt: r.alt.trim() || (asset.alt?.trim() ?? ""),
+            isPrimary: !hasOtherUrls,
+          };
+        }
+        if (!hasOtherUrls) {
+          return { ...r, isPrimary: false };
+        }
+        return r;
+      });
+    });
+  }
+
   function removeImageRow(key: string) {
     setImageRows((rows) => {
       if (rows.length <= 1) return rows;
@@ -919,9 +965,28 @@ function ProductForm({
           ))}
         </div>
 
-        <AdminButton type="button" variant="primary" onClick={addImageRow}>
-          + إضافة صورة
-        </AdminButton>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+          <AdminButton type="button" variant="primary" onClick={addImageRow}>
+            + إضافة صورة
+          </AdminButton>
+          <AdminButton type="button" variant="secondary" onClick={addImageFromLibrary}>
+            إضافة صورة من المكتبة
+          </AdminButton>
+        </div>
+
+        {libraryPickerRowKey ? (
+          <MediaPicker
+            open
+            onClose={() => setLibraryPickerRowKey(null)}
+            title="صورة منتج من المكتبة"
+            defaultUsageType="PRODUCT_IMAGE"
+            defaultFolder="products"
+            onSelect={(asset) => {
+              applyLibrarySelection(libraryPickerRowKey, asset);
+              setLibraryPickerRowKey(null);
+            }}
+          />
+        ) : null}
       </section>
 
       <label>

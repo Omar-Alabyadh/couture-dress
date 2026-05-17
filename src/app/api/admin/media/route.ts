@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireOwner } from "@/lib/api/admin-auth";
+import { checkMediaUploadRateLimit } from "@/lib/api/media-upload-rate-limit";
 import { getClientIp } from "@/lib/api/get-client-ip";
 import { MediaStorageConfigError } from "@/lib/media/storage";
 import {
@@ -40,6 +41,14 @@ export async function POST(req: Request) {
   const r = await requireOwner();
   if (r.error) return r.error;
   const ip = getClientIp(req);
+
+  const rate = checkMediaUploadRateLimit(r.session!.user.id);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "تم تجاوز حد الرفع مؤقتًا. حاولي لاحقًا." },
+      { status: 429 },
+    );
+  }
 
   let form: FormData;
   try {

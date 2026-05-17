@@ -20,7 +20,9 @@ import {
   AdminSelect,
 } from "@/components/admin/AdminPrimitives";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
+import { folderForUsageType } from "@/lib/media/selectors";
 import {
+  DEFAULT_MEDIA_UI_FILTERS,
   MEDIA_FOLDER_OPTIONS,
   MEDIA_USAGE_OPTIONS,
   buildMediaListQuery,
@@ -32,17 +34,21 @@ import {
   type MediaPickerSelection,
   type MediaUIFilters,
 } from "@/lib/admin/media-ui";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import type { MediaAssetDto, MediaListResult } from "@/lib/media/types";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 
 const SEARCH_DEBOUNCE_MS = 300;
-const PICKER_EMPTY_MSG =
+const PICKER_EMPTY_GLOBAL =
   "لا توجد وسائط بعد. ارفعي صورة من مكتبة الوسائط أولًا.";
+
+const PICKER_EMPTY_FILTERED =
+  "لا توجد صور بهذا التصنيف. جرّبي كل الوسائط أو ارفعي صورة جديدة.";
 
 export type MediaPickerProps = {
   open: boolean;
   onClose: () => void;
-  onSelect: (asset: MediaPickerSelection) => void;
+  onSelect: (asset: MediaPickerSelection, usageTypeSyncWarning?: string) => void;
   title?: string;
   defaultUsageType?: MediaUsageType;
   defaultFolder?: string;
@@ -142,10 +148,48 @@ export function MediaPicker({
 
   const selected = items.find((a) => a.id === selectedId) ?? null;
 
+  const hasRestrictiveFilters = Boolean(
+    debouncedFilters.usageType ||
+      debouncedFilters.folder ||
+      debouncedFilters.q.trim(),
+  );
+
+  const finalizeSelection = useCallback(
+    async (asset: MediaAssetDto) => {
+      let selection = toMediaPickerSelection(asset);
+      let warning: string | undefined;
+
+      if (defaultUsageType && asset.usageType === "GENERAL") {
+        const folder = defaultFolder ?? folderForUsageType(defaultUsageType);
+        try {
+          const r = await fetch(`/api/admin/media/${asset.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              usageType: defaultUsageType,
+              folder,
+            }),
+          });
+          if (r.ok) {
+            const j = (await r.json()) as { data: MediaAssetDto };
+            selection = toMediaPickerSelection(j.data);
+          } else {
+            warning = "تم اختيار الصورة، لكن تعذر تحديث نوع الاستخدام.";
+          }
+        } catch {
+          warning = "تم اختيار الصورة، لكن تعذر تحديث نوع الاستخدام.";
+        }
+      }
+
+      onSelect(selection, warning);
+      onClose();
+    },
+    [defaultFolder, defaultUsageType, onClose, onSelect],
+  );
+
   const confirmSelect = () => {
     if (!selected) return;
-    onSelect(toMediaPickerSelection(selected));
-    onClose();
+    void finalizeSelection(selected);
   };
 
   if (!open) return null;
@@ -239,10 +283,23 @@ export function MediaPicker({
             />
           ) : null}
           {!loading && !error && items.length === 0 ? (
-            <AdminEmptyState
-              title="لا توجد وسائط"
-              description={PICKER_EMPTY_MSG}
-            />
+            <div className="admin-picker-empty-filtered">
+              <AdminEmptyState
+                title="لا توجد وسائط"
+                description={
+                  hasRestrictiveFilters ? PICKER_EMPTY_FILTERED : PICKER_EMPTY_GLOBAL
+                }
+              />
+              {hasRestrictiveFilters ? (
+                <AdminButton
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setFilters(DEFAULT_MEDIA_UI_FILTERS)}
+                >
+                  عرض كل الوسائط النشطة
+                </AdminButton>
+              ) : null}
+            </div>
           ) : null}
           {items.length > 0 ? (
             <ul className="admin-picker-grid" role="listbox" aria-label="الوسائط">
@@ -258,8 +315,7 @@ export function MediaPicker({
                       onClick={() => setSelectedId(asset.id)}
                       onDoubleClick={() => {
                         setSelectedId(asset.id);
-                        onSelect(toMediaPickerSelection(asset));
-                        onClose();
+                        void finalizeSelection(asset);
                       }}
                     >
                       <div className="admin-picker-item__preview">
@@ -322,7 +378,7 @@ type MediaPickerButtonProps = {
   title?: string;
   defaultUsageType?: MediaUsageType;
   defaultFolder?: string;
-  onSelect: (asset: MediaPickerSelection) => void;
+  onSelect: (asset: MediaPickerSelection, usageTypeSyncWarning?: string) => void;
   variant?: "secondary" | "ghost";
   className?: string;
   children?: ReactNode;
@@ -338,6 +394,7 @@ export function MediaPickerButton({
   className = "",
 }: MediaPickerButtonProps) {
   const [open, setOpen] = useState(false);
+  const { pushToast } = useAdminToast();
 
   return (
     <>
@@ -353,9 +410,9 @@ export function MediaPickerButton({
         <MediaPicker
           open
           onClose={() => setOpen(false)}
-          onSelect={(asset) => {
+          onSelect={(asset, warning) => {
+            if (warning) pushToast(warning, "error");
             onSelect(asset);
-            setOpen(false);
           }}
           title={title}
           defaultUsageType={defaultUsageType}

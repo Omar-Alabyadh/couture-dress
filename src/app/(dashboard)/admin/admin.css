@@ -1101,3 +1101,37 @@
   border: 1px solid rgba(185, 133, 111, 0.35);
   background: rgba(255, 255, 255, 0.03);
 }
+
+.admin-media-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.82rem;
+  color: #c9bbb4;
+}
+
+.admin-media-stats--error {
+  border-color: rgba(200, 80, 80, 0.45);
+  color: #f0a0a0;
+}
+
+.admin-media-stats__item strong {
+  color: #f0e8e4;
+  font-weight: 800;
+}
+
+.admin-media-stats__item--latest {
+  min-width: 0;
+}
+
+.admin-picker-empty-filtered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}

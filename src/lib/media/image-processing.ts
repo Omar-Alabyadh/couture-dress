@@ -29,6 +29,7 @@ export async function processImageForUpload(
   usageType: MediaUsageType,
   outputBasename: string,
 ): Promise<ProcessedImage> {
+  // rotate() applies EXIF orientation, then re-encode strips GPS/camera metadata.
   let pipeline = sharp(input, { failOn: "error" }).rotate();
 
   const meta = await pipeline.metadata();
@@ -52,7 +53,9 @@ export async function processImageForUpload(
     withoutEnlargement: true,
   });
 
-  const buffer = await pipeline.webp({ quality: WEBP_QUALITY }).toBuffer();
+  const buffer = await pipeline
+    .webp({ quality: WEBP_QUALITY })
+    .toBuffer();
   const outMeta = await sharp(buffer).metadata();
   const width = outMeta.width ?? w;
   const height = outMeta.height ?? h;
