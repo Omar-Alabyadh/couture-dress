@@ -34,7 +34,9 @@ import {
 } from "@/components/admin/products/ProductGalleryEditor";
 import {
   ProductVariantEditor,
+  type VariantColorOption,
   type VariantFormRow,
+  type VariantSizeOption,
 } from "@/components/admin/products/ProductVariantEditor";
 import {
   deriveProductAdminStatus,
@@ -171,6 +173,7 @@ export default function AdminProductsPage() {
   const { requestConfirm } = useAdminConfirm();
   const [list, setList] = useState<Product[]>([]);
   const [colors, setColors] = useState<ColorRow[]>([]);
+  const [sizeOptions, setSizeOptions] = useState<VariantSizeOption[]>([]);
   const [brands, setBrands] = useState<BrandRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -188,9 +191,10 @@ export default function AdminProductsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const [p, c, b, cat] = await Promise.all([
+      const [p, c, sz, b, cat] = await Promise.all([
         fetch("/api/admin/products", { cache: "no-store" }),
         fetch("/api/admin/colors", { cache: "no-store" }),
+        fetch("/api/admin/sizes", { cache: "no-store" }),
         fetch("/api/admin/brands", { cache: "no-store" }),
         fetch("/api/admin/categories", { cache: "no-store" }),
       ]);
@@ -206,6 +210,10 @@ export default function AdminProductsPage() {
       if (c.ok) {
         const j2 = (await c.json()) as { data: ColorRow[] };
         setColors(j2.data);
+      }
+      if (sz.ok) {
+        const jSz = (await sz.json()) as { data: VariantSizeOption[] };
+        setSizeOptions(jSz.data);
       }
       if (b.ok) {
         const j3 = (await b.json()) as { data: BrandRow[] };
@@ -327,6 +335,7 @@ export default function AdminProductsPage() {
             <ProductForm
               key="create-product"
               colors={colors}
+              sizes={sizeOptions}
               brands={brands}
               categories={categories}
               onClose={() => setCreating(false)}
@@ -349,6 +358,7 @@ export default function AdminProductsPage() {
               key={editing.id}
               initial={editing}
               colors={colors}
+              sizes={sizeOptions}
               brands={brands}
               categories={categories}
               onClose={() => setEditing(null)}
@@ -528,8 +538,10 @@ function initialVariantRows(initial?: Product): VariantFormRow[] {
   if (initial?.variants && initial.variants.length > 0) {
     return initial.variants.map((v) => ({
       key: v.id,
-      size: v.size,
-      colorLabel: v.colorLabel ?? "",
+      size: v.size?.trim() || "Standard",
+      colorId: v.colorId ?? "",
+      legacyColorLabel:
+        !v.colorId && v.colorLabel?.trim() ? v.colorLabel.trim() : undefined,
       quantity: String(v.quantity),
       isAvailable: v.isAvailable,
       allowSpecialOrder: v.allowSpecialOrder,
@@ -539,8 +551,8 @@ function initialVariantRows(initial?: Product): VariantFormRow[] {
   if (sz.length > 0) {
     return sz.map((s, i) => ({
       key: `leg-${i}-${s}`,
-      size: s,
-      colorLabel: "",
+      size: s.trim() || "Standard",
+      colorId: "",
       quantity: "1",
       isAvailable: true,
       allowSpecialOrder: false,
@@ -549,8 +561,8 @@ function initialVariantRows(initial?: Product): VariantFormRow[] {
   return [
     {
       key: newVariantKey(),
-      size: "",
-      colorLabel: "",
+      size: "Standard",
+      colorId: "",
       quantity: "1",
       isAvailable: true,
       allowSpecialOrder: false,
@@ -566,6 +578,7 @@ const CURRENCY_OPTIONS = [
 function ProductForm({
   initial,
   colors,
+  sizes,
   brands,
   categories,
   onClose,
@@ -573,6 +586,7 @@ function ProductForm({
 }: {
   initial?: Product;
   colors: ColorRow[];
+  sizes: VariantSizeOption[];
   brands: BrandRow[];
   categories: { slug: string; nameAr: string }[];
   onClose: () => void;
@@ -671,12 +685,17 @@ function ProductForm({
       isAvailable: boolean;
       allowSpecialOrder: boolean;
     }[] = [];
+    const isAccessories = category === "accessories";
     for (const row of variantRows) {
-      const sz = row.size.trim();
+      let sz = row.size.trim();
       if (!sz) {
-        pushToast("كل صف يجب أن يحتوي مقاسًا.", "error");
-        setLoading(false);
-        return;
+        if (isAccessories) {
+          sz = "Standard";
+        } else {
+          pushToast("اختر مقاسًا لكل صف.", "error");
+          setLoading(false);
+          return;
+        }
       }
       const q = parseInt(row.quantity.trim(), 10);
       if (!Number.isFinite(q) || q < 0 || q > 999999) {
@@ -684,10 +703,12 @@ function ProductForm({
         setLoading(false);
         return;
       }
+      const colorId = row.colorId.trim() || null;
+      const legacyLabel = row.legacyColorLabel?.trim() || null;
       variantsPayload.push({
         size: sz,
-        colorId: null,
-        colorLabel: row.colorLabel.trim() ? row.colorLabel.trim() : null,
+        colorId,
+        colorLabel: colorId ? null : legacyLabel,
         quantity: q,
         isAvailable: q > 0 && row.isAvailable,
         allowSpecialOrder: row.allowSpecialOrder,
@@ -695,7 +716,7 @@ function ProductForm({
     }
     const keys = new Set<string>();
     for (const v of variantsPayload) {
-      const k = `${v.size.toLowerCase()}__${v.colorLabel ?? ""}`;
+      const k = `${v.size.toLowerCase()}__${v.colorId ?? v.colorLabel ?? ""}`;
       if (keys.has(k)) {
         pushToast("لا تكرّر نفس المقاس مع نفس اللون في صفين.", "error");
         setLoading(false);
@@ -878,6 +899,8 @@ function ProductForm({
       <ProductVariantEditor
         rows={variantRows}
         onChange={setVariantRows}
+        colors={colors as VariantColorOption[]}
+        sizes={sizes}
         allowEmptySize={category === "accessories"}
       />
 

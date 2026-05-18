@@ -21,6 +21,7 @@ type TrashEntityType =
   | "brand"
   | "testimonial"
   | "color"
+  | "size"
   | "media"
   | "category";
 
@@ -39,6 +40,7 @@ const TYPE_LABELS: Record<TrashEntityType, string> = {
   brand: "ماركة / مصمم",
   testimonial: "رأي عميل",
   color: "لون",
+  size: "مقاس",
   media: "وسيط",
   category: "قسم",
 };

@@ -1,21 +1,40 @@
 "use client";
 
-import { AdminButton } from "@/components/admin/AdminPrimitives";
+import { AdminButton, AdminSelect } from "@/components/admin/AdminPrimitives";
+import { SIZE_TYPE_LABELS } from "@/lib/admin/default-size-options";
 import { variantRowSellable } from "@/lib/admin/product-status";
 
 export type VariantFormRow = {
   key: string;
   size: string;
-  colorLabel: string;
+  colorId: string;
+  /** Legacy free-text color when no colorId match */
+  legacyColorLabel?: string;
   quantity: string;
   isAvailable: boolean;
   allowSpecialOrder: boolean;
 };
 
+export type VariantColorOption = {
+  id: string;
+  label: string;
+  hex: string | null;
+  deletedAt?: string | null;
+};
+
+export type VariantSizeOption = {
+  id: string;
+  label: string;
+  type: "STANDARD" | "LETTER" | "NUMBER";
+  archivedAt?: string | null;
+};
+
 type ProductVariantEditorProps = {
   rows: VariantFormRow[];
   onChange: (rows: VariantFormRow[]) => void;
-  /** When true, size/color rows are optional (e.g. accessories). */
+  colors: VariantColorOption[];
+  sizes: VariantSizeOption[];
+  /** When true, size is optional (e.g. accessories) — defaults to Standard when empty. */
   allowEmptySize?: boolean;
 };
 
@@ -32,18 +51,77 @@ function patchRow(
   return rows.map((r) => (r.key === key ? { ...r, ...patch } : r));
 }
 
+function adminSizeLabel(label: string): string {
+  if (label.toLowerCase() === "standard") return "مقاس واحد (Standard)";
+  return label;
+}
+
+function buildSizeOptions(
+  catalog: VariantSizeOption[],
+  current: string,
+): { value: string; label: string }[] {
+  const active = catalog.filter((s) => !s.archivedAt);
+  const opts = active.map((s) => ({
+    value: s.label,
+    label: `${adminSizeLabel(s.label)} — ${SIZE_TYPE_LABELS[s.type]}`,
+  }));
+  const cur = current.trim();
+  if (cur && !opts.some((o) => o.value === cur)) {
+    opts.unshift({ value: cur, label: `${adminSizeLabel(cur)} (قديم)` });
+  }
+  return opts;
+}
+
+function buildColorOptions(
+  catalog: VariantColorOption[],
+  row: VariantFormRow,
+): { value: string; label: string }[] {
+  const active = catalog.filter((c) => !c.deletedAt);
+  const opts: { value: string; label: string }[] = [
+    { value: "", label: "— بدون لون —" },
+  ];
+  for (const c of active) {
+    opts.push({ value: c.id, label: c.label });
+  }
+  if (row.colorId && !active.some((c) => c.id === row.colorId)) {
+    const archived = catalog.find((c) => c.id === row.colorId);
+    if (archived) {
+      opts.push({
+        value: archived.id,
+        label: `${archived.label} (مؤرشف)`,
+      });
+    }
+  }
+  const legacy = row.legacyColorLabel?.trim();
+  if (legacy && !row.colorId) {
+    opts.push({ value: `__legacy__:${legacy}`, label: `${legacy} (قديم)` });
+  }
+  return opts;
+}
+
+function colorSelectValue(row: VariantFormRow): string {
+  if (row.colorId) return row.colorId;
+  const legacy = row.legacyColorLabel?.trim();
+  if (legacy) return `__legacy__:${legacy}`;
+  return "";
+}
+
 export function ProductVariantEditor({
   rows,
   onChange,
+  colors,
+  sizes,
   allowEmptySize = false,
 }: ProductVariantEditorProps) {
   function addRow() {
+    const defaultSize =
+      sizes.find((s) => !s.archivedAt && s.type === "STANDARD")?.label ?? "Standard";
     onChange([
       ...rows,
       {
         key: `var-${Math.random().toString(36).slice(2, 11)}`,
-        size: "",
-        colorLabel: "",
+        size: defaultSize,
+        colorId: "",
         quantity: "1",
         isAvailable: true,
         allowSpecialOrder: false,
@@ -59,7 +137,6 @@ export function ProductVariantEditor({
       {
         ...src,
         key: `var-${Math.random().toString(36).slice(2, 11)}`,
-        size: src.size ? `${src.size} (نسخة)` : "",
       },
     ]);
   }
@@ -86,7 +163,7 @@ export function ProductVariantEditor({
           المقاسات والتوفر
         </h4>
         <p className="admin-hint admin-variant-editor__hint">
-          الكمية 0 تعني غير متوفر للبيع. «طلب خاص» يسمح بطلب واتساب عند عدم التوفر.
+          اختاري المقاس واللون من القوائم المعرّفة في الداشبورد. الكمية 0 تعني غير متوفر.
         </p>
       </div>
 
@@ -106,6 +183,8 @@ export function ProductVariantEditor({
           const qty = parseQty(row.quantity);
           const sellable = variantRowSellable(qty, row.isAvailable);
           const unavailable = !sellable;
+          const sizeOptions = buildSizeOptions(sizes, row.size);
+          const colorOptions = buildColorOptions(colors, row);
           return (
             <div
               key={row.key}
@@ -114,29 +193,53 @@ export function ProductVariantEditor({
             >
               <label className="admin-variant-editor__cell" role="cell">
                 <span className="admin-variant-editor__cell-label">لون</span>
-                <input
-                  className="admin-control"
-                  value={row.colorLabel}
-                  placeholder="اختياري — مثل: أسود"
-                  onChange={(e) =>
+                <AdminSelect
+                  value={colorSelectValue(row)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v.startsWith("__legacy__:")) {
+                      onChange(
+                        patchRow(rows, row.key, {
+                          colorId: "",
+                          legacyColorLabel: v.slice("__legacy__:".length),
+                        }),
+                      );
+                      return;
+                    }
                     onChange(
-                      patchRow(rows, row.key, { colorLabel: e.target.value }),
-                    )
-                  }
-                />
+                      patchRow(rows, row.key, {
+                        colorId: v,
+                        legacyColorLabel: undefined,
+                      }),
+                    );
+                  }}
+                >
+                  {colorOptions.map((o) => (
+                    <option key={o.value || "none"} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </AdminSelect>
               </label>
 
               <label className="admin-variant-editor__cell" role="cell">
                 <span className="admin-variant-editor__cell-label">مقاس</span>
-                <input
-                  className="admin-control"
+                <AdminSelect
                   value={row.size}
                   required={!allowEmptySize}
-                  placeholder={allowEmptySize ? "اختياري" : "مثال: M أو 42"}
                   onChange={(e) =>
                     onChange(patchRow(rows, row.key, { size: e.target.value }))
                   }
-                />
+                >
+                  {allowEmptySize ? (
+                    <option value="">— بدون —</option>
+                  ) : null}
+                  {sizeOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </AdminSelect>
               </label>
 
               <label className="admin-variant-editor__cell" role="cell">

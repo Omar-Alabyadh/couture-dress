@@ -13,6 +13,7 @@ const TYPES = new Set<TrashEntityType>([
   "brand",
   "testimonial",
   "color",
+  "size",
   "media",
   "category",
 ]);
@@ -52,7 +53,9 @@ export async function POST(req: Request) {
               ? "Testimonial"
               : entityType === "color"
                 ? "Color"
-                : entityType === "category"
+                : entityType === "size"
+                  ? "SizeOption"
+                  : entityType === "category"
                   ? "ProductCategory"
                   : "MediaAsset",
       entityId: id,

@@ -11,6 +11,7 @@ import {
   saveProductCategories,
 } from "../src/lib/categories/product-categories";
 import { DEFAULT_FILTER_COLORS } from "../src/lib/admin/default-filter-colors";
+import { ensureDefaultSizeOptions } from "../src/server/services/ensureDefaultSizeOptions";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -76,6 +77,7 @@ async function main() {
   await prisma.collectionItem.deleteMany({});
   await prisma.brandDesigner.deleteMany({});
   await prisma.color.deleteMany({});
+  await prisma.sizeOption.deleteMany({});
 
   const demoBrand = await prisma.brandDesigner.create({
     data: {
@@ -126,6 +128,9 @@ async function main() {
     });
     colors.push(row);
   }
+
+  await ensureDefaultSizeOptions();
+
   const byLabel = (name: string) => colors.find((x) => x.label === name);
   for (const item of seedItems) {
     const connect = (item.colorLabels || [])

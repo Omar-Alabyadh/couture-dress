@@ -11,6 +11,7 @@ import type {
   ProductVariantView,
 } from "@/lib/types/collection";
 import { isVariantSellable } from "@/lib/types/collection";
+import { formatPublicSizeLabel } from "@/lib/sizes/display-size";
 import type { PublicSocialUrls } from "@/lib/config/site";
 import type { WhatsappTemplateKind } from "@/lib/communication/whatsapp";
 import {
@@ -313,7 +314,7 @@ export default function ProductsPage({
   const sizeOptions = useMemo(
     () => [
       { value: "", label: "— أي مقاس —" },
-      ...sizes.map((z) => ({ value: z, label: z })),
+      ...sizes.map((z) => ({ value: z, label: formatPublicSizeLabel(z) })),
     ],
     [sizes],
   );
@@ -599,7 +600,7 @@ export default function ProductsPage({
                                 }))
                               }
                             >
-                              {s}
+                              {formatPublicSizeLabel(s)}
                             </button>
                           ))}
                         </div>

@@ -204,8 +204,9 @@ export function normalizeProductVariantsInput(
   for (const item of raw) {
     if (!item || typeof item !== "object") return { ok: false };
     const o = item as Record<string, unknown>;
-    const size = String(o.size ?? "").trim();
-    if (!size || size.length > MAX_SIZE_TOKEN_LEN) return { ok: false };
+    let size = String(o.size ?? "").trim();
+    if (!size) size = "Standard";
+    if (size.length > MAX_SIZE_TOKEN_LEN) return { ok: false };
     let colorId: string | null = null;
     if (o.colorId != null && o.colorId !== "") {
       const c = String(o.colorId).trim();

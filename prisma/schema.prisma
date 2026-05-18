@@ -54,6 +54,26 @@ model User {
   @@index([email])
 }
 
+enum SizeOptionType {
+  STANDARD
+  LETTER
+  NUMBER
+}
+
+/// مقاسات يعرّفها المالك من الداشبورد — تُختار في صفوف variants
+model SizeOption {
+  id         String         @id @default(cuid())
+  label      String
+  type       SizeOptionType
+  sortOrder  Int            @default(0)
+  archivedAt DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([type, label])
+  @@index([archivedAt, type, sortOrder])
+}
+
 /// ألوان يعرّفها المالك من الداشبورد
 model Color {
   id        String   @id @default(cuid())

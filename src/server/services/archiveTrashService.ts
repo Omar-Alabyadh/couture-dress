@@ -7,6 +7,7 @@ export type TrashEntityType =
   | "brand"
   | "testimonial"
   | "color"
+  | "size"
   | "media"
   | "category";
 
@@ -25,7 +26,7 @@ function toIso(d: Date): string {
 }
 
 export async function listArchivedItems(): Promise<TrashArchiveRow[]> {
-  const [products, brands, testimonials, colors, media] = await Promise.all([
+  const [products, brands, testimonials, colors, sizes, media] = await Promise.all([
     prisma.collectionItem.findMany({
       where: { NOT: { deletedAt: null } },
       orderBy: { deletedAt: "desc" },
@@ -45,6 +46,11 @@ export async function listArchivedItems(): Promise<TrashArchiveRow[]> {
       where: { NOT: { deletedAt: null } },
       orderBy: { deletedAt: "desc" },
       select: { id: true, label: true, deletedAt: true },
+    }),
+    prisma.sizeOption.findMany({
+      where: { NOT: { archivedAt: null } },
+      orderBy: { archivedAt: "desc" },
+      select: { id: true, label: true, archivedAt: true },
     }),
     prisma.mediaAsset.findMany({
       where: { isArchived: true },
@@ -105,6 +111,18 @@ export async function listArchivedItems(): Promise<TrashArchiveRow[]> {
       moduleHref: "/admin/manage/colors",
       moduleLabel: "الألوان",
       field: "Color.deletedAt",
+    });
+  }
+  for (const s of sizes) {
+    if (!s.archivedAt) continue;
+    rows.push({
+      entityType: "size",
+      id: s.id,
+      label: s.label,
+      archivedAt: toIso(s.archivedAt),
+      moduleHref: "/admin/manage/sizes",
+      moduleLabel: "المقاسات",
+      field: "SizeOption.archivedAt",
     });
   }
   for (const m of media) {
@@ -174,6 +192,14 @@ export async function restoreArchivedItem(
       const r = await prisma.color.updateMany({
         where: { id, NOT: { deletedAt: null } },
         data: { deletedAt: null },
+      });
+      if (r.count === 0) throw new Error("NOT_FOUND");
+      return;
+    }
+    case "size": {
+      const r = await prisma.sizeOption.updateMany({
+        where: { id, NOT: { archivedAt: null } },
+        data: { archivedAt: null },
       });
       if (r.count === 0) throw new Error("NOT_FOUND");
       return;
