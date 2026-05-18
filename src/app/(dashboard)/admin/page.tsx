@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { AdminOverviewDashboard } from "@/components/admin/AdminOverviewDashboard";
 
 export default async function AdminDashboard() {
   const s = await auth();
@@ -11,45 +12,21 @@ export default async function AdminDashboard() {
     redirect("/admin/audit");
   }
   return (
-    <div className="admin-page admin-page--narrow" dir="rtl">
-      <h1 style={{ margin: "0 0 0.4rem" }}>مرحبًا {s.user.name ?? s.user.email}</h1>
-      <p className="admin-hint">
-        هنا تتحكّمين بكل الموقع: المنتجات، الألوان، الصفحة الرئيسية، والسجل. الحذف
-        يكون ناعمًا (يُرجَع لاحقًا من الأرشيف).
+    <div className="admin-page admin-page--wide" dir="rtl">
+      <h1 style={{ margin: "0 0 0.25rem" }}>مرحبًا {s.user.name ?? s.user.email}</h1>
+      <p className="admin-hint" style={{ marginBottom: "1rem" }}>
+        لوحة تحكم متجر كوتور — نظرة سريعة على المحتوى والاختصارات اليومية.
       </p>
-      <ul style={{ margin: "1rem 0 0 1.2rem", lineHeight: 1.7 }}>
-        <li>
-          <Link href="/admin/manage/products" style={{ fontWeight: 800, color: "#b9856f" }}>
-            إدارة المنتجات
-          </Link>
-        </li>
-        <li>
-          <Link href="/admin/manage/colors" style={{ fontWeight: 800, color: "#b9856f" }}>
-            ألوان الفلتر
-          </Link>
-        </li>
-        <li>
-          <Link href="/admin/manage/landing" style={{ fontWeight: 800, color: "#b9856f" }}>
-            محرّر الصفحة الرئيسية
-          </Link>
-        </li>
-        <li>
-          <Link href="/admin/manage/trash" style={{ fontWeight: 800, color: "#b9856f" }}>
-            المنتجات المؤرشفة
-          </Link>
-        </li>
-        <li>
-          <Link href="/admin/audit" style={{ fontWeight: 800, color: "#b9856f" }}>
-            سجل التدقيق
-          </Link>{" "}
-          (أنت + مهندس المشروع)
-        </li>
-        <li>
-          <a href="/" target="_blank" rel="noreferrer" style={{ fontWeight: 800 }}>
-            عرض الموقع
-          </a>
-        </li>
-      </ul>
+      <AdminOverviewDashboard />
+      <p className="admin-hint" style={{ marginTop: "1.25rem" }}>
+        <a href="/" target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>
+          عرض الموقع للعامة
+        </a>
+        {" · "}
+        <Link href="/admin/audit" style={{ fontWeight: 700 }}>
+          سجل التدقيق
+        </Link>
+      </p>
     </div>
   );
 }

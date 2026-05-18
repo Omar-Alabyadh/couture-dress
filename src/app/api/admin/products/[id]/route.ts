@@ -25,8 +25,7 @@ import {
 } from "@/lib/validation/product-input";
 import { variantColorIdsExistOnDb } from "@/lib/products/validate-variant-colors";
 import { resolveBrandDesignerLinkForProduct } from "@/lib/products/resolve-brand-designer-id";
-
-const CATEGORIES = new Set(["dresses", "abayas", "casual", "accessories"]);
+import { getAllowedCategorySlugs } from "@/lib/categories/product-categories";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -99,8 +98,11 @@ export async function PATCH(req: Request, ctx: Ctx) {
   }
   const p = parsePatch(json);
   if (!p) return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 400 });
-  if (p.category && !CATEGORIES.has(p.category)) {
-    return NextResponse.json({ error: "تصنيف غير صالح" }, { status: 400 });
+  if (p.category) {
+    const allowed = await getAllowedCategorySlugs();
+    if (!allowed.has(p.category)) {
+      return NextResponse.json({ error: "تصنيف غير صالح" }, { status: 400 });
+    }
   }
   if (p.titleAr !== undefined && !isValidTitleAr(p.titleAr)) {
     return NextResponse.json({ error: "عنوان غير صالح" }, { status: 400 });
@@ -198,6 +200,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
         create: variantReplace.map((v, i) => ({
           size: v.size,
           colorId: v.colorId,
+          colorLabel: v.colorLabel,
           quantity: v.quantity,
           isAvailable: v.isAvailable,
           allowSpecialOrder: v.allowSpecialOrder,

@@ -1,23 +1,22 @@
 "use client";
 
-import { AdminButton, AdminSelect } from "@/components/admin/AdminPrimitives";
+import { AdminButton } from "@/components/admin/AdminPrimitives";
 import { variantRowSellable } from "@/lib/admin/product-status";
 
 export type VariantFormRow = {
   key: string;
   size: string;
-  colorId: string;
+  colorLabel: string;
   quantity: string;
   isAvailable: boolean;
   allowSpecialOrder: boolean;
 };
 
-type ColorOption = { id: string; label: string; deletedAt?: string | null };
-
 type ProductVariantEditorProps = {
   rows: VariantFormRow[];
-  colors: ColorOption[];
   onChange: (rows: VariantFormRow[]) => void;
+  /** When true, size/color rows are optional (e.g. accessories). */
+  allowEmptySize?: boolean;
 };
 
 function parseQty(qty: string): number {
@@ -35,8 +34,8 @@ function patchRow(
 
 export function ProductVariantEditor({
   rows,
-  colors,
   onChange,
+  allowEmptySize = false,
 }: ProductVariantEditorProps) {
   function addRow() {
     onChange([
@@ -44,7 +43,7 @@ export function ProductVariantEditor({
       {
         key: `var-${Math.random().toString(36).slice(2, 11)}`,
         size: "",
-        colorId: "",
+        colorLabel: "",
         quantity: "1",
         isAvailable: true,
         allowSpecialOrder: false,
@@ -115,24 +114,16 @@ export function ProductVariantEditor({
             >
               <label className="admin-variant-editor__cell" role="cell">
                 <span className="admin-variant-editor__cell-label">لون</span>
-                <AdminSelect
-                  value={row.colorId}
+                <input
+                  className="admin-control"
+                  value={row.colorLabel}
+                  placeholder="اختياري — مثل: أسود"
                   onChange={(e) =>
-                    onChange(patchRow(rows, row.key, { colorId: e.target.value }))
+                    onChange(
+                      patchRow(rows, row.key, { colorLabel: e.target.value }),
+                    )
                   }
-                >
-                  <option value="">— بدون —</option>
-                  {colors.map((c) => {
-                    const archived = Boolean(c.deletedAt);
-                    if (archived && row.colorId !== c.id) return null;
-                    return (
-                      <option key={c.id} value={c.id}>
-                        {c.label}
-                        {archived ? " (مؤرشف)" : ""}
-                      </option>
-                    );
-                  })}
-                </AdminSelect>
+                />
               </label>
 
               <label className="admin-variant-editor__cell" role="cell">
@@ -140,7 +131,8 @@ export function ProductVariantEditor({
                 <input
                   className="admin-control"
                   value={row.size}
-                  required
+                  required={!allowEmptySize}
+                  placeholder={allowEmptySize ? "اختياري" : "مثال: M أو 42"}
                   onChange={(e) =>
                     onChange(patchRow(rows, row.key, { size: e.target.value }))
                   }

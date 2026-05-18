@@ -99,6 +99,7 @@ export function serializeProductForAdmin(
       id: v.id,
       size: v.size,
       colorId: v.colorId,
+      colorLabel: v.colorLabel ?? null,
       quantity: v.quantity,
       isAvailable: v.isAvailable,
       allowSpecialOrder: v.allowSpecialOrder,

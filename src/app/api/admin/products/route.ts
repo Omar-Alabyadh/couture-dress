@@ -26,8 +26,7 @@ import {
 } from "@/lib/serializers/product-admin";
 import { variantColorIdsExistOnDb } from "@/lib/products/validate-variant-colors";
 import { resolveBrandDesignerLinkForProduct } from "@/lib/products/resolve-brand-designer-id";
-
-const CATEGORIES = new Set(["dresses", "abayas", "casual", "accessories"]);
+import { getAllowedCategorySlugs } from "@/lib/categories/product-categories";
 
 function defaultVariantsFromSizesStrings(
   sizes: string[],
@@ -37,6 +36,7 @@ function defaultVariantsFromSizesStrings(
   return norm.map((size, i) => ({
     size,
     colorId: null,
+    colorLabel: null,
     quantity: 1,
     isAvailable: true,
     allowSpecialOrder: false,
@@ -74,12 +74,15 @@ type CreateBody = {
   brandDesignerId?: string | null;
 };
 
-function parseCreate(body: unknown): CreateBody | null {
+function parseCreate(
+  body: unknown,
+  allowedCategories: Set<string>,
+): CreateBody | null {
   if (!isRecord(body)) return null;
   const titleAr = String(body.titleAr ?? "").trim();
   const category = String(body.category ?? "").trim();
   if (!isValidTitleAr(titleAr)) return null;
-  if (!CATEGORIES.has(category)) return null;
+  if (!allowedCategories.has(category)) return null;
 
   const hasImagesArray =
     Array.isArray(body.images) && body.images.length > 0;
@@ -151,7 +154,8 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 400 });
   }
-  const p = parseCreate(json);
+  const allowedCategories = await getAllowedCategorySlugs();
+  const p = parseCreate(json, allowedCategories);
   if (!p) {
     return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 400 });
   }
@@ -243,6 +247,7 @@ export async function POST(req: Request) {
           create: variantRows.map((v, i) => ({
             size: v.size,
             colorId: v.colorId,
+            colorLabel: v.colorLabel,
             quantity: v.quantity,
             isAvailable: v.isAvailable,
             allowSpecialOrder: v.allowSpecialOrder,

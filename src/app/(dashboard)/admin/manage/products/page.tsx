@@ -18,6 +18,8 @@ import {
   AdminTd,
 } from "@/components/admin/AdminPrimitives";
 import { AdminListToolbar } from "@/components/admin/AdminListToolbar";
+import { AdminModal } from "@/components/admin/AdminModal";
+import { AdminLuxuryListbox } from "@/components/admin/AdminLuxuryListbox";
 import { ProductStatusBadge } from "@/components/admin/ProductStatusBadge";
 import {
   ProductGalleryEditor,
@@ -57,6 +59,7 @@ type ProductVariantRow = {
   id: string;
   size: string;
   colorId: string | null;
+  colorLabel?: string | null;
   quantity: number;
   isAvailable: boolean;
   allowSpecialOrder: boolean;
@@ -145,6 +148,9 @@ export default function AdminProductsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
+  const [categories, setCategories] = useState<
+    { slug: string; nameAr: string }[]
+  >([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sort, setSort] = useState<SortDirection>("newest");
@@ -154,10 +160,11 @@ export default function AdminProductsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const [p, c, b] = await Promise.all([
+      const [p, c, b, cat] = await Promise.all([
         fetch("/api/admin/products", { cache: "no-store" }),
         fetch("/api/admin/colors", { cache: "no-store" }),
         fetch("/api/admin/brands", { cache: "no-store" }),
+        fetch("/api/admin/categories", { cache: "no-store" }),
       ]);
       if (!p.ok) {
         const msg =
@@ -175,6 +182,17 @@ export default function AdminProductsPage() {
       if (b.ok) {
         const j3 = (await b.json()) as { data: BrandRow[] };
         setBrands(j3.data);
+      }
+      if (cat.ok) {
+        const j4 = (await cat.json()) as {
+          data: { slug: string; nameAr: string; deletedAt: string | null }[];
+        };
+        setCategories(
+          j4.data.filter((x) => !x.deletedAt).map((x) => ({
+            slug: x.slug,
+            nameAr: x.nameAr,
+          })),
+        );
       }
     } catch {
       setLoadError("تعذر الاتصال بالخادم.");
@@ -247,7 +265,7 @@ export default function AdminProductsPage() {
       <AdminCard>
         <AdminSectionHeader
           title="المنتجات"
-          description='الحذف من هنا تمويه (soft) — تسترجعينه من "الأرشيف". حقل sizes القديم يُحدَّث تلقائيًا من «المقاسات والتوفر».'
+          description="يمكنك إدارة المنتجات وإخفاء غير المتوفر منها. المنتجات المحذوفة يمكن استرجاعها من الأرشيف."
           actions={
             <AdminButton
               type="button"
@@ -270,38 +288,54 @@ export default function AdminProductsPage() {
           <AdminLoadingState />
         ) : null}
 
-        {creating && (
-          <ProductForm
-            key="create-product"
-            colors={colors}
-            brands={brands}
-            onClose={() => setCreating(false)}
-            onSaved={async () => {
-              setCreating(false);
-              pushToast("تم إنشاء المنتج.", "success");
-              await load();
-            }}
-          />
-        )}
-        {editing && (
-          <ProductForm
-            key={editing.id}
-            initial={editing}
-            colors={colors}
-            brands={brands}
-            onClose={() => setEditing(null)}
-            onSaved={async () => {
-              setEditing(null);
-              pushToast("تم تحديث المنتج.", "success");
-              await load();
-            }}
-          />
-        )}
+        <AdminModal
+          open={creating}
+          title="منتج جديد"
+          wide
+          onClose={() => setCreating(false)}
+        >
+          {creating ? (
+            <ProductForm
+              key="create-product"
+              colors={colors}
+              brands={brands}
+              categories={categories}
+              onClose={() => setCreating(false)}
+              onSaved={async () => {
+                setCreating(false);
+                pushToast("تم إنشاء المنتج.", "success");
+                await load();
+              }}
+            />
+          ) : null}
+        </AdminModal>
+        <AdminModal
+          open={Boolean(editing)}
+          title={editing ? `تعديل: ${editing.titleAr}` : "تعديل"}
+          wide
+          onClose={() => setEditing(null)}
+        >
+          {editing ? (
+            <ProductForm
+              key={editing.id}
+              initial={editing}
+              colors={colors}
+              brands={brands}
+              categories={categories}
+              onClose={() => setEditing(null)}
+              onSaved={async () => {
+                setEditing(null);
+                pushToast("تم تحديث المنتج.", "success");
+                await load();
+              }}
+            />
+          ) : null}
+        </AdminModal>
 
         {!loading && !loadError && list.length === 0 ? (
           <AdminEmptyState
             title="لا توجد منتجات بعد"
-            description='اضغطي "منتج جديد" لإضافة أول قطعة.'
+            description='اضغط "منتج جديد" لإضافة أول قطعة.'
           />
         ) : null}
 
@@ -446,7 +480,7 @@ function initialVariantRows(initial?: Product): VariantFormRow[] {
     return initial.variants.map((v) => ({
       key: v.id,
       size: v.size,
-      colorId: v.colorId ?? "",
+      colorLabel: v.colorLabel ?? "",
       quantity: String(v.quantity),
       isAvailable: v.isAvailable,
       allowSpecialOrder: v.allowSpecialOrder,
@@ -457,7 +491,7 @@ function initialVariantRows(initial?: Product): VariantFormRow[] {
     return sz.map((s, i) => ({
       key: `leg-${i}-${s}`,
       size: s,
-      colorId: "",
+      colorLabel: "",
       quantity: "1",
       isAvailable: true,
       allowSpecialOrder: false,
@@ -467,7 +501,7 @@ function initialVariantRows(initial?: Product): VariantFormRow[] {
     {
       key: newVariantKey(),
       size: "",
-      colorId: "",
+      colorLabel: "",
       quantity: "1",
       isAvailable: true,
       allowSpecialOrder: false,
@@ -475,16 +509,23 @@ function initialVariantRows(initial?: Product): VariantFormRow[] {
   ];
 }
 
+const CURRENCY_OPTIONS = [
+  { value: "LYD", label: "دينار ليبي (د.ل)" },
+  { value: "USD", label: "دولار أمريكي ($)" },
+];
+
 function ProductForm({
   initial,
   colors,
   brands,
+  categories,
   onClose,
   onSaved,
 }: {
   initial?: Product;
   colors: ColorRow[];
   brands: BrandRow[];
+  categories: { slug: string; nameAr: string }[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
@@ -576,6 +617,7 @@ function ProductForm({
     const variantsPayload: {
       size: string;
       colorId: string | null;
+      colorLabel: string | null;
       quantity: number;
       isAvailable: boolean;
       allowSpecialOrder: boolean;
@@ -595,7 +637,8 @@ function ProductForm({
       }
       variantsPayload.push({
         size: sz,
-        colorId: row.colorId.trim() ? row.colorId.trim() : null,
+        colorId: null,
+        colorLabel: row.colorLabel.trim() ? row.colorLabel.trim() : null,
         quantity: q,
         isAvailable: q > 0 && row.isAvailable,
         allowSpecialOrder: row.allowSpecialOrder,
@@ -603,7 +646,7 @@ function ProductForm({
     }
     const keys = new Set<string>();
     for (const v of variantsPayload) {
-      const k = `${v.size.toLowerCase()}__${v.colorId ?? ""}`;
+      const k = `${v.size.toLowerCase()}__${v.colorLabel ?? ""}`;
       if (keys.has(k)) {
         pushToast("لا تكرّري نفس المقاس مع نفس اللون في صفين.", "error");
         setLoading(false);
@@ -742,30 +785,31 @@ function ProductForm({
           placeholder="مثال: 250"
         />
       </label>
-      <label>
-        العملة (افتراضي LYD)
-        <input
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-          maxLength={8}
-        />
-      </label>
+      <AdminLuxuryListbox
+        id="product-category"
+        label="القسم"
+        value={category}
+        options={
+          categories.length > 0
+            ? categories.map((c) => ({ value: c.slug, label: c.nameAr }))
+            : cats.map((c) => ({ value: c.v, label: c.l }))
+        }
+        onChange={setCategory}
+      />
 
-      <label>
-        التصنيف
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          {cats.map((c) => (
-            <option key={c.v} value={c.v}>
-              {c.l}
-            </option>
-          ))}
-        </select>
-      </label>
+      <AdminLuxuryListbox
+        id="product-currency"
+        label="العملة"
+        value={currency}
+        options={CURRENCY_OPTIONS}
+        onChange={setCurrency}
+      />
 
-      <ProductVariantEditor rows={variantRows} colors={colors} onChange={setVariantRows} />
+      <ProductVariantEditor
+        rows={variantRows}
+        onChange={setVariantRows}
+        allowEmptySize={category === "accessories"}
+      />
 
       <div>
         <div style={{ fontWeight: 800, fontSize: "0.9rem", color: "#d7c9c2" }}>
