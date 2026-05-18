@@ -139,7 +139,7 @@ export function MediaUploadDropzone({
           onChange={onInputChange}
         />
         <label htmlFor={inputId} className="admin-media-lib-dropzone__label">
-          {uploading ? (progress ?? "جارٍ الرفع…") : "اسحبي الصور هنا أو انقري للاختيار"}
+          {uploading ? (progress ?? "جارٍ الرفع…") : "اسحب الصور هنا أو انقر للاختيار"}
         </label>
         <p className="admin-hint admin-media-lib-dropzone__hint">
           يمكن اختيار أكثر من ملف؛ يُرفع كل ملف على حدة.

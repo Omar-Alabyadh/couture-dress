@@ -26,6 +26,9 @@ import {
   AdminTextarea,
 } from "@/components/admin/AdminPrimitives";
 import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
+import { AdminModal } from "@/components/admin/AdminModal";
+import { AdminRowActions } from "@/components/admin/AdminRowActions";
+import { Plus } from "lucide-react";
 
 type Testimonial = {
   id: string;
@@ -62,6 +65,7 @@ export default function AdminTestimonialsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sort, setSort] = useState<SortDirection>("newest");
   const [page, setPage] = useState(1);
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,8 +112,8 @@ export default function AdminTestimonialsPage() {
   async function archiveRow(t: Testimonial) {
     const ok = await requestConfirm({
       title: "أرشفة الرأي",
-      message: `هل تريدين أرشفة رأي «${t.customerName}»؟`,
-      confirmLabel: "أرشِفي",
+      message: `هل تريد أرشفة رأي «${t.customerName}»؟`,
+      confirmLabel: "أرشِف",
       cancelLabel: "إلغاء",
       destructive: true,
     });
@@ -189,6 +193,16 @@ export default function AdminTestimonialsPage() {
         <AdminSectionHeader
           title="آراء العملاء"
           description="تظهر المنشورة فقط في الصفحة الرئيسية — مرتبة حسب الترتيب ثم التاريخ."
+          actions={
+            <AdminButton
+              type="button"
+              variant="primary"
+              icon={Plus}
+              onClick={() => setCreating(true)}
+            >
+              رأي جديد
+            </AdminButton>
+          }
         />
 
         {loadError ? (
@@ -199,37 +213,40 @@ export default function AdminTestimonialsPage() {
           <AdminLoadingState />
         ) : null}
 
-        <form
-          className="admin-form"
-          style={{ marginTop: 8 }}
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const r = await fetch("/api/admin/testimonials", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                customerName: customerName.trim(),
-                text: text.trim(),
-                rating: Number(rating),
-                imageUrl: imageUrl.trim() || null,
-                sortOrder: Number(sortOrder),
-              }),
-            });
-            if (!r.ok) {
-              const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
-              pushToast(msg, "error");
-              return;
-            }
-            setCustomerName("");
-            setText("");
-            setRating("5");
-            setImageUrl("");
-            setSortOrder("0");
-            pushToast("تمت الإضافة.", "success");
-            await load();
-          }}
-        >
-          <AdminField label="اسم العميلة" htmlFor="tm-name">
+        <AdminModal open={creating} title="رأي عميل جديد" onClose={() => setCreating(false)}>
+          {creating ? (
+            <form
+              className="admin-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const r = await fetch("/api/admin/testimonials", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    customerName: customerName.trim(),
+                    text: text.trim(),
+                    rating: Number(rating),
+                    imageUrl: imageUrl.trim() || null,
+                    sortOrder: Number(sortOrder),
+                  }),
+                });
+                if (!r.ok) {
+                  const msg =
+                    (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+                  pushToast(msg, "error");
+                  return;
+                }
+                setCustomerName("");
+                setText("");
+                setRating("5");
+                setImageUrl("");
+                setSortOrder("0");
+                pushToast("تمت الإضافة.", "success");
+                setCreating(false);
+                await load();
+              }}
+            >
+          <AdminField label="اسم العميل" htmlFor="tm-name">
             <AdminInput
               id="tm-name"
               value={customerName}
@@ -281,15 +298,20 @@ export default function AdminTestimonialsPage() {
           </AdminField>
           <div className="admin-form__submit-row">
             <AdminButton type="submit" variant="primary">
-              إضافة
+              حفظ
+            </AdminButton>
+            <AdminButton type="button" variant="secondary" onClick={() => setCreating(false)}>
+              إلغاء
             </AdminButton>
           </div>
-        </form>
+            </form>
+          ) : null}
+        </AdminModal>
 
         {!loading && !loadError && list.filter((x) => !x.deletedAt).length === 0 ? (
           <AdminEmptyState
             title="لا توجد آراء بعد"
-            description="أضيفي أول رأي باستخدام النموذج أعلاه."
+            description='اضغط "رأي جديد" لإضافة أول رأي.'
           />
         ) : null}
 
@@ -371,23 +393,11 @@ export default function AdminTestimonialsPage() {
                     )}
                   </AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
-                    {t.deletedAt ? (
-                      <AdminButton
-                        type="button"
-                        variant="primary"
-                        onClick={() => void restoreRow(t)}
-                      >
-                        استرجاع
-                      </AdminButton>
-                    ) : (
-                      <AdminButton
-                        type="button"
-                        variant="danger"
-                        onClick={() => void archiveRow(t)}
-                      >
-                        أرشفة
-                      </AdminButton>
-                    )}
+                    <AdminRowActions
+                      archived={Boolean(t.deletedAt)}
+                      onArchive={t.deletedAt ? undefined : () => void archiveRow(t)}
+                      onRestore={t.deletedAt ? () => void restoreRow(t) : undefined}
+                    />
                   </AdminTd>
                 </tr>
               ))}

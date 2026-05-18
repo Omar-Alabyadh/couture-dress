@@ -125,7 +125,7 @@ function GalleryCard({
         <div className="admin-media-card__preview">
           {url.length === 0 ? (
             <span className="admin-media-card__preview-placeholder">
-              اسحبي لإعادة الترتيب — أضيفي رابطًا
+              اسحب لإعادة الترتيب — أضف رابطًا
             </span>
           ) : null}
           {url.length > 0 && unsafe ? (
@@ -241,7 +241,7 @@ export function ProductGalleryEditor({
   async function confirmRemove(key: string) {
     const ok = await requestConfirm({
       title: "إزالة الصورة",
-      message: "هل تريدين إزالة هذه الصورة من المعرض؟",
+      message: "هل تريد إزالة هذه الصورة من المعرض؟",
       confirmLabel: "إزالة",
       cancelLabel: "إلغاء",
       destructive: true,
@@ -261,7 +261,7 @@ export function ProductGalleryEditor({
         معرض الصور
       </h4>
       <p className="admin-hint">
-        اسحبي البطاقات لإعادة الترتيب. الصورة الأولى / «غلاف» تظهر في بطاقة المنتج.
+        اسحب البطاقات لإعادة الترتيب. الصورة الأولى / «غلاف» تظهر في بطاقة المنتج.
       </p>
 
       {panelError ? (
@@ -271,7 +271,7 @@ export function ProductGalleryEditor({
       ) : null}
 
       {allEmpty ? (
-        <p className="admin-media-panel__empty">أضيفي صورة واحدة على الأقل.</p>
+        <p className="admin-media-panel__empty">أضف صورة واحدة على الأقل.</p>
       ) : null}
 
       <div className="admin-gallery-grid">

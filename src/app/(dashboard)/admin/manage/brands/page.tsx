@@ -27,6 +27,9 @@ import {
   AdminTextarea,
 } from "@/components/admin/AdminPrimitives";
 import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
+import { AdminModal } from "@/components/admin/AdminModal";
+import { AdminRowActions } from "@/components/admin/AdminRowActions";
+import { Plus } from "lucide-react";
 
 type Brand = {
   id: string;
@@ -89,9 +92,6 @@ function BrandEditPanel({
   const [loading, setLoading] = useState(false);
 
   return (
-    <div style={{ marginTop: 16 }}>
-      <AdminCard>
-      <h3 style={{ marginTop: 0 }}>تعديل: {initial.nameAr}</h3>
       <form
         className="admin-form"
         onSubmit={async (e) => {
@@ -200,8 +200,80 @@ function BrandEditPanel({
           </AdminButton>
         </div>
       </form>
-      </AdminCard>
-    </div>
+  );
+}
+
+function BrandCreateForm({
+  nameAr,
+  setNameAr,
+  nameEn,
+  setNameEn,
+  type,
+  setType,
+  logoUrl,
+  setLogoUrl,
+  descriptionAr,
+  setDescriptionAr,
+  sortOrder,
+  setSortOrder,
+  loading,
+  onSubmit,
+  onClose,
+}: {
+  nameAr: string;
+  setNameAr: (v: string) => void;
+  nameEn: string;
+  setNameEn: (v: string) => void;
+  type: Brand["type"];
+  setType: (v: Brand["type"]) => void;
+  logoUrl: string;
+  setLogoUrl: (v: string) => void;
+  descriptionAr: string;
+  setDescriptionAr: (v: string) => void;
+  sortOrder: string;
+  setSortOrder: (v: string) => void;
+  loading: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+  onClose: () => void;
+}) {
+  return (
+    <form className="admin-form" onSubmit={onSubmit}>
+      <AdminField label="الاسم (عربي)">
+        <AdminInput value={nameAr} onChange={(e) => setNameAr(e.target.value)} required />
+      </AdminField>
+      <AdminField label="الاسم (EN) اختياري">
+        <AdminInput value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
+      </AdminField>
+      <AdminField label="النوع">
+        <AdminSelect value={type} onChange={(e) => setType(e.target.value as Brand["type"])}>
+          <option value="BRAND">ماركة</option>
+          <option value="DESIGNER">مصمم</option>
+        </AdminSelect>
+      </AdminField>
+      <AdminField label="رابط الشعار (اختياري)">
+        <AdminInput value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} dir="ltr" />
+      </AdminField>
+      <MediaPickerButton
+        label="اختر شعار من مكتبة الوسائط"
+        defaultUsageType="BRAND_LOGO"
+        defaultFolder="brands"
+        onSelect={(asset) => setLogoUrl(asset.url)}
+      />
+      <AdminField label="وصف عربي (اختياري)">
+        <AdminTextarea rows={2} value={descriptionAr} onChange={(e) => setDescriptionAr(e.target.value)} />
+      </AdminField>
+      <AdminField label="الترتيب">
+        <AdminInput type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
+      </AdminField>
+      <div className="admin-form__submit-row">
+        <AdminButton type="submit" variant="primary" disabled={loading}>
+          {loading ? "جارٍ الحفظ…" : "حفظ"}
+        </AdminButton>
+        <AdminButton type="button" variant="secondary" onClick={onClose}>
+          إلغاء
+        </AdminButton>
+      </div>
+    </form>
   );
 }
 
@@ -218,6 +290,8 @@ export default function AdminBrandsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Brand | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sort, setSort] = useState<SortDirection>("newest");
@@ -268,8 +342,8 @@ export default function AdminBrandsPage() {
   async function archiveRow(b: Brand) {
     const ok = await requestConfirm({
       title: "أرشفة السجل",
-      message: `هل تريدين أرشفة «${b.nameAr}»؟ لن يظهر في الواجهة العامة.`,
-      confirmLabel: "أرشِفي",
+      message: `هل تريد أرشفة «${b.nameAr}»؟ لن يظهر في الواجهة العامة.`,
+      confirmLabel: "أرشِف",
       cancelLabel: "إلغاء",
       destructive: true,
     });
@@ -336,6 +410,19 @@ export default function AdminBrandsPage() {
         <AdminSectionHeader
           title="ماركات ومصممون"
           description="يُربَط اختياريًا بالمنتجات من صفحة المنتجات. الأرشفة لا تحذف الربط لكن تخفي الظهور العام."
+          actions={
+            <AdminButton
+              type="button"
+              variant="primary"
+              icon={Plus}
+              onClick={() => {
+                setCreating(true);
+                setEditing(null);
+              }}
+            >
+              إضافة جديد
+            </AdminButton>
+          }
         />
 
         {loadError ? (
@@ -346,99 +433,87 @@ export default function AdminBrandsPage() {
           <AdminLoadingState />
         ) : null}
 
-        <form
-          className="admin-form"
-          style={{ marginTop: 8 }}
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const r = await fetch("/api/admin/brands", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                nameAr: nameAr.trim(),
-                nameEn: nameEn.trim() || null,
-                type,
-                logoUrl: logoUrl.trim() || null,
-                descriptionAr: descriptionAr.trim() || null,
-                sortOrder: Number(sortOrder),
-              }),
-            });
-            if (!r.ok) {
-              const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
-              pushToast(msg, "error");
-              return;
-            }
-            setNameAr("");
-            setNameEn("");
-            setType("BRAND");
-            setLogoUrl("");
-            setDescriptionAr("");
-            setSortOrder("0");
-            pushToast("تمت الإضافة.", "success");
-            await load();
-          }}
+        <AdminModal
+          open={creating}
+          title="ماركة / مصمم جديد"
+          onClose={() => setCreating(false)}
         >
-          <AdminField label="الاسم (عربي)">
-            <AdminInput
-              value={nameAr}
-              onChange={(e) => setNameAr(e.target.value)}
-              required
+          {creating ? (
+            <BrandCreateForm
+              nameAr={nameAr}
+              setNameAr={setNameAr}
+              nameEn={nameEn}
+              setNameEn={setNameEn}
+              type={type}
+              setType={setType}
+              logoUrl={logoUrl}
+              setLogoUrl={setLogoUrl}
+              descriptionAr={descriptionAr}
+              setDescriptionAr={setDescriptionAr}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+              loading={createLoading}
+              onClose={() => setCreating(false)}
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setCreateLoading(true);
+                try {
+                  const r = await fetch("/api/admin/brands", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      nameAr: nameAr.trim(),
+                      nameEn: nameEn.trim() || null,
+                      type,
+                      logoUrl: logoUrl.trim() || null,
+                      descriptionAr: descriptionAr.trim() || null,
+                      sortOrder: Number(sortOrder),
+                    }),
+                  });
+                  if (!r.ok) {
+                    pushToast(
+                      (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r),
+                      "error",
+                    );
+                    return;
+                  }
+                  setNameAr("");
+                  setNameEn("");
+                  setType("BRAND");
+                  setLogoUrl("");
+                  setDescriptionAr("");
+                  setSortOrder("0");
+                  pushToast("تمت الإضافة.", "success");
+                  setCreating(false);
+                  await load();
+                } finally {
+                  setCreateLoading(false);
+                }
+              }}
             />
-          </AdminField>
-          <AdminField label="الاسم (EN) اختياري">
-            <AdminInput
-              value={nameEn}
-              onChange={(e) => setNameEn(e.target.value)}
-              dir="ltr"
+          ) : null}
+        </AdminModal>
+        <AdminModal
+          open={Boolean(editing)}
+          title={editing ? `تعديل: ${editing.nameAr}` : "تعديل"}
+          onClose={() => setEditing(null)}
+        >
+          {editing && !editing.deletedAt ? (
+            <BrandEditPanel
+              initial={editing}
+              onClose={() => setEditing(null)}
+              onSaved={async () => {
+                setEditing(null);
+                await load();
+              }}
             />
-          </AdminField>
-          <AdminField label="النوع">
-            <AdminSelect
-              value={type}
-              onChange={(e) => setType(e.target.value as Brand["type"])}
-            >
-              <option value="BRAND">ماركة</option>
-              <option value="DESIGNER">مصمم</option>
-            </AdminSelect>
-          </AdminField>
-          <AdminField label="رابط الشعار (اختياري)">
-            <AdminInput
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              dir="ltr"
-            />
-          </AdminField>
-          <MediaPickerButton
-            label="اختر شعار من مكتبة الوسائط"
-            defaultUsageType="BRAND_LOGO"
-            defaultFolder="brands"
-            onSelect={(asset) => setLogoUrl(asset.url)}
-          />
-          <AdminField label="وصف عربي (اختياري)">
-            <AdminTextarea
-              rows={2}
-              value={descriptionAr}
-              onChange={(e) => setDescriptionAr(e.target.value)}
-            />
-          </AdminField>
-          <AdminField label="الترتيب">
-            <AdminInput
-              type="number"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-            />
-          </AdminField>
-          <div className="admin-form__submit-row">
-            <AdminButton type="submit" variant="primary">
-              إضافة
-            </AdminButton>
-          </div>
-        </form>
+          ) : null}
+        </AdminModal>
 
         {!loading && !loadError && list.filter((x) => !x.deletedAt).length === 0 ? (
           <AdminEmptyState
             title="لا توجد سجلات بعد"
-            description="أضيفي أول ماركة أو مصمم باستخدام النموذج أعلاه."
+            description='اضغط "إضافة جديد" لإضافة أول ماركة أو مصمم.'
           />
         ) : null}
 
@@ -502,34 +577,12 @@ export default function AdminBrandsPage() {
                     )}
                   </AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
-                    <div className="admin-table__actions">
-                      {b.deletedAt ? (
-                        <AdminButton
-                          type="button"
-                          variant="primary"
-                          onClick={() => void restoreRow(b)}
-                        >
-                          استرجاع
-                        </AdminButton>
-                      ) : (
-                        <>
-                          <AdminButton
-                            type="button"
-                            variant="ghost"
-                            onClick={() => setEditing(b)}
-                          >
-                            تعديل
-                          </AdminButton>
-                          <AdminButton
-                            type="button"
-                            variant="danger"
-                            onClick={() => void archiveRow(b)}
-                          >
-                            أرشفة
-                          </AdminButton>
-                        </>
-                      )}
-                    </div>
+                    <AdminRowActions
+                      archived={Boolean(b.deletedAt)}
+                      onEdit={b.deletedAt ? undefined : () => setEditing(b)}
+                      onArchive={b.deletedAt ? undefined : () => void archiveRow(b)}
+                      onRestore={b.deletedAt ? () => void restoreRow(b) : undefined}
+                    />
                   </AdminTd>
                 </tr>
               ))}
@@ -538,17 +591,6 @@ export default function AdminBrandsPage() {
           </>
         ) : null}
       </AdminCard>
-
-      {editing && !editing.deletedAt ? (
-        <BrandEditPanel
-          initial={editing}
-          onClose={() => setEditing(null)}
-          onSaved={async () => {
-            setEditing(null);
-            await load();
-          }}
-        />
-      ) : null}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { ADMIN_NAV_ITEMS, isAdminNavActive } from "@/config/admin-nav";
+import { AdminNavIcon } from "@/config/admin-nav-icons";
 import { AdminFeedbackProviders } from "@/components/admin/AdminFeedbackProviders";
 import { AdminLoadingState } from "@/components/admin/AdminPrimitives";
 
@@ -128,11 +129,12 @@ export function AdminChrome({ children }: { children: React.ReactNode }) {
             {filteredNav.map((n) => (
               <Link
                 key={n.href}
-                className={isAdminNavActive(pathname, n.href) ? "is-active" : ""}
+                className={`admin-sidebar__link${isAdminNavActive(pathname, n.href) ? " is-active" : ""}`}
                 href={n.href}
                 onClick={closeMobileSidebar}
               >
-                {n.label}
+                <AdminNavIcon href={n.href} />
+                <span className="admin-sidebar__label">{n.label}</span>
               </Link>
             ))}
           </nav>

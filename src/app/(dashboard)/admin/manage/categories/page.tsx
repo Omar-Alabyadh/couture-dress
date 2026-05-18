@@ -1,10 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
+import { normalizeSearch } from "@/lib/admin/list-client";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
+import { AdminModal } from "@/components/admin/AdminModal";
+import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import {
   AdminButton,
   AdminCard,
@@ -29,16 +33,103 @@ type Category = {
   deletedAt: string | null;
 };
 
+function CategoryForm({
+  initial,
+  onClose,
+  onSaved,
+}: {
+  initial?: Category;
+  onClose: () => void;
+  onSaved: () => void | Promise<void>;
+}) {
+  const { pushToast } = useAdminToast();
+  const [nameAr, setNameAr] = useState(initial?.nameAr ?? "");
+  const [slug, setSlug] = useState(initial?.slug ?? "");
+  const [descriptionAr, setDescriptionAr] = useState(initial?.descriptionAr ?? "");
+  const [sortOrder, setSortOrder] = useState(String(initial?.sortOrder ?? 0));
+  const [loading, setLoading] = useState(false);
+
+  return (
+    <form
+      className="admin-form"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+          const body = {
+            nameAr: nameAr.trim(),
+            slug: slug.trim() || undefined,
+            descriptionAr: descriptionAr.trim() || null,
+            sortOrder: Number(sortOrder),
+          };
+          const r = initial
+            ? await fetch(`/api/admin/categories/${initial.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              })
+            : await fetch("/api/admin/categories", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              });
+          if (!r.ok) {
+            pushToast((await readApiErrorMessage(r)) ?? fallbackErrorMessage(r), "error");
+            return;
+          }
+          pushToast(initial ? "تم تحديث القسم." : "تمت إضافة القسم.", "success");
+          await onSaved();
+        } finally {
+          setLoading(false);
+        }
+      }}
+    >
+      <AdminField label="اسم القسم (عربي)">
+        <AdminInput value={nameAr} onChange={(e) => setNameAr(e.target.value)} required />
+      </AdminField>
+      <AdminField label="المعرّف (إنجليزي — اختياري)" hint="مثال: dresses">
+        <AdminInput
+          value={slug}
+          onChange={(e) => setSlug(e.target.value)}
+          dir="ltr"
+          placeholder="dresses"
+        />
+      </AdminField>
+      <AdminField label="وصف قصير (اختياري)">
+        <AdminTextarea
+          rows={2}
+          value={descriptionAr}
+          onChange={(e) => setDescriptionAr(e.target.value)}
+        />
+      </AdminField>
+      <AdminField label="الترتيب">
+        <AdminInput
+          type="number"
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+        />
+      </AdminField>
+      <div className="admin-form__submit-row">
+        <AdminButton type="submit" variant="primary" disabled={loading}>
+          {loading ? "جارٍ الحفظ…" : "حفظ"}
+        </AdminButton>
+        <AdminButton type="button" variant="secondary" onClick={onClose}>
+          إلغاء
+        </AdminButton>
+      </div>
+    </form>
+  );
+}
+
 export default function AdminCategoriesPage() {
   const { pushToast } = useAdminToast();
   const { requestConfirm } = useAdminConfirm();
   const [list, setList] = useState<Category[]>([]);
-  const [nameAr, setNameAr] = useState("");
-  const [slug, setSlug] = useState("");
-  const [descriptionAr, setDescriptionAr] = useState("");
-  const [sortOrder, setSortOrder] = useState("0");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Category | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,6 +157,17 @@ export default function AdminCategoriesPage() {
       void load();
     });
   }, [load]);
+
+  const filtered = useMemo(() => {
+    const q = normalizeSearch(search);
+    if (!q) return list;
+    return list.filter(
+      (c) =>
+        c.nameAr.toLowerCase().includes(q) ||
+        c.slug.toLowerCase().includes(q) ||
+        (c.descriptionAr?.toLowerCase().includes(q) ?? false),
+    );
+  }, [list, search]);
 
   async function archiveRow(c: Category) {
     const ok = await requestConfirm({
@@ -104,11 +206,24 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="admin-page admin-page--wide" dir="rtl">
+    <div className="admin-page admin-page--catalog" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="أقسام المتجر"
-          description="نظّم أقسام المنتجات (فساتين، عبايات، إكسسوارات…). تظهر في الصفحة الرئيسية وفلتر المنتجات."
+          description="نظّم أقسام المنتجات — تظهر في الصفحة الرئيسية وفلتر المنتجات."
+          actions={
+            <AdminButton
+              type="button"
+              variant="primary"
+              icon={Plus}
+              onClick={() => {
+                setCreating(true);
+                setEditing(null);
+              }}
+            >
+              قسم جديد
+            </AdminButton>
+          }
         />
 
         {loadError ? (
@@ -116,99 +231,89 @@ export default function AdminCategoriesPage() {
         ) : null}
         {loading && list.length === 0 && !loadError ? <AdminLoadingState /> : null}
 
-        <form
-          className="admin-form"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const r = await fetch("/api/admin/categories", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                nameAr: nameAr.trim(),
-                slug: slug.trim() || undefined,
-                descriptionAr: descriptionAr.trim() || null,
-                sortOrder: Number(sortOrder),
-              }),
-            });
-            if (!r.ok) {
-              pushToast((await readApiErrorMessage(r)) ?? fallbackErrorMessage(r), "error");
-              return;
-            }
-            setNameAr("");
-            setSlug("");
-            setDescriptionAr("");
-            setSortOrder("0");
-            pushToast("تمت إضافة القسم.", "success");
-            await load();
-          }}
+        <label className="admin-list-toolbar__search" style={{ display: "block", marginTop: 12 }}>
+          <span className="admin-field__label">بحث</span>
+          <AdminInput
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث بالاسم أو المعرّف…"
+          />
+        </label>
+
+        <AdminModal open={creating} title="قسم جديد" onClose={() => setCreating(false)}>
+          {creating ? (
+            <CategoryForm
+              key="create-category"
+              onClose={() => setCreating(false)}
+              onSaved={async () => {
+                setCreating(false);
+                await load();
+              }}
+            />
+          ) : null}
+        </AdminModal>
+        <AdminModal
+          open={Boolean(editing)}
+          title={editing ? `تعديل: ${editing.nameAr}` : "تعديل"}
+          onClose={() => setEditing(null)}
         >
-          <AdminField label="اسم القسم (عربي)">
-            <AdminInput value={nameAr} onChange={(e) => setNameAr(e.target.value)} required />
-          </AdminField>
-          <AdminField label="المعرّف (إنجليزي — اختياري)" hint="مثال: dresses">
-            <AdminInput
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              dir="ltr"
-              placeholder="dresses"
+          {editing ? (
+            <CategoryForm
+              key={editing.id}
+              initial={editing}
+              onClose={() => setEditing(null)}
+              onSaved={async () => {
+                setEditing(null);
+                await load();
+              }}
             />
-          </AdminField>
-          <AdminField label="وصف قصير (اختياري)">
-            <AdminTextarea
-              rows={2}
-              value={descriptionAr}
-              onChange={(e) => setDescriptionAr(e.target.value)}
-            />
-          </AdminField>
-          <AdminField label="الترتيب">
-            <AdminInput
-              type="number"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-            />
-          </AdminField>
-          <div className="admin-form__submit-row">
-            <AdminButton type="submit" variant="primary">
-              إضافة قسم
-            </AdminButton>
-          </div>
-        </form>
+          ) : null}
+        </AdminModal>
 
         {!loading && !loadError && list.filter((c) => !c.deletedAt).length === 0 ? (
           <AdminEmptyState
             title="لا توجد أقسام بعد"
-            description="أضف أول قسم باستخدام النموذج أعلاه."
+            description='اضغط "قسم جديد" لإضافة أول قسم.'
           />
         ) : null}
 
-        {!loadError && list.length > 0 ? (
-          <AdminTable style={{ marginTop: 16 }} responsiveCards>
+        {!loadError && filtered.length > 0 ? (
+          <AdminTable style={{ marginTop: 16 }}>
             <thead>
               <tr>
                 <th>الاسم</th>
                 <th>المعرّف</th>
+                <th>الوصف</th>
                 <th>ترتيب</th>
-                <th>—</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
-              {list.map((c) => (
-                <tr key={c.id} style={{ opacity: c.deletedAt ? 0.5 : 1 }}>
+              {filtered.map((c) => (
+                <tr key={c.id} style={{ opacity: c.deletedAt ? 0.55 : 1 }}>
                   <AdminTd label="الاسم">{c.nameAr}</AdminTd>
                   <AdminTd label="المعرّف" dir="ltr">
                     {c.slug}
                   </AdminTd>
+                  <AdminTd label="الوصف" className="admin-table__cell--full">
+                    {c.descriptionAr?.trim() || "—"}
+                  </AdminTd>
                   <AdminTd label="ترتيب">{c.sortOrder}</AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
-                    {c.deletedAt ? (
-                      <AdminButton type="button" variant="primary" onClick={() => void restoreRow(c)}>
-                        استرجاع
-                      </AdminButton>
-                    ) : (
-                      <AdminButton type="button" variant="danger" onClick={() => void archiveRow(c)}>
-                        أرشفة
-                      </AdminButton>
-                    )}
+                    <AdminRowActions
+                      archived={Boolean(c.deletedAt)}
+                      onEdit={
+                        c.deletedAt
+                          ? undefined
+                          : () => {
+                              setEditing(c);
+                              setCreating(false);
+                            }
+                      }
+                      onArchive={c.deletedAt ? undefined : () => void archiveRow(c)}
+                      onRestore={c.deletedAt ? () => void restoreRow(c) : undefined}
+                    />
                   </AdminTd>
                 </tr>
               ))}

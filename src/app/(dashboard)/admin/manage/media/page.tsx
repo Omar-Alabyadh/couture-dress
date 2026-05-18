@@ -106,7 +106,7 @@ export default function AdminMediaLibraryPage() {
 
   const handleConfirmArchive = useCallback(
     async (asset: MediaAssetDto) => {
-      let message = `هل تريدين أرشفة «${asset.originalFilename}»؟ لن يُحذف من التخزين في هذه المرحلة.`;
+      let message = `هل تريد أرشفة «${asset.originalFilename}»؟ لن يُحذف من التخزين في هذه المرحلة.`;
       try {
         const r = await fetch(`/api/admin/media/${asset.id}/usage`, {
           cache: "no-store",
@@ -117,9 +117,9 @@ export default function AdminMediaLibraryPage() {
           };
           const n = j.data.totalReferences;
           if (n > 0) {
-            message = `هذه الصورة مستخدمة في ${n} موضع. أرشفتها قد تكسر الصور في الموقع.\n\nهل تريدين المتابعة؟`;
+            message = `هذه الصورة مستخدمة في ${n} موضع. أرشفتها قد تكسر الصور في الموقع.\n\nهل تريد المتابعة؟`;
           } else {
-            message = `هذه الصورة غير مستخدمة حاليًا.\n\nهل تريدين أرشفتها؟`;
+            message = `هذه الصورة غير مستخدمة حاليًا.\n\nهل تريد أرشفتها؟`;
           }
         }
       } catch {
@@ -128,7 +128,7 @@ export default function AdminMediaLibraryPage() {
       return requestConfirm({
         title: "أرشفة الوسيط",
         message,
-        confirmLabel: "أرشِفي",
+        confirmLabel: "أرشِف",
         cancelLabel: "إلغاء",
         destructive: true,
       });

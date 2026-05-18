@@ -10,6 +10,7 @@ import {
   DEFAULT_PRODUCT_CATEGORIES,
   saveProductCategories,
 } from "../src/lib/categories/product-categories";
+import { DEFAULT_FILTER_COLORS } from "../src/lib/admin/default-filter-colors";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -62,12 +63,11 @@ const seedItems = [
   },
 ];
 
-const seedColors = [
-  { label: "أسود", hex: "111111", sortOrder: 0 },
-  { label: "كحلي", hex: "1a1f3a", sortOrder: 1 },
-  { label: "بيج", hex: "c4a78c", sortOrder: 2 },
-  { label: "أحمر", hex: "7a1c2a", sortOrder: 3 },
-];
+const seedColors = DEFAULT_FILTER_COLORS.map((c) => ({
+  label: c.label,
+  hex: c.hex,
+  sortOrder: c.sortOrder,
+}));
 
 async function main() {
   await saveProductCategories([...DEFAULT_PRODUCT_CATEGORIES]);

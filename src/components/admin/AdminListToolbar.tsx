@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { AdminButton, AdminInput, AdminSelect } from "@/components/admin/AdminPrimitives";
 import type { SortDirection } from "@/lib/admin/list-client";
@@ -45,13 +46,16 @@ export function AdminListToolbar({
       <div className="admin-list-toolbar__row">
         <label className="admin-list-toolbar__search">
           <span className="admin-field__label">بحث</span>
-          <AdminInput
-            type="search"
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={searchPlaceholder}
-            autoComplete="off"
-          />
+          <span className="admin-input-with-icon">
+            <Search className="admin-input-with-icon__icon" size={16} aria-hidden />
+            <AdminInput
+              type="search"
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder={searchPlaceholder}
+              autoComplete="off"
+            />
+          </span>
         </label>
         <label className="admin-list-toolbar__sort">
           <span className="admin-field__label">ترتيب</span>
@@ -88,6 +92,7 @@ export function AdminListToolbar({
           <AdminButton
             type="button"
             variant="ghost"
+            icon={ChevronRight}
             disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
           >
@@ -99,6 +104,8 @@ export function AdminListToolbar({
           <AdminButton
             type="button"
             variant="ghost"
+            icon={ChevronLeft}
+            iconPosition="end"
             disabled={page >= totalPages}
             onClick={() => onPageChange(page + 1)}
           >

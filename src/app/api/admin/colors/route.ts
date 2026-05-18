@@ -4,6 +4,7 @@ import { requireOwner } from "@/lib/api/admin-auth";
 import { logAudit } from "@/server/services/auditService";
 import { getClientIp } from "@/lib/api/get-client-ip";
 import { listColorsForAdmin } from "@/server/repositories/contentRepository";
+import { ensureDefaultFilterColors } from "@/server/services/ensureDefaultFilterColors";
 import { isRecord } from "@/lib/validation/record";
 import {
   clampSortOrder,
@@ -15,6 +16,7 @@ export async function GET() {
   const r = await requireOwner();
   if (r.error) return r.error;
   try {
+    await ensureDefaultFilterColors();
     const data = await listColorsForAdmin();
     return NextResponse.json({ data });
   } catch {

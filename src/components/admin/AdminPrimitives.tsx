@@ -1,5 +1,6 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
@@ -24,18 +25,31 @@ export type AdminButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 
 type AdminButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: AdminButtonVariant;
+  icon?: LucideIcon;
+  iconPosition?: "start" | "end";
 };
 
 export function AdminButton({
   variant = "primary",
   className = "",
+  icon: Icon,
+  iconPosition = "start",
+  children,
   ...rest
 }: AdminButtonProps) {
   return (
     <button
-      className={`admin-btn admin-btn--${variant} ${className}`.trim()}
+      className={`admin-btn admin-btn--${variant}${Icon ? " admin-btn--with-icon" : ""} ${className}`.trim()}
       {...rest}
-    />
+    >
+      {Icon && iconPosition === "start" ? (
+        <Icon className="admin-btn__icon" size={16} strokeWidth={2.25} aria-hidden />
+      ) : null}
+      {children ? <span className="admin-btn__label">{children}</span> : null}
+      {Icon && iconPosition === "end" ? (
+        <Icon className="admin-btn__icon" size={16} strokeWidth={2.25} aria-hidden />
+      ) : null}
+    </button>
   );
 }
 

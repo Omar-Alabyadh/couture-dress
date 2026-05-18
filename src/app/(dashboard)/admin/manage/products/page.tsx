@@ -11,13 +11,20 @@ import {
   AdminCard,
   AdminEmptyState,
   AdminErrorState,
+  AdminField,
+  AdminInput,
   AdminLoadingState,
   AdminSectionHeader,
   AdminSelect,
   AdminTable,
   AdminTd,
+  AdminTextarea,
 } from "@/components/admin/AdminPrimitives";
+import { AdminCollapsibleSection } from "@/components/admin/AdminCollapsibleSection";
+import { AdminProductCard } from "@/components/admin/products/AdminProductCard";
 import { AdminListToolbar } from "@/components/admin/AdminListToolbar";
+import { AdminRowActions } from "@/components/admin/AdminRowActions";
+import { Plus } from "lucide-react";
 import { AdminModal } from "@/components/admin/AdminModal";
 import { AdminLuxuryListbox } from "@/components/admin/AdminLuxuryListbox";
 import { ProductStatusBadge } from "@/components/admin/ProductStatusBadge";
@@ -40,7 +47,12 @@ import {
   type SortDirection,
 } from "@/lib/admin/list-client";
 
-type ColorRow = { id: string; label: string; deletedAt: string | null };
+type ColorRow = {
+  id: string;
+  label: string;
+  hex: string | null;
+  deletedAt: string | null;
+};
 type BrandRow = {
   id: string;
   nameAr: string;
@@ -116,14 +128,30 @@ function primaryProductThumbSrc(p: Product): string {
   return p.imageUrl?.trim() ?? "";
 }
 
+function productSizes(p: Product): string[] {
+  if (p.variants?.length) {
+    return [...new Set(p.variants.map((v) => v.size))];
+  }
+  return p.sizes;
+}
+
+function categoryLabelFor(
+  p: Product,
+  categories: { slug: string; nameAr: string }[],
+): string {
+  return (
+    categories.find((c) => c.slug === p.category)?.nameAr ??
+    cats.find((c) => c.v === p.category)?.l ??
+    p.category
+  );
+}
+
 function AdminProductThumbCell({ src }: { src: string }) {
   const trimmed = src.trim();
   const [failedFor, setFailedFor] = useState<string | null>(null);
   const failed = Boolean(trimmed && failedFor === trimmed);
   if (!trimmed || failed) {
-    return (
-      <div className="admin-table-thumb admin-table-thumb--empty">—</div>
-    );
+    return <div className="admin-table-thumb admin-table-thumb--empty">—</div>;
   }
   return (
     <div className="admin-table-thumb">
@@ -212,7 +240,7 @@ export default function AdminProductsPage() {
     const ok = await requestConfirm({
       title: "حذف ناعم للمنتج",
       message: `سيتم أرشفة «${product.titleAr}». يمكنك استرجاعه لاحقًا من الأرشيف.`,
-      confirmLabel: "نعم، أرشِفي",
+      confirmLabel: "نعم، أرشِف",
       cancelLabel: "إلغاء",
       destructive: true,
     });
@@ -261,7 +289,7 @@ export default function AdminProductsPage() {
   );
 
   return (
-    <div className="admin-page admin-page--wide" dir="rtl">
+    <div className="admin-page admin-page--catalog" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="المنتجات"
@@ -270,12 +298,13 @@ export default function AdminProductsPage() {
             <AdminButton
               type="button"
               variant="primary"
+              icon={Plus}
               onClick={() => {
                 setCreating(true);
                 setEditing(null);
               }}
             >
-              + منتج جديد
+              منتج جديد
             </AdminButton>
           }
         />
@@ -365,20 +394,69 @@ export default function AdminProductsPage() {
               }}
               statusOptions={STATUS_FILTER_OPTIONS}
             />
-          <AdminTable style={{ marginTop: 12 }}>
-            <thead>
-              <tr>
-                <th aria-label="معاينة">صورة</th>
-                <th>العنوان</th>
-                <th>الحالة</th>
-                <th>تصنيف</th>
-                <th>مقاسات</th>
-                <th>السعر</th>
-                <th>ألوان</th>
-                <th>—</th>
-              </tr>
-            </thead>
-            <tbody>
+            <div className="admin-data-table--desktop">
+              <AdminTable style={{ marginTop: 12 }}>
+                <thead>
+                  <tr>
+                    <th aria-label="صورة">صورة</th>
+                    <th>العنوان</th>
+                    <th>الحالة</th>
+                    <th>التصنيف</th>
+                    <th>المقاسات</th>
+                    <th>الألوان</th>
+                    <th>السعر</th>
+                    <th>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.items.map((p) => {
+                    const status = deriveProductAdminStatus({
+                      isPublished: p.isPublished,
+                      deletedAt: p.deletedAt,
+                      variants: p.variants,
+                      sizes: p.sizes,
+                    });
+                    const sizes = productSizes(p);
+                    return (
+                      <tr key={p.id}>
+                        <AdminTd label="">
+                          <AdminProductThumbCell src={primaryProductThumbSrc(p)} />
+                        </AdminTd>
+                        <AdminTd label="العنوان">{p.titleAr}</AdminTd>
+                        <AdminTd label="الحالة">
+                          <ProductStatusBadge status={status} />
+                        </AdminTd>
+                        <AdminTd label="التصنيف">
+                          {categoryLabelFor(p, categories)}
+                        </AdminTd>
+                        <AdminTd label="المقاسات" style={{ fontSize: 12 }}>
+                          {sizes.join("، ") || "—"}
+                        </AdminTd>
+                        <AdminTd label="الألوان" style={{ fontSize: 12 }}>
+                          {p.colors.map((c) => c.label).join("، ") || "—"}
+                        </AdminTd>
+                        <AdminTd label="السعر" style={{ fontSize: 12 }}>
+                          {p.price != null && p.price !== ""
+                            ? `${p.price} ${p.currency || "LYD"}`
+                            : "—"}
+                        </AdminTd>
+                        <AdminTd label="إجراءات" className="admin-table__cell--actions">
+                          <AdminRowActions
+                            archived={false}
+                            onEdit={() => {
+                              setEditing(p);
+                              setCreating(false);
+                            }}
+                            onArchive={() => void confirmSoftDelete(p)}
+                          />
+                        </AdminTd>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </AdminTable>
+            </div>
+            <div className="admin-data-cards--mobile admin-product-grid">
               {paginated.items.map((p) => {
                 const status = deriveProductAdminStatus({
                   isPublished: p.isPublished,
@@ -386,58 +464,29 @@ export default function AdminProductsPage() {
                   variants: p.variants,
                   sizes: p.sizes,
                 });
-                const thumb = primaryProductThumbSrc(p);
+                const priceLabel =
+                  p.price != null && p.price !== ""
+                    ? `${p.price} ${p.currency || "LYD"}`
+                    : "السعر غير محدد";
                 return (
-                <tr key={p.id}>
-                  <AdminTd label="">
-                    <AdminProductThumbCell src={thumb} />
-                  </AdminTd>
-                  <AdminTd label="العنوان">{p.titleAr}</AdminTd>
-                  <AdminTd label="الحالة">
-                    <ProductStatusBadge status={status} />
-                  </AdminTd>
-                  <AdminTd label="تصنيف">
-                    {cats.find((c) => c.v === p.category)?.l ?? p.category}
-                  </AdminTd>
-                  <AdminTd label="مقاسات" style={{ fontSize: 12 }}>
-                    {p.variants?.length
-                      ? p.variants.map((v) => v.size).join("، ")
-                      : p.sizes.join("، ")}
-                  </AdminTd>
-                  <AdminTd label="السعر" style={{ fontSize: 12 }}>
-                    {p.price != null && p.price !== ""
-                      ? `${p.price} ${p.currency || "LYD"}`
-                      : "—"}
-                  </AdminTd>
-                  <AdminTd label="ألوان" style={{ fontSize: 12 }}>
-                    {p.colors.map((c) => c.label).join("، ")}
-                  </AdminTd>
-                  <AdminTd label="إجراءات" className="admin-table__cell--actions">
-                    <div className="admin-table__actions">
-                      <AdminButton
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditing(p);
-                          setCreating(false);
-                        }}
-                      >
-                        تعديل
-                      </AdminButton>
-                      <AdminButton
-                        type="button"
-                        variant="danger"
-                        onClick={() => void confirmSoftDelete(p)}
-                      >
-                        حذف
-                      </AdminButton>
-                    </div>
-                  </AdminTd>
-                </tr>
-              );
+                  <AdminProductCard
+                    key={p.id}
+                    title={p.titleAr}
+                    categoryLabel={categoryLabelFor(p, categories)}
+                    status={status}
+                    priceLabel={priceLabel}
+                    imageSrc={primaryProductThumbSrc(p)}
+                    sizes={productSizes(p)}
+                    colors={p.colors.map((c) => c.label)}
+                    onEdit={() => {
+                      setEditing(p);
+                      setCreating(false);
+                    }}
+                    onArchive={() => void confirmSoftDelete(p)}
+                  />
+                );
               })}
-            </tbody>
-          </AdminTable>
+            </div>
           </>
         ) : null}
       </AdminCard>
@@ -578,8 +627,8 @@ function ProductForm({
       }))
       .filter((r) => r.url.length > 0);
     if (cleaned.length === 0) {
-      setMediaPanelError("أضيفي صورة واحدة على الأقل للمنتج");
-      pushToast("أضيفي صورة واحدة على الأقل للمنتج.", "error");
+      setMediaPanelError("أضف صورة واحدة على الأقل للمنتج");
+      pushToast("أضف صورة واحدة على الأقل للمنتج.", "error");
       setLoading(false);
       return;
     }
@@ -593,7 +642,7 @@ function ProductForm({
     }
     if (Object.keys(nextUrlErrors).length > 0) {
       setMediaUrlErrors(nextUrlErrors);
-      pushToast("صححي روابط الصور غير الصالحة.", "error");
+      pushToast("صحّح روابط الصور غير الصالحة.", "error");
       setLoading(false);
       return;
     }
@@ -648,7 +697,7 @@ function ProductForm({
     for (const v of variantsPayload) {
       const k = `${v.size.toLowerCase()}__${v.colorLabel ?? ""}`;
       if (keys.has(k)) {
-        pushToast("لا تكرّري نفس المقاس مع نفس اللون في صفين.", "error");
+        pushToast("لا تكرّر نفس المقاس مع نفس اللون في صفين.", "error");
         setLoading(false);
         return;
       }
@@ -722,50 +771,71 @@ function ProductForm({
   return (
     <form
       onSubmit={submit}
-      className="admin-form admin-form--wide"
-      style={{ margin: "0.5rem 0 1.2rem" }}
+      className="admin-form admin-form--luxury"
+      style={{ margin: "0.25rem 0 0.5rem" }}
     >
-      <div className="admin-form__title-row">
-        <h3>{initial ? "تعديل" : "جديد"}</h3>
-        <ProductStatusBadge status={formStatus} />
-      </div>
-      <label>
-        العنوان (عربي)
-        <input
-          value={titleAr}
-          onChange={(e) => setTitleAr(e.target.value)}
-          required
+      <AdminCollapsibleSection
+        title="المعلومات الأساسية"
+        description="العنوان، الوصف، والماركة"
+        defaultOpen
+        badge={<ProductStatusBadge status={formStatus} />}
+      >
+        <AdminField label="العنوان (عربي)">
+          <AdminInput
+            value={titleAr}
+            onChange={(e) => setTitleAr(e.target.value)}
+            required
+            placeholder="مثال: فستان سهرة مطرّز"
+          />
+        </AdminField>
+        <AdminField label="عنوان EN (اختياري)">
+          <AdminInput
+            value={titleEn}
+            onChange={(e) => setTitleEn(e.target.value)}
+            dir="ltr"
+            placeholder="Evening gown"
+          />
+        </AdminField>
+        <AdminField label="وصف المنتج">
+          <AdminTextarea
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="وصف قصير يظهر في بطاقة المنتج…"
+          />
+        </AdminField>
+        <AdminField label="ماركة / مصمم (اختياري)">
+          <AdminSelect
+            value={brandDesignerId}
+            onChange={(e) => setBrandDesignerId(e.target.value)}
+          >
+            <option value="">— بدون —</option>
+            {brandSelectOptions.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.type === "DESIGNER" ? "مصمم — " : "ماركة — "}
+                {b.nameAr}
+              </option>
+            ))}
+          </AdminSelect>
+        </AdminField>
+        <AdminLuxuryListbox
+          id="product-category"
+          label="القسم"
+          value={category}
+          options={
+            categories.length > 0
+              ? categories.map((c) => ({ value: c.slug, label: c.nameAr }))
+              : cats.map((c) => ({ value: c.v, label: c.l }))
+          }
+          onChange={setCategory}
         />
-      </label>
-      <label>
-        عنوان EN (اختياري)
-        <input value={titleEn} onChange={(e) => setTitleEn(e.target.value)} />
-      </label>
-      <label>
-        وصف
-        <textarea
-          rows={2}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </label>
+      </AdminCollapsibleSection>
 
-      <label>
-        ماركة / مصمم (اختياري)
-        <AdminSelect
-          value={brandDesignerId}
-          onChange={(e) => setBrandDesignerId(e.target.value)}
-        >
-          <option value="">— بدون —</option>
-          {brandSelectOptions.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.type === "DESIGNER" ? "مصمم — " : "ماركة — "}
-              {b.nameAr}
-            </option>
-          ))}
-        </AdminSelect>
-      </label>
-
+      <AdminCollapsibleSection
+        title="المعرض"
+        description="صور المنتج وترتيبها"
+        defaultOpen={!initial}
+      >
       <ProductGalleryEditor
         rows={imageRows}
         urlErrors={mediaUrlErrors}
@@ -774,94 +844,114 @@ function ProductForm({
         onUrlErrorsChange={setMediaUrlErrors}
         onPanelErrorChange={setMediaPanelError}
       />
+      </AdminCollapsibleSection>
 
-      <label>
-        السعر (اختياري — رقم موجب)
-        <input
-          type="text"
-          inputMode="decimal"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          placeholder="مثال: 250"
-        />
-      </label>
-      <AdminLuxuryListbox
-        id="product-category"
-        label="القسم"
-        value={category}
-        options={
-          categories.length > 0
-            ? categories.map((c) => ({ value: c.slug, label: c.nameAr }))
-            : cats.map((c) => ({ value: c.v, label: c.l }))
-        }
-        onChange={setCategory}
-      />
-
-      <AdminLuxuryListbox
+      <AdminCollapsibleSection
+        title="التسعير"
+        description="السعر والعملة"
+        defaultOpen={false}
+      >
+        <AdminField label="السعر (اختياري)" hint="رقم موجب، مثال: 250">
+          <AdminInput
+            type="text"
+            inputMode="decimal"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="250"
+            dir="ltr"
+          />
+        </AdminField>
+        <AdminLuxuryListbox
         id="product-currency"
         label="العملة"
         value={currency}
         options={CURRENCY_OPTIONS}
         onChange={setCurrency}
-      />
+        />
+      </AdminCollapsibleSection>
 
+      <AdminCollapsibleSection
+        title="المقاسات والتوفر"
+        description="المخزون والألوان المتاحة للفلترة"
+        defaultOpen
+      >
       <ProductVariantEditor
         rows={variantRows}
         onChange={setVariantRows}
         allowEmptySize={category === "accessories"}
       />
 
-      <div>
-        <div style={{ fontWeight: 800, fontSize: "0.9rem", color: "#d7c9c2" }}>
-          ألوان المنتج (فلاتر)
-        </div>
-        {colors.map((c) => {
-          const isArchived = Boolean(c.deletedAt);
-          if (isArchived && !colorIds.has(c.id) && !initial) return null;
-          return (
-            <label
-              key={c.id}
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={colorIds.has(c.id)}
-                onChange={() => {
-                  setColorIds((s) => {
-                    const n = new Set(s);
-                    if (n.has(c.id)) n.delete(c.id);
-                    else n.add(c.id);
-                    return n;
-                  });
-                }}
-              />
-              {c.label}
-              {isArchived ? " (مؤرشف لون)" : null}
-            </label>
-          );
-        })}
+        <AdminField label="ألوان المنتج (فلاتر المتجر)">
+          <div className="admin-color-picker-grid">
+            {colors.map((c) => {
+              const isArchived = Boolean(c.deletedAt);
+              if (isArchived && !colorIds.has(c.id) && !initial) return null;
+              const hex = c.hex?.trim().replace(/^#/, "");
+              const swatch =
+                hex && /^[0-9a-fA-F]{3,8}$/.test(hex)
+                  ? `#${hex.slice(0, 6)}`
+                  : undefined;
+              const on = colorIds.has(c.id);
+              return (
+                <label
+                  key={c.id}
+                  className={`admin-color-picker-chip${on ? " admin-color-picker-chip--on" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    onChange={() => {
+                      setColorIds((s) => {
+                        const n = new Set(s);
+                        if (n.has(c.id)) n.delete(c.id);
+                        else n.add(c.id);
+                        return n;
+                      });
+                    }}
+                  />
+                  <span
+                    className="admin-color-picker-chip__swatch"
+                    style={swatch ? { background: swatch } : undefined}
+                    aria-hidden
+                  />
+                  <span>
+                    {c.label}
+                    {isArchived ? " (مؤرشف)" : ""}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </AdminField>
+      </AdminCollapsibleSection>
+
+      <AdminCollapsibleSection
+        title="النشر"
+        description="ظهور المنتج في المتجر"
+        defaultOpen
+      >
+        <label
+          className="admin-field"
+          style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+        >
+          <input
+            type="checkbox"
+            checked={isPublished}
+            onChange={(e) => setIsPublished(e.target.checked)}
+          />
+          <span className="admin-field__label">منشور في المتجر</span>
+        </label>
+      </AdminCollapsibleSection>
+      <div className="admin-form__sticky-footer">
+        <p className="admin-product-form-actions">
+          <AdminButton type="submit" variant="primary" disabled={loading}>
+            {loading ? "جارٍ الحفظ…" : "حفظ المنتج"}
+          </AdminButton>
+          <AdminButton type="button" variant="secondary" onClick={onClose}>
+            إلغاء
+          </AdminButton>
+        </p>
       </div>
-      <label style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <input
-          type="checkbox"
-          checked={isPublished}
-          onChange={(e) => setIsPublished(e.target.checked)}
-        />
-        منشور
-      </label>
-      <p className="admin-product-form-actions">
-        <AdminButton type="submit" variant="primary" disabled={loading}>
-          {loading ? "…" : "حفظ"}
-        </AdminButton>
-        <AdminButton type="button" variant="secondary" onClick={onClose}>
-          إلغاء
-        </AdminButton>
-      </p>
     </form>
   );
 }

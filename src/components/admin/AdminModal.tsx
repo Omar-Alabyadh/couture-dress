@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { AdminButton } from "@/components/admin/AdminPrimitives";
 
@@ -36,25 +37,29 @@ export function AdminModal({
 
   return (
     <div
-      className="admin-modal"
+      className="admin-form-modal-root"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="admin-modal-title"
+      aria-labelledby="admin-form-modal-title"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className={`admin-modal__panel${wide ? " admin-modal__panel--wide" : ""}`}
+        className={`admin-form-modal__panel${wide ? " admin-form-modal__panel--wide" : ""}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="admin-modal__header">
-          <h2 id="admin-modal-title">{title}</h2>
-          <AdminButton type="button" variant="ghost" onClick={onClose} aria-label="إغلاق">
-            ✕
-          </AdminButton>
+        <header className="admin-form-modal__header">
+          <h2 id="admin-form-modal-title">{title}</h2>
+          <AdminButton
+            type="button"
+            variant="ghost"
+            icon={X}
+            onClick={onClose}
+            aria-label="إغلاق"
+          />
         </header>
-        <div className="admin-modal__body">{children}</div>
+        <div className="admin-form-modal__body">{children}</div>
       </div>
     </div>
   );
