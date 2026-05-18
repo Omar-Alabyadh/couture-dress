@@ -12,6 +12,8 @@ import {
 } from "@/server/services/contentService";
 import { getPublicLandingContent } from "@/server/services/landingService";
 import { defaultLandingContent } from "@/lib/types/landing";
+import { getProductCategories } from "@/lib/categories/product-categories";
+import type { HomeCategoryPreview } from "@/components/sections/HomePage";
 
 // AR: الصفحة تعتمد على قاعدة البيانات؛ نجعلها ديناميكية حتى لا يفشل `next build` بدون DATABASE_URL.
 // EN: Page depends on DB; force dynamic rendering so `next build` works without DATABASE_URL.
@@ -35,6 +37,7 @@ export default async function SiteHomePage() {
   let landing = defaultLandingContent();
   let testimonials: PublicTestimonialHome[] = [];
   let brandStrip: PublicBrandStripItem[] = [];
+  let homeCategories: HomeCategoryPreview[] = [];
   try {
     collectionItems = await getPublicCollectionItemsForHome();
   } catch (error) {
@@ -60,6 +63,17 @@ export default async function SiteHomePage() {
     brandStrip = [];
   }
 
+  try {
+    const cats = await getProductCategories(false);
+    homeCategories = cats.map((c) => ({
+      slug: c.slug,
+      nameAr: c.nameAr,
+      descriptionAr: c.descriptionAr,
+    }));
+  } catch (error) {
+    console.error("[SiteHomePage] Failed to load categories:", error);
+  }
+
   const socialUrls = readPublicSocialUrls();
 
   return (
@@ -69,6 +83,7 @@ export default async function SiteHomePage() {
       socialUrls={socialUrls}
       testimonials={testimonials}
       brandStrip={brandStrip}
+      homeCategories={homeCategories}
     />
   );
 }

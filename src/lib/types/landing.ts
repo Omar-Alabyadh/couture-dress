@@ -79,8 +79,9 @@ export function defaultLandingContent(): LandingContent {
     visionTitle: "رؤيتنا",
     visionText:
       "أن تصبح كوتور للأزياء الوجهة الأولى لكل سيدة تبحث عن أسلوب راقٍ ومميز.",
-    collectionTitle: "المجموعة",
-    collectionSubtitle: "",
+    collectionTitle: "الأقسام",
+    collectionSubtitle:
+      "اكتشفي أقسامنا المختارة — من الفساتين الراقية إلى الإكسسوارات التي تكمل إطلالتك.",
     stats: [
       { num: "+100", label: "قطعة مختارة" },
       { num: "أسبوعي", label: "تجديد الموديلات" },
@@ -92,6 +93,21 @@ export function defaultLandingContent(): LandingContent {
       { icon: "✓", title: "جودة ممتازة", text: "خامات ممتازة وتفاصيل دقيقة." },
       { icon: "⚡", title: "تحديث مستمر", text: "موديلات جديدة بشكل أسبوعي." },
       { icon: "☎", title: "تواصل سريع", text: "واتساب مباشر للحجز والاستفسار." },
+      {
+        icon: "💳",
+        title: "وسائل دفع محلية ومصرفية",
+        text: "إدفع لي، موبي كاش، تحويل مصرفي، One Pay، لي باي.",
+      },
+      {
+        icon: "🚚",
+        title: "توصيل لجميع مدن ليبيا",
+        text: "نوصّل طلبك إلى مدينتك بكل عناية.",
+      },
+      {
+        icon: "🌍",
+        title: "توصيل دولي",
+        text: "توصيل متاح أيضًا خارج ليبيا — تواصلي معنا للتفاصيل.",
+      },
     ],
     contactTitle: "تواصل معنا",
     contactIntro:

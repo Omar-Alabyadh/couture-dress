@@ -45,32 +45,44 @@ const HOME_CATEGORY_FALLBACK_IMAGE = "/assets/hero.jpeg";
 const FEATURE_HIGHLIGHT_TITLE = "اختيار راقٍ";
 
 const HOME_CATEGORY_PREVIEWS: Record<
-  CollectionCategory,
+  string,
   { title: string; description: string; ctaLabel: string }
 > = {
   dresses: {
     title: "فساتين",
     description:
       "فساتين سهرة وزفاف بقصّات راقية ولمسات كوتور تليق بلحظاتك المميزة.",
-    ctaLabel: "تصفحي المجموعة",
+    ctaLabel: "استكشفي القسم",
   },
   abayas: {
-    title: "عبايات",
+    title: "عبايات وجلابيات",
     description:
-      "عبايات يومية وسهرة بخامات ناعمة وتفاصيل هادئة تعكس أناقتك اليومية.",
-    ctaLabel: "تصفحي المجموعة",
+      "عبايات وجلابيات بخامات ناعمة وتفاصيل هادئة لإطلالة يومية راقية.",
+    ctaLabel: "استكشفي القسم",
+  },
+  suits: {
+    title: "بدل وأطقم",
+    description:
+      "بدل وأطقم أنيقة للمناسبات والعمل — قصّات محددة بعناية.",
+    ctaLabel: "استكشفي القسم",
   },
   casual: {
     title: "كاجوال",
     description:
       "قطع يومية مريحة بلمسة عصرية — توازن بين السهولة والتميز.",
-    ctaLabel: "تصفحي المجموعة",
+    ctaLabel: "استكشفي القسم",
   },
   accessories: {
     title: "إكسسوارات",
     description: "لمسات تكمّل إطلالتك: حقائب وقطع مختارة بعناية.",
-    ctaLabel: "تصفحي المجموعة",
+    ctaLabel: "استكشفي القسم",
   },
+};
+
+export type HomeCategoryPreview = {
+  slug: string;
+  nameAr: string;
+  descriptionAr: string | null;
 };
 
 type HomePageProps = {
@@ -81,6 +93,8 @@ type HomePageProps = {
   socialUrls: PublicSocialUrls;
   testimonials?: PublicTestimonialHome[];
   brandStrip?: PublicBrandStripItem[];
+  /** Admin-defined sections; falls back to default order when empty. */
+  homeCategories?: HomeCategoryPreview[];
 };
 
 export default function HomePage({
@@ -89,6 +103,7 @@ export default function HomePage({
   socialUrls,
   testimonials = [],
   brandStrip = [],
+  homeCategories = [],
 }: HomePageProps) {
   const landing = landingProp ?? defaultLandingContent();
   const heroBgSafe = clampHeroBgImageUrl(
@@ -355,17 +370,27 @@ export default function HomePage({
                 </p>
               ) : null}
               <p style={{ marginTop: "0.5rem" }}>
-                <Link className="btn btn--ghost" href="/products">
-                  تصفحي جميع المنتجات والفلاتر
+                <Link className="btn btn--ghost btn--cta-pulse" href="/products">
+                  تصفّحي كل القطع
                 </Link>
               </p>
             </div>
           </Reveal>
 
           <div className="gallery" id="gallery">
-            {COLLECTION_CATEGORY_ORDER.map((categoryId, idx) => {
-              const meta = HOME_CATEGORY_PREVIEWS[categoryId];
-              const rep = categorySpotlightItem.get(categoryId);
+            {(homeCategories.length > 0
+              ? homeCategories.map((c) => c.slug)
+              : COLLECTION_CATEGORY_ORDER
+            ).map((categoryId, idx) => {
+              const fromCms = homeCategories.find((c) => c.slug === categoryId);
+              const meta = HOME_CATEGORY_PREVIEWS[categoryId] ?? {
+                title: fromCms?.nameAr ?? categoryId,
+                description:
+                  fromCms?.descriptionAr ??
+                  "اكتشفي تشكيلة مختارة من هذا القسم.",
+                ctaLabel: "استكشفي القسم",
+              };
+              const rep = categorySpotlightItem.get(categoryId as CollectionCategory);
               const imageUrl = rep?.imageUrl ?? HOME_CATEGORY_FALLBACK_IMAGE;
               const imageAlt =
                 rep?.imageAlt ??
@@ -644,6 +669,15 @@ export default function HomePage({
         brandEn={landing.footerEn}
       />
 
+      <a
+        className="call-float"
+        href="tel:+218920920500"
+        aria-label="اتصال هاتفي"
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden fill="currentColor">
+          <path d="M6.6 10.8c1.5 2.9 3.7 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.3 0 .7-.2 1L6.6 10.8z" />
+        </svg>
+      </a>
       <a
         className="whats-float"
         href={defaultWhatsappLink}

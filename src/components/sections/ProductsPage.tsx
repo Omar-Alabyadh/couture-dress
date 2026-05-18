@@ -20,7 +20,10 @@ import {
 } from "@/lib/communication/whatsapp";
 import { getShopName } from "@/lib/customer-service";
 import { formatProductPriceDisplay } from "@/lib/product-price";
-import { PRODUCT_DELIVERY_NOTE } from "@/lib/config/product-display";
+import {
+  PRODUCT_DELIVERY_INTERNATIONAL,
+  PRODUCT_DELIVERY_LIBYA,
+} from "@/lib/config/product-display";
 import { ProductMediaCarousel } from "@/components/products/ProductMediaCarousel";
 import type { ProductSlide } from "@/components/products/ProductMediaCarousel";
 import Reveal from "@/components/motion/Reveal";
@@ -31,14 +34,9 @@ import { LuxuryListbox } from "@/components/ui/LuxuryListbox";
 
 type ColorOption = { id: string; label: string; hex: string | null };
 
-type Category = "all" | "dresses" | "abayas" | "casual" | "accessories";
+type Category = "all" | string;
 
-const categoryLabels: Record<Exclude<Category, "all">, string> = {
-  dresses: "فساتين",
-  abayas: "عبايات",
-  casual: "كاجوال",
-  accessories: "إكسسوارات",
-};
+type SelectionState = { size: string; color: string };
 
 function toProductSlides(item: CollectionItemView): ProductSlide[] {
   if (item.images.length > 0) {
@@ -61,14 +59,12 @@ function toProductSlides(item: CollectionItemView): ProductSlide[] {
 
 function buildQuery(p: {
   q: string;
-  name: string;
   size: string;
   colorId: string;
   category: Category;
 }) {
   const u = new URLSearchParams();
   if (p.q.trim()) u.set("q", p.q.trim());
-  if (p.name.trim()) u.set("name", p.name.trim());
   if (p.size) u.set("size", p.size);
   if (p.colorId) u.set("colorId", p.colorId);
   if (p.category !== "all") u.set("category", p.category);
@@ -88,6 +84,56 @@ function displayVariantsForProduct(item: CollectionItemView): ProductVariantView
     allowSpecialOrder: false,
     sortOrder: i,
   }));
+}
+
+function uniqueVariantColors(item: CollectionItemView): string[] {
+  const set = new Set<string>();
+  for (const v of displayVariantsForProduct(item)) {
+    const label = v.colorLabel?.trim();
+    if (label) set.add(label);
+  }
+  for (const c of item.colors) {
+    if (c.label.trim()) set.add(c.label.trim());
+  }
+  return Array.from(set);
+}
+
+function uniqueVariantSizes(item: CollectionItemView): string[] {
+  const set = new Set<string>();
+  for (const v of displayVariantsForProduct(item)) {
+    const s = v.size.trim();
+    if (s) set.add(s);
+  }
+  return Array.from(set);
+}
+
+function resolveVariantForSelection(
+  item: CollectionItemView,
+  selection: SelectionState | undefined,
+): ProductVariantView | null {
+  const rows = displayVariantsForProduct(item);
+  if (rows.length === 0) return null;
+  const size = selection?.size?.trim() ?? "";
+  const color = selection?.color?.trim() ?? "";
+  if (size || color) {
+    const match = rows.find((v) => {
+      const sizeOk = !size || v.size.trim() === size;
+      const colorOk =
+        !color ||
+        (v.colorLabel?.trim() ?? "") === color ||
+        item.colors.find((c) => c.id === v.colorId)?.label.trim() === color;
+      return sizeOk && colorOk;
+    });
+    if (match) return match;
+  }
+  return rows.find(isVariantSellable) ?? rows[0] ?? null;
+}
+
+function priceLine(item: CollectionItemView): string {
+  if (item.price != null && item.price !== "") {
+    return formatProductPriceDisplay(item.price, item.currency);
+  }
+  return "تواصلي لمعرفة السعر";
 }
 
 function productHasSpecialOrderOption(item: CollectionItemView): boolean {
@@ -168,7 +214,6 @@ export default function ProductsPage({
   const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
   const headerRef = useStickyHeader<HTMLElement>();
   const [q, setQ] = useState("");
-  const [name, setName] = useState("");
   const [size, setSize] = useState("");
   const [colorId, setColorId] = useState("");
   const [category, setCategory] = useState<Category>(() =>
@@ -180,9 +225,12 @@ export default function ProductsPage({
   const [sizes, setSizes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [selectedVariantByProduct, setSelectedVariantByProduct] = useState<
-    Record<string, string>
+  const [selectionByProduct, setSelectionByProduct] = useState<
+    Record<string, SelectionState>
   >({});
+  const [categoryLabels, setCategoryLabels] = useState<Record<string, string>>(
+    {},
+  );
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q), 320);
@@ -194,7 +242,6 @@ export default function ProductsPage({
     setErr(null);
     const qs = buildQuery({
       q: debouncedQ,
-      name,
       size,
       colorId,
       category,
@@ -222,7 +269,21 @@ export default function ProductsPage({
     } finally {
       setLoading(false);
     }
-  }, [debouncedQ, name, size, colorId, category]);
+  }, [debouncedQ, size, colorId, category]);
+
+  useEffect(() => {
+    return runAfterEffectFlush(() => {
+      void fetch("/api/public/categories", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j: { data?: { slug: string; nameAr: string }[] } | null) => {
+          if (!j?.data) return;
+          const map: Record<string, string> = {};
+          for (const c of j.data) map[c.slug] = c.nameAr;
+          setCategoryLabels(map);
+        })
+        .catch(() => {});
+    });
+  }, []);
 
   useEffect(() => {
     return runAfterEffectFlush(() => {
@@ -246,7 +307,7 @@ export default function ProductsPage({
         label: l,
       })),
     ],
-    [],
+    [categoryLabels],
   );
 
   const sizeOptions = useMemo(
@@ -268,11 +329,8 @@ export default function ProductsPage({
     [colors],
   );
 
-  function orderProduct(item: CollectionItemView, selectedVariantId: string | null) {
-    const rows = displayVariantsForProduct(item);
-    const v = selectedVariantId
-      ? rows.find((r) => r.id === selectedVariantId) ?? null
-      : null;
+  function orderProduct(item: CollectionItemView, variant: ProductVariantView | null) {
+    const v = variant;
     const sellable = v ? isVariantSellable(v) : false;
     const special = Boolean(v && !sellable && v.allowSpecialOrder);
     const unavailableNoSpecial = Boolean(v && !sellable && !v.allowSpecialOrder);
@@ -390,32 +448,20 @@ export default function ProductsPage({
         <div className="container">
           <h1 className="section__title" style={{ marginTop: 0 }}>المنتجات</h1>
           <p className="section__text">
-            ابحثي وصفّي حسب الاسم، المقاس، واللون — الألوان يعرّفها مالك المتجر من
-            لوحة التحكم.
+            تصفّحي تشكيلتنا واختاري المقاس واللون المناسبين — ثم اطلبي عبر واتساب
+            بسهولة.
           </p>
 
           <div className="products-filters" dir="rtl">
             <div className="field field--wide">
-              <label htmlFor="pq">بحث (في الاسم والوصف)</label>
+              <label htmlFor="pq">بحث</label>
               <input
                 id="pq"
                 name="q"
                 type="search"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="مثال: فستان، عباية..."
-                autoComplete="off"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="pname">اسم المنتج (ضمن الاسم فقط)</label>
-              <input
-                id="pname"
-                name="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="مطابقة لجزء من العنوان"
+                placeholder="ابحثي بالاسم أو الوصف…"
                 autoComplete="off"
               />
             </div>
@@ -459,22 +505,33 @@ export default function ProductsPage({
               </p>
             ) : null}
             {items.map((item, idx) => {
+              const selection = selectionByProduct[item.id];
+              const variant = resolveVariantForSelection(item, selection);
               const selectedId =
-                selectedVariantByProduct[item.id] ??
-                defaultVariantIdForProduct(item);
+                variant?.id ?? defaultVariantIdForProduct(item);
               const orderEnabled = canOrderProduct(item, selectedId);
+              const fullyUnavailable =
+                !item.inStock && !productHasSpecialOrderOption(item);
+              const colorOptions = uniqueVariantColors(item);
+              const sizeOptions = uniqueVariantSizes(item);
               return (
               <Reveal
                 key={item.id}
                 variant="zoom"
                 delay={Math.min(idx * 60, 360)}
               >
-                <article className="item product-card" data-cat={item.category}>
+                <article
+                  className={`item product-card${fullyUnavailable ? " product-card--unavailable" : ""}`}
+                  data-cat={item.category}
+                >
                   <div className="item__media item__media--product">
                     <ProductMediaCarousel
                       slides={toProductSlides(item)}
                       productLabel={item.title}
                     />
+                    {fullyUnavailable ? (
+                      <span className="product-card__overlay-badge">غير متوفر</span>
+                    ) : null}
                   </div>
                   <div className="item__body">
                     <h3>{item.title}</h3>
@@ -489,88 +546,69 @@ export default function ProductsPage({
                     {item.description ? (
                       <p className="product-card__desc">{item.description}</p>
                     ) : null}
-                    <p className="product-card__price">
-                      {formatProductPriceDisplay(item.price, item.currency)}
-                    </p>
-                    {!item.inStock ? (
-                      <p className="product-card__stock product-card__stock--out">
-                        غير متوفر حاليًا
-                      </p>
-                    ) : null}
-                    {item.colors.length > 0 ? (
-                      <div className="product-card__chips" aria-label="الألوان">
-                        {item.colors.map((c) => (
-                          <span key={c.id} className="product-chip">
-                            {c.hex ? (
-                              <span
-                                className="color-swatch"
-                                style={{
-                                  background: c.hex.startsWith("#")
-                                    ? c.hex
-                                    : `#${c.hex}`,
-                                }}
-                                title={c.label}
-                              />
-                            ) : null}
-                            {c.label}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                    {displayVariantsForProduct(item).length > 0 ? (
-                      <div
-                        className="product-size-pills"
-                        aria-label="المقاسات والتوفر"
-                      >
-                        {displayVariantsForProduct(item).map((v) => {
-                          const sellable = isVariantSellable(v);
-                          const selected = selectedId === v.id;
-                          const cls = [
-                            "product-size-pill",
-                            selected ? "product-size-pill--selected" : "",
-                            !sellable ? "product-size-pill--unavailable" : "",
-                            !sellable && v.allowSpecialOrder
-                              ? "product-size-pill--special"
-                              : "",
-                          ]
-                            .filter(Boolean)
-                            .join(" ");
-                          const title = !sellable
-                            ? v.allowSpecialOrder
-                              ? "غير متوفر حاليًا — طلب خاص عبر واتساب"
-                              : "غير متوفر حاليًا"
-                            : undefined;
-                          return (
+                    <p className="product-card__price">{priceLine(item)}</p>
+                    {colorOptions.length > 0 ? (
+                      <div className="product-card__picker" aria-label="اختيار اللون">
+                        <span className="product-card__picker-label">اللون</span>
+                        <div className="product-card__pills">
+                          {colorOptions.map((c) => (
                             <button
-                              key={v.id}
+                              key={c}
                               type="button"
-                              className={cls}
-                              title={title}
+                              className={`product-choice-pill${
+                                selection?.color === c
+                                  ? " product-choice-pill--selected"
+                                  : ""
+                              }`}
                               onClick={() =>
-                                setSelectedVariantByProduct((m) => ({
+                                setSelectionByProduct((m) => ({
                                   ...m,
-                                  [item.id]: v.id,
+                                  [item.id]: {
+                                    size: m[item.id]?.size ?? "",
+                                    color: c,
+                                  },
                                 }))
                               }
                             >
-                              <span>{v.size}</span>
-                              {v.colorLabel ? (
-                                <span style={{ opacity: 0.88 }}>
-                                  {" "}
-                                  · {v.colorLabel}
-                                </span>
-                              ) : null}
-                              {!sellable && v.allowSpecialOrder ? (
-                                <span className="product-size-pill__special">
-                                  طلب خاص
-                                </span>
-                              ) : null}
+                              {c}
                             </button>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </div>
                     ) : null}
-                    <p className="product-card__delivery">{PRODUCT_DELIVERY_NOTE}</p>
+                    {sizeOptions.length > 0 ? (
+                      <div className="product-card__picker" aria-label="اختيار المقاس">
+                        <span className="product-card__picker-label">المقاس</span>
+                        <div className="product-card__pills">
+                          {sizeOptions.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              className={`product-choice-pill${
+                                selection?.size === s
+                                  ? " product-choice-pill--selected"
+                                  : ""
+                              }`}
+                              onClick={() =>
+                                setSelectionByProduct((m) => ({
+                                  ...m,
+                                  [item.id]: {
+                                    color: m[item.id]?.color ?? "",
+                                    size: s,
+                                  },
+                                }))
+                              }
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    <p className="product-card__delivery">{PRODUCT_DELIVERY_LIBYA}</p>
+                    <p className="product-card__delivery product-card__delivery--intl">
+                      {PRODUCT_DELIVERY_INTERNATIONAL}
+                    </p>
                     <button
                       className="btn btn--small btn--primary product-card__order-btn"
                       type="button"
@@ -582,7 +620,7 @@ export default function ProductsPage({
                         item,
                         selectedId,
                       )}
-                      onClick={() => orderProduct(item, selectedId)}
+                      onClick={() => orderProduct(item, variant)}
                     >
                       {orderButtonLabel(item, selectedId)}
                     </button>

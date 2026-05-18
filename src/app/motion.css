@@ -2237,6 +2237,104 @@ select:focus-visible {
     0 0 40px rgba(16, 114, 83, 0.24);
 }
 
+.call-float {
+  position: fixed;
+  left: 16px;
+  bottom: 84px;
+  z-index: 60;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.12), #2a4a6b 55%, #1a3348);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 22px rgba(26, 51, 72, 0.35);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.call-float:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(26, 51, 72, 0.45);
+}
+
+@keyframes btn-cta-luxury-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(185, 133, 111, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(185, 133, 111, 0.12);
+  }
+}
+.btn--cta-pulse {
+  animation: btn-cta-luxury-pulse 3.2s ease-in-out infinite;
+}
+
+.brand-card__logo-wrap--icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+}
+.brand-card__type-icon {
+  width: 28px;
+  height: 28px;
+  color: #d4b8a8;
+}
+
+.product-card--unavailable .item__media--product::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.38);
+  pointer-events: none;
+}
+.product-card__overlay-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.72);
+  color: #f5e8e0;
+}
+.product-card__picker {
+  margin-top: 0.5rem;
+}
+.product-card__picker-label {
+  display: block;
+  font-size: 0.78rem;
+  opacity: 0.85;
+  margin-bottom: 0.35rem;
+}
+.product-card__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.product-choice-pill {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.product-choice-pill--selected {
+  border-color: rgba(185, 133, 111, 0.75);
+  background: rgba(185, 133, 111, 0.18);
+}
+.product-card__delivery--intl {
+  margin-top: 0.15rem;
+  opacity: 0.9;
+}
+
 /* =========================================================
    Focus-visible polish
    ========================================================= */

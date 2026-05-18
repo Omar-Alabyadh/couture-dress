@@ -1,9 +1,43 @@
 import type { PublicBrandStripItem } from "@/lib/types/home-cms";
-import { nameInitials } from "@/lib/home/initials";
 import Reveal from "@/components/motion/Reveal";
 
+function BrandIconPlaceholder({ type }: { type: PublicBrandStripItem["type"] }) {
+  const isBrand = type === "BRAND";
+  return (
+    <div
+      className="brand-card__logo-wrap brand-card__logo-wrap--icon"
+      aria-hidden
+    >
+      {isBrand ? (
+        <svg
+          className="brand-card__type-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden
+        >
+          <path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9z" />
+          <path d="M9 22V12h6v10" />
+        </svg>
+      ) : (
+        <svg
+          className="brand-card__type-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden
+        >
+          <circle cx="12" cy="8" r="4" />
+          <path d="M5 20c0-4 3.5-6 7-6s7 2 7 6" />
+        </svg>
+      )}
+    </div>
+  );
+}
+
 function BrandLogo({ item }: { item: PublicBrandStripItem }) {
-  const monogram = nameInitials(item.nameAr, 1);
   if (item.logoUrl?.trim()) {
     return (
       <div className="brand-card__logo-wrap">
@@ -18,16 +52,7 @@ function BrandLogo({ item }: { item: PublicBrandStripItem }) {
       </div>
     );
   }
-  return (
-    <div
-      className="brand-card__logo-wrap brand-card__logo-wrap--monogram"
-      aria-hidden
-    >
-      <span className="brand-card__monogram" aria-hidden>
-        {monogram}
-      </span>
-    </div>
-  );
+  return <BrandIconPlaceholder type={item.type} />;
 }
 
 export default function HomeBrandStripSection({
