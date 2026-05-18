@@ -136,6 +136,7 @@ model ProductVariant {
   collectionItem    CollectionItem @relation(fields: [collectionItemId], references: [id], onDelete: Cascade)
   size              String
   colorId           String?
+  colorLabel        String?
   color             Color?         @relation(fields: [colorId], references: [id], onDelete: SetNull)
   quantity          Int            @default(1)
   isAvailable       Boolean        @default(true)

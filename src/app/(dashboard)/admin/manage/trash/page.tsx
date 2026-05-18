@@ -21,7 +21,8 @@ type TrashEntityType =
   | "brand"
   | "testimonial"
   | "color"
-  | "media";
+  | "media"
+  | "category";
 
 type TrashRow = {
   entityType: TrashEntityType;
@@ -39,6 +40,7 @@ const TYPE_LABELS: Record<TrashEntityType, string> = {
   testimonial: "رأي عميل",
   color: "لون",
   media: "وسيط",
+  category: "قسم",
 };
 
 export default function AdminTrashPage() {
@@ -59,7 +61,7 @@ export default function AdminTrashPage() {
         setList([]);
       } else {
         const j = (await r.json()) as { data: TrashRow[] };
-        setList(j.data);
+        setList(Array.isArray(j.data) ? j.data : []);
       }
     } catch {
       setLoadError("تعذر الاتصال بالخادم.");
@@ -101,7 +103,7 @@ export default function AdminTrashPage() {
       <AdminCard>
         <AdminSectionHeader
           title="الأرشيف الموحّد"
-          description="استرجاع المحتوى المؤرشف دون حذف نهائي. وسائط Supabase تُدار أيضًا من مكتبة الوسائط (فلتر «مؤرشفة»)."
+          description="استرجع المنتجات والماركات والآراء والوسائط والأقسام المؤرشفة دون حذف نهائي."
         />
 
         <p className="admin-hint" style={{ marginBottom: 12 }}>

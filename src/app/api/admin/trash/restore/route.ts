@@ -14,6 +14,7 @@ const TYPES = new Set<TrashEntityType>([
   "testimonial",
   "color",
   "media",
+  "category",
 ]);
 
 export async function POST(req: Request) {
@@ -51,7 +52,9 @@ export async function POST(req: Request) {
               ? "Testimonial"
               : entityType === "color"
                 ? "Color"
-                : "MediaAsset",
+                : entityType === "category"
+                  ? "ProductCategory"
+                  : "MediaAsset",
       entityId: id,
       metadata: { entityType },
       ip,

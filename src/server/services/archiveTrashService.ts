@@ -1,12 +1,14 @@
 import { prisma } from "@/server/db/client";
 import { updateMediaAsset } from "@/server/repositories/mediaRepository";
+import { getProductCategories } from "@/lib/categories/product-categories";
 
 export type TrashEntityType =
   | "product"
   | "brand"
   | "testimonial"
   | "color"
-  | "media";
+  | "media"
+  | "category";
 
 export type TrashArchiveRow = {
   entityType: TrashEntityType;
@@ -117,6 +119,20 @@ export async function listArchivedItems(): Promise<TrashArchiveRow[]> {
     });
   }
 
+  const categories = await getProductCategories(true);
+  for (const c of categories) {
+    if (!c.deletedAt) continue;
+    rows.push({
+      entityType: "category",
+      id: c.id,
+      label: c.nameAr,
+      archivedAt: c.deletedAt,
+      moduleHref: "/admin/manage/categories",
+      moduleLabel: "الأقسام",
+      field: "ProductCategory.deletedAt",
+    });
+  }
+
   rows.sort(
     (a, b) =>
       new Date(b.archivedAt).getTime() - new Date(a.archivedAt).getTime(),
@@ -166,6 +182,17 @@ export async function restoreArchivedItem(
       const row = await prisma.mediaAsset.findUnique({ where: { id } });
       if (!row?.isArchived) throw new Error("NOT_FOUND");
       await updateMediaAsset(id, { isArchived: false });
+      return;
+    }
+    case "category": {
+      const all = await getProductCategories(true);
+      const idx = all.findIndex((c) => c.id === id && c.deletedAt);
+      if (idx < 0) throw new Error("NOT_FOUND");
+      all[idx] = { ...all[idx]!, deletedAt: null };
+      const { saveProductCategories } = await import(
+        "@/lib/categories/product-categories"
+      );
+      await saveProductCategories(all);
       return;
     }
     default:

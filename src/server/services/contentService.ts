@@ -77,7 +77,9 @@ function mapVariantToView(
     id: v.id,
     size: v.size,
     colorId: v.colorId,
-    colorLabel: v.colorId ? colorById.get(v.colorId)?.label ?? null : null,
+    colorLabel:
+      v.colorLabel?.trim() ||
+      (v.colorId ? colorById.get(v.colorId)?.label ?? null : null),
     quantity: v.quantity,
     isAvailable: v.isAvailable,
     allowSpecialOrder: v.allowSpecialOrder,

@@ -8,6 +8,7 @@ export type AdminNavItem = {
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin", label: "نظرة عامة", ownerOnly: false },
   { href: "/admin/manage/products", label: "المنتجات", ownerOnly: true },
+  { href: "/admin/manage/categories", label: "الأقسام", ownerOnly: true },
   { href: "/admin/manage/colors", label: "الألوان", ownerOnly: true },
   { href: "/admin/manage/landing", label: "الصفحة الرئيسية", ownerOnly: true },
   { href: "/admin/manage/testimonials", label: "آراء العملاء", ownerOnly: true },

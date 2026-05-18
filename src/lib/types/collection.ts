@@ -1,6 +1,7 @@
 export type CollectionCategory =
   | "dresses"
   | "abayas"
+  | "suits"
   | "casual"
   | "accessories";
 
@@ -8,6 +9,7 @@ export type CollectionCategory =
 export const COLLECTION_CATEGORY_ORDER: CollectionCategory[] = [
   "dresses",
   "abayas",
+  "suits",
   "casual",
   "accessories",
 ];

@@ -6,6 +6,10 @@ import {
   Prisma,
   BrandDesignerType,
 } from "../src/generated/prisma/client";
+import {
+  DEFAULT_PRODUCT_CATEGORIES,
+  saveProductCategories,
+} from "../src/lib/categories/product-categories";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -66,6 +70,8 @@ const seedColors = [
 ];
 
 async function main() {
+  await saveProductCategories([...DEFAULT_PRODUCT_CATEGORIES]);
+
   await prisma.testimonial.deleteMany({});
   await prisma.collectionItem.deleteMany({});
   await prisma.brandDesigner.deleteMany({});

@@ -154,6 +154,7 @@ export const MAX_VARIANTS = 60;
 export type NormalizedProductVariantInput = {
   size: string;
   colorId: string | null;
+  colorLabel: string | null;
   quantity: number;
   isAvailable: boolean;
   allowSpecialOrder: boolean;
@@ -211,6 +212,11 @@ export function normalizeProductVariantsInput(
       if (!c) return { ok: false };
       colorId = c;
     }
+    let colorLabel: string | null = null;
+    if (o.colorLabel != null && o.colorLabel !== "") {
+      const label = String(o.colorLabel).trim().slice(0, 80);
+      if (label) colorLabel = label;
+    }
     const qRaw = o.quantity;
     const quantity =
       typeof qRaw === "number" && Number.isFinite(qRaw)
@@ -222,12 +228,13 @@ export function normalizeProductVariantsInput(
     let isAvailable = Boolean(o.isAvailable);
     const allowSpecialOrder = Boolean(o.allowSpecialOrder);
     if (quantity <= 0) isAvailable = false;
-    const key = `${size.toLowerCase()}__${colorId ?? ""}`;
+    const key = `${size.toLowerCase()}__${colorId ?? colorLabel?.toLowerCase() ?? ""}`;
     if (seen.has(key)) return { ok: false };
     seen.add(key);
     rows.push({
       size,
       colorId,
+      colorLabel,
       quantity,
       isAvailable,
       allowSpecialOrder,
