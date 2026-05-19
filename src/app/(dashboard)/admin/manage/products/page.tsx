@@ -798,7 +798,7 @@ function ProductForm({
       <AdminCollapsibleSection
         title="المعلومات الأساسية"
         description="العنوان، الوصف، والماركة"
-        defaultOpen
+        defaultOpen={false}
         badge={<ProductStatusBadge status={formStatus} />}
       >
         <AdminField label="العنوان (عربي)">
@@ -855,7 +855,7 @@ function ProductForm({
       <AdminCollapsibleSection
         title="المعرض"
         description="صور المنتج وترتيبها"
-        defaultOpen={!initial}
+        defaultOpen={false}
       >
       <ProductGalleryEditor
         rows={imageRows}
@@ -894,7 +894,7 @@ function ProductForm({
       <AdminCollapsibleSection
         title="المقاسات والتوفر"
         description="المخزون والألوان المتاحة للفلترة"
-        defaultOpen
+        defaultOpen={false}
       >
       <ProductVariantEditor
         rows={variantRows}
@@ -951,7 +951,7 @@ function ProductForm({
       <AdminCollapsibleSection
         title="النشر"
         description="ظهور المنتج في المتجر"
-        defaultOpen
+        defaultOpen={false}
       >
         <label
           className="admin-field"
