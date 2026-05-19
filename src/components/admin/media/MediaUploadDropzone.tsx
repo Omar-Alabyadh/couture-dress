@@ -6,7 +6,7 @@ import {
   AdminButton,
   AdminField,
   AdminInput,
-  AdminSelect,
+  AdminLuxurySelect,
 } from "@/components/admin/AdminPrimitives";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import {
@@ -148,20 +148,15 @@ export function MediaUploadDropzone({
 
       <div className="admin-media-lib-upload__fields">
         <AdminField label="نوع الاستخدام" htmlFor="media-upload-usage">
-          <AdminSelect
+          <AdminLuxurySelect
             id="media-upload-usage"
             value={usageType}
             disabled={uploading}
+            options={MEDIA_UPLOAD_USAGE_OPTIONS}
             onChange={(e) =>
               onUsageTypeChange(e.target.value as MediaUsageType)
             }
-          >
-            {MEDIA_UPLOAD_USAGE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </AdminSelect>
+          />
         </AdminField>
         <AdminField label="النص البديل (alt)" htmlFor="media-upload-alt" hint="اختياري">
           <AdminInput

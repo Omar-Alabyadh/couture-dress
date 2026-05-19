@@ -1,6 +1,10 @@
 "use client";
 
-import { AdminButton, AdminSelect } from "@/components/admin/AdminPrimitives";
+import {
+  AdminButton,
+  AdminCheckbox,
+  AdminLuxurySelect,
+} from "@/components/admin/AdminPrimitives";
 import { SIZE_TYPE_LABELS } from "@/lib/admin/default-size-options";
 import { variantRowSellable } from "@/lib/admin/product-status";
 
@@ -191,10 +195,13 @@ export function ProductVariantEditor({
               className={`admin-variant-editor__row${unavailable ? " admin-variant-editor__row--unavailable" : ""}`}
               role="row"
             >
-              <label className="admin-variant-editor__cell" role="cell">
+              <div className="admin-variant-editor__cell" role="cell">
                 <span className="admin-variant-editor__cell-label">لون</span>
-                <AdminSelect
+                <AdminLuxurySelect
+                  id={`variant-color-${row.key}`}
                   value={colorSelectValue(row)}
+                  options={colorOptions}
+                  emptyLabel="— بدون لون —"
                   onChange={(e) => {
                     const v = e.target.value;
                     if (v.startsWith("__legacy__:")) {
@@ -213,34 +220,25 @@ export function ProductVariantEditor({
                       }),
                     );
                   }}
-                >
-                  {colorOptions.map((o) => (
-                    <option key={o.value || "none"} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </AdminSelect>
-              </label>
+                />
+              </div>
 
-              <label className="admin-variant-editor__cell" role="cell">
+              <div className="admin-variant-editor__cell" role="cell">
                 <span className="admin-variant-editor__cell-label">مقاس</span>
-                <AdminSelect
+                <AdminLuxurySelect
+                  id={`variant-size-${row.key}`}
                   value={row.size}
-                  required={!allowEmptySize}
+                  options={
+                    allowEmptySize
+                      ? [{ value: "", label: "— بدون —" }, ...sizeOptions]
+                      : sizeOptions
+                  }
+                  emptyLabel="— اختر مقاسًا —"
                   onChange={(e) =>
                     onChange(patchRow(rows, row.key, { size: e.target.value }))
                   }
-                >
-                  {allowEmptySize ? (
-                    <option value="">— بدون —</option>
-                  ) : null}
-                  {sizeOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </AdminSelect>
-              </label>
+                />
+              </div>
 
               <label className="admin-variant-editor__cell" role="cell">
                 <span className="admin-variant-editor__cell-label">كمية</span>
@@ -253,13 +251,13 @@ export function ProductVariantEditor({
                 />
               </label>
 
-              <label
+              <div
                 className="admin-variant-editor__cell admin-variant-editor__cell--check"
                 role="cell"
               >
-                <span className="admin-variant-editor__cell-label">متاح</span>
-                <input
-                  type="checkbox"
+                <AdminCheckbox
+                  id={`variant-available-${row.key}`}
+                  label="متاح"
                   checked={row.isAvailable && qty > 0}
                   disabled={qty <= 0}
                   onChange={(e) =>
@@ -268,15 +266,15 @@ export function ProductVariantEditor({
                     )
                   }
                 />
-              </label>
+              </div>
 
-              <label
+              <div
                 className="admin-variant-editor__cell admin-variant-editor__cell--check"
                 role="cell"
               >
-                <span className="admin-variant-editor__cell-label">طلب خاص</span>
-                <input
-                  type="checkbox"
+                <AdminCheckbox
+                  id={`variant-special-${row.key}`}
+                  label="طلب خاص"
                   checked={row.allowSpecialOrder}
                   onChange={(e) =>
                     onChange(
@@ -286,7 +284,7 @@ export function ProductVariantEditor({
                     )
                   }
                 />
-              </label>
+              </div>
 
               <div
                 className="admin-variant-editor__cell admin-variant-editor__row-actions"

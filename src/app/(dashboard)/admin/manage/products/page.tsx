@@ -15,7 +15,8 @@ import {
   AdminInput,
   AdminLoadingState,
   AdminSectionHeader,
-  AdminSelect,
+  AdminCheckbox,
+  AdminLuxurySelect,
   AdminTable,
   AdminTd,
   AdminTextarea,
@@ -825,19 +826,23 @@ function ProductForm({
             placeholder="وصف قصير يظهر في بطاقة المنتج…"
           />
         </AdminField>
-        <AdminField label="ماركة / مصمم (اختياري)">
-          <AdminSelect
+        <AdminField label="ماركة / مصمم (اختياري)" htmlFor="product-brand">
+          <AdminLuxurySelect
+            id="product-brand"
             value={brandDesignerId}
+            emptyLabel="— بدون —"
+            options={[
+              { value: "", label: "— بدون —" },
+              ...brandSelectOptions.map((b) => ({
+                value: b.id,
+                label:
+                  b.type === "DESIGNER"
+                    ? `مصمم — ${b.nameAr}`
+                    : `ماركة — ${b.nameAr}`,
+              })),
+            ]}
             onChange={(e) => setBrandDesignerId(e.target.value)}
-          >
-            <option value="">— بدون —</option>
-            {brandSelectOptions.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.type === "DESIGNER" ? "مصمم — " : "ماركة — "}
-                {b.nameAr}
-              </option>
-            ))}
-          </AdminSelect>
+          />
         </AdminField>
         <AdminLuxuryListbox
           id="product-category"
@@ -953,17 +958,13 @@ function ProductForm({
         description="ظهور المنتج في المتجر"
         defaultOpen={false}
       >
-        <label
-          className="admin-field"
-          style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-        >
-          <input
-            type="checkbox"
-            checked={isPublished}
-            onChange={(e) => setIsPublished(e.target.checked)}
-          />
-          <span className="admin-field__label">منشور في المتجر</span>
-        </label>
+        <AdminCheckbox
+          id="product-published"
+          className="admin-checkbox--publish"
+          label="منشور في المتجر"
+          checked={isPublished}
+          onChange={(e) => setIsPublished(e.target.checked)}
+        />
       </AdminCollapsibleSection>
       <div className="admin-form__sticky-footer">
         <p className="admin-product-form-actions">

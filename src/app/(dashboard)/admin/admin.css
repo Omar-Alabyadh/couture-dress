@@ -1954,19 +1954,262 @@ select.admin-control {
   }
 }
 
-.admin-luxury-dd-field .luxury-dd {
+/* Luxury custom listbox (matches /products filters) */
+.admin-luxury-dd-field .luxury-dd,
+.admin-luxury-dd-inline .luxury-dd,
+.admin-variant-editor .luxury-dd {
+  position: relative;
   width: 100%;
 }
-.admin-luxury-dd-field .luxury-dd__btn {
+
+.admin-luxury-dd-field .luxury-dd__btn,
+.admin-luxury-dd-inline .luxury-dd__btn,
+.admin-variant-editor .luxury-dd__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   width: 100%;
   min-height: 42px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.04);
-  color: #f2ebe6;
+  padding: 10px 12px;
+  padding-inline-end: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(185, 133, 111, 0.32);
+  background: rgba(12, 10, 14, 0.92);
+  backdrop-filter: blur(10px);
+  color: rgba(246, 241, 238, 0.96);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: start;
+  transition:
+    border-color 0.22s ease,
+    background-color 0.22s ease,
+    box-shadow 0.22s ease;
 }
-.admin-luxury-dd-field .luxury-dd__list {
-  z-index: 220;
+
+.admin-variant-editor .luxury-dd__btn {
+  min-height: 38px;
+  font-size: 0.88rem;
+  padding: 8px 10px;
+}
+
+.admin-luxury-dd-field .luxury-dd__btn:hover:not(:disabled),
+.admin-luxury-dd-inline .luxury-dd__btn:hover:not(:disabled),
+.admin-variant-editor .luxury-dd__btn:hover:not(:disabled) {
+  border-color: rgba(185, 133, 111, 0.5);
+  background: rgba(18, 14, 20, 0.95);
+}
+
+.admin-luxury-dd-field .luxury-dd__btn:focus,
+.admin-luxury-dd-inline .luxury-dd__btn:focus,
+.admin-variant-editor .luxury-dd__btn:focus {
+  outline: none;
+}
+
+.admin-luxury-dd-field .luxury-dd__btn:focus-visible,
+.admin-luxury-dd-inline .luxury-dd__btn:focus-visible,
+.admin-variant-editor .luxury-dd__btn:focus-visible {
+  border-color: rgba(185, 133, 111, 0.88);
+  box-shadow:
+    0 0 0 3px rgba(185, 133, 111, 0.24),
+    0 10px 28px rgba(72, 17, 38, 0.32);
+}
+
+.admin-luxury-dd-field .luxury-dd__btn:disabled,
+.admin-luxury-dd-inline .luxury-dd__btn:disabled,
+.admin-variant-editor .luxury-dd__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-luxury-dd-field .luxury-dd__value,
+.admin-luxury-dd-inline .luxury-dd__value,
+.admin-variant-editor .luxury-dd__value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-luxury-dd-field .luxury-dd__chevron,
+.admin-luxury-dd-inline .luxury-dd__chevron,
+.admin-variant-editor .luxury-dd__chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: rgba(185, 133, 111, 0.92);
+  transition: transform 0.22s ease;
+}
+
+.admin-luxury-dd-field .luxury-dd__btn[aria-expanded="true"] .luxury-dd__chevron,
+.admin-luxury-dd-inline .luxury-dd__btn[aria-expanded="true"] .luxury-dd__chevron,
+.admin-variant-editor .luxury-dd__btn[aria-expanded="true"] .luxury-dd__chevron {
+  transform: rotate(180deg);
+}
+
+.admin-luxury-dd-field .luxury-dd__list,
+.admin-luxury-dd-inline .luxury-dd__list,
+.admin-variant-editor .luxury-dd__list {
+  position: absolute;
+  z-index: 280;
+  top: calc(100% + 6px);
+  inset-inline: 0;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: min(52vh, 280px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(185, 133, 111, 0.42);
+  background: rgba(14, 10, 18, 0.97);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 28px 64px rgba(0, 0, 0, 0.62),
+    0 16px 40px rgba(72, 17, 38, 0.38),
+    0 0 0 1px rgba(72, 17, 38, 0.45),
+    0 0 48px -12px rgba(185, 133, 111, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.admin-luxury-dd-field .luxury-dd__list[hidden],
+.admin-luxury-dd-inline .luxury-dd__list[hidden],
+.admin-variant-editor .luxury-dd__list[hidden] {
+  display: none;
+}
+
+.admin-luxury-dd-field .luxury-dd__option,
+.admin-luxury-dd-inline .luxury-dd__option,
+.admin-variant-editor .luxury-dd__option {
+  margin: 2px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: rgba(246, 241, 238, 0.94);
+  font-weight: 600;
+  line-height: 1.45;
+  user-select: none;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+  border: 1px solid transparent;
+}
+
+.admin-luxury-dd-field .luxury-dd__option:hover,
+.admin-luxury-dd-inline .luxury-dd__option:hover,
+.admin-variant-editor .luxury-dd__option:hover {
+  background: rgba(185, 133, 111, 0.12);
+  border-color: rgba(185, 133, 111, 0.2);
+}
+
+.admin-luxury-dd-field .luxury-dd__option--highlight,
+.admin-luxury-dd-inline .luxury-dd__option--highlight,
+.admin-variant-editor .luxury-dd__option--highlight {
+  background: rgba(185, 133, 111, 0.16);
+  border-color: rgba(185, 133, 111, 0.28);
+}
+
+.admin-luxury-dd-field .luxury-dd__option--selected,
+.admin-luxury-dd-inline .luxury-dd__option--selected,
+.admin-variant-editor .luxury-dd__option--selected {
+  background: rgba(72, 17, 38, 0.58);
+  color: rgba(255, 236, 224, 0.98);
+  border-color: rgba(185, 133, 111, 0.42);
+}
+
+.admin-luxury-dd-field .luxury-dd__option--selected.luxury-dd__option--highlight,
+.admin-luxury-dd-inline .luxury-dd__option--selected.luxury-dd__option--highlight,
+.admin-variant-editor .luxury-dd__option--selected.luxury-dd__option--highlight {
+  background: rgba(88, 22, 44, 0.72);
+  border-color: rgba(185, 133, 111, 0.55);
+}
+
+/* Admin checkbox — label beside control (RTL) */
+.admin-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+  user-select: none;
+  min-height: 1.5rem;
+}
+
+.admin-checkbox--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-checkbox__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-checkbox__box {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(185, 133, 111, 0.45);
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.admin-checkbox__input:focus-visible + .admin-checkbox__box {
+  box-shadow: 0 0 0 3px rgba(185, 133, 111, 0.28);
+}
+
+.admin-checkbox__input:checked + .admin-checkbox__box {
+  background: rgba(72, 17, 38, 0.78);
+  border-color: rgba(185, 133, 111, 0.72);
+}
+
+.admin-checkbox__input:checked + .admin-checkbox__box::after {
+  content: "";
+  width: 5px;
+  height: 9px;
+  margin-bottom: 2px;
+  border: solid rgba(255, 236, 224, 0.98);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.admin-checkbox__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(246, 241, 238, 0.92);
+  line-height: 1.35;
+}
+
+.admin-variant-editor__cell--check {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.admin-variant-editor__cell--check .admin-variant-editor__cell-label {
+  display: none;
+}
+
+.admin-form .admin-checkbox--publish {
+  margin-top: 0.25rem;
 }
 
 .admin-landing-form__section {

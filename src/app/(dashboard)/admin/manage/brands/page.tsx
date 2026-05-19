@@ -21,7 +21,8 @@ import {
   AdminInput,
   AdminLoadingState,
   AdminSectionHeader,
-  AdminSelect,
+  AdminCheckbox,
+  AdminLuxurySelect,
   AdminTable,
   AdminTd,
   AdminTextarea,
@@ -30,6 +31,11 @@ import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
 import { AdminModal } from "@/components/admin/AdminModal";
 import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import { Plus } from "lucide-react";
+
+const BRAND_TYPE_OPTIONS = [
+  { value: "BRAND", label: "ماركة" },
+  { value: "DESIGNER", label: "مصمم" },
+];
 
 type Brand = {
   id: string;
@@ -138,14 +144,13 @@ function BrandEditPanel({
             dir="ltr"
           />
         </AdminField>
-        <AdminField label="النوع">
-          <AdminSelect
+        <AdminField label="النوع" htmlFor="brand-edit-type">
+          <AdminLuxurySelect
+            id="brand-edit-type"
             value={type}
+            options={BRAND_TYPE_OPTIONS}
             onChange={(e) => setType(e.target.value as Brand["type"])}
-          >
-            <option value="BRAND">ماركة</option>
-            <option value="DESIGNER">مصمم</option>
-          </AdminSelect>
+          />
         </AdminField>
         <AdminField label="رابط الشعار (اختياري)">
           <AdminInput
@@ -183,14 +188,12 @@ function BrandEditPanel({
             onChange={(e) => setSortOrder(e.target.value)}
           />
         </AdminField>
-        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input
-            type="checkbox"
-            checked={isPublished}
-            onChange={(e) => setIsPublished(e.target.checked)}
-          />
-          منشور للعامة
-        </label>
+        <AdminCheckbox
+          id="brand-edit-published"
+          label="منشور للعامة"
+          checked={isPublished}
+          onChange={(e) => setIsPublished(e.target.checked)}
+        />
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <AdminButton type="submit" variant="primary" disabled={loading}>
             حفظ
@@ -244,11 +247,13 @@ function BrandCreateForm({
       <AdminField label="الاسم (EN) اختياري">
         <AdminInput value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
       </AdminField>
-      <AdminField label="النوع">
-        <AdminSelect value={type} onChange={(e) => setType(e.target.value as Brand["type"])}>
-          <option value="BRAND">ماركة</option>
-          <option value="DESIGNER">مصمم</option>
-        </AdminSelect>
+      <AdminField label="النوع" htmlFor="brand-create-type">
+        <AdminLuxurySelect
+          id="brand-create-type"
+          value={type}
+          options={BRAND_TYPE_OPTIONS}
+          onChange={(e) => setType(e.target.value as Brand["type"])}
+        />
       </AdminField>
       <AdminField label="رابط الشعار (اختياري)">
         <AdminInput value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} dir="ltr" />

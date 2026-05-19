@@ -2,7 +2,16 @@
 
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import type { ReactNode } from "react";
-import { AdminButton, AdminInput, AdminSelect } from "@/components/admin/AdminPrimitives";
+import {
+  AdminButton,
+  AdminInput,
+  AdminLuxurySelect,
+} from "@/components/admin/AdminPrimitives";
+
+const SORT_OPTIONS = [
+  { value: "newest", label: "الأحدث أولًا" },
+  { value: "oldest", label: "الأقدم أولًا" },
+];
 import type { SortDirection } from "@/lib/admin/list-client";
 
 export type AdminListToolbarProps = {
@@ -59,27 +68,22 @@ export function AdminListToolbar({
         </label>
         <label className="admin-list-toolbar__sort">
           <span className="admin-field__label">ترتيب</span>
-          <AdminSelect
+          <AdminLuxurySelect
+            id="admin-list-sort"
             value={sort}
+            options={SORT_OPTIONS}
             onChange={(e) => onSortChange(e.target.value as SortDirection)}
-          >
-            <option value="newest">الأحدث أولًا</option>
-            <option value="oldest">الأقدم أولًا</option>
-          </AdminSelect>
+          />
         </label>
         {statusOptions && onStatusFilterChange ? (
           <label className="admin-list-toolbar__sort">
             <span className="admin-field__label">الحالة</span>
-            <AdminSelect
+            <AdminLuxurySelect
+              id="admin-list-status"
               value={statusFilter ?? "all"}
+              options={statusOptions}
               onChange={(e) => onStatusFilterChange(e.target.value)}
-            >
-              {statusOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </AdminSelect>
+            />
           </label>
         ) : null}
         {extra}

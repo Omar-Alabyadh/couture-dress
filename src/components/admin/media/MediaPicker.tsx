@@ -17,7 +17,7 @@ import {
   AdminField,
   AdminInput,
   AdminLoadingState,
-  AdminSelect,
+  AdminLuxurySelect,
 } from "@/components/admin/AdminPrimitives";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { folderForUsageType } from "@/lib/media/selectors";
@@ -226,39 +226,29 @@ export function MediaPicker({
 
         <div className="admin-picker-filters">
           <AdminField label="نوع الاستخدام" htmlFor="picker-filter-usage">
-            <AdminSelect
+            <AdminLuxurySelect
               id="picker-filter-usage"
               value={filters.usageType}
               disabled={loading && items.length === 0}
+              options={MEDIA_USAGE_OPTIONS}
               onChange={(e) =>
                 setFilters({
                   ...filters,
                   usageType: e.target.value as MediaUsageType | "",
                 })
               }
-            >
-              {MEDIA_USAGE_OPTIONS.map((o) => (
-                <option key={o.value || "all"} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </AdminSelect>
+            />
           </AdminField>
           <AdminField label="المجلد" htmlFor="picker-filter-folder">
-            <AdminSelect
+            <AdminLuxurySelect
               id="picker-filter-folder"
               value={filters.folder}
               disabled={loading && items.length === 0}
+              options={MEDIA_FOLDER_OPTIONS}
               onChange={(e) =>
                 setFilters({ ...filters, folder: e.target.value })
               }
-            >
-              {MEDIA_FOLDER_OPTIONS.map((o) => (
-                <option key={o.value || "all"} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </AdminSelect>
+            />
           </AdminField>
           <AdminField label="بحث" htmlFor="picker-filter-q">
             <AdminInput

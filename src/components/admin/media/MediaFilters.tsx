@@ -4,7 +4,7 @@ import {
   AdminButton,
   AdminField,
   AdminInput,
-  AdminSelect,
+  AdminLuxurySelect,
 } from "@/components/admin/AdminPrimitives";
 import type { MediaUIFilters } from "@/lib/admin/media-ui";
 import type { SortDirection } from "@/lib/admin/list-client";
@@ -24,76 +24,64 @@ type Props = {
   disabled?: boolean;
 };
 
+const SORT_OPTIONS = [
+  { value: "newest", label: "الأحدث أولًا" },
+  { value: "oldest", label: "الأقدم أولًا" },
+];
+
 export function MediaFilters({ filters, onChange, sort, onSortChange, disabled }: Props) {
   return (
     <div className="admin-media-lib-filters" role="search">
       <AdminField label="نوع الاستخدام" htmlFor="media-filter-usage">
-        <AdminSelect
+        <AdminLuxurySelect
           id="media-filter-usage"
           value={filters.usageType}
           disabled={disabled}
+          options={MEDIA_USAGE_OPTIONS}
           onChange={(e) =>
             onChange({
               ...filters,
               usageType: e.target.value as MediaUsageType | "",
             })
           }
-        >
-          {MEDIA_USAGE_OPTIONS.map((o) => (
-            <option key={o.value || "all"} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </AdminSelect>
+        />
       </AdminField>
 
       <AdminField label="المجلد" htmlFor="media-filter-folder">
-        <AdminSelect
+        <AdminLuxurySelect
           id="media-filter-folder"
           value={filters.folder}
           disabled={disabled}
+          options={MEDIA_FOLDER_OPTIONS}
           onChange={(e) =>
             onChange({ ...filters, folder: e.target.value })
           }
-        >
-          {MEDIA_FOLDER_OPTIONS.map((o) => (
-            <option key={o.value || "all"} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </AdminSelect>
+        />
       </AdminField>
 
       <AdminField label="الحالة" htmlFor="media-filter-archived">
-        <AdminSelect
+        <AdminLuxurySelect
           id="media-filter-archived"
           value={filters.archived}
           disabled={disabled}
+          options={MEDIA_ARCHIVED_OPTIONS}
           onChange={(e) =>
             onChange({
               ...filters,
               archived: e.target.value as MediaUIFilters["archived"],
             })
           }
-        >
-          {MEDIA_ARCHIVED_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </AdminSelect>
+        />
       </AdminField>
 
       <AdminField label="ترتيب" htmlFor="media-filter-sort">
-        <AdminSelect
+        <AdminLuxurySelect
           id="media-filter-sort"
           value={sort}
           disabled={disabled}
+          options={SORT_OPTIONS}
           onChange={(e) => onSortChange(e.target.value as SortDirection)}
-        >
-          <option value="newest">الأحدث أولًا</option>
-          <option value="oldest">الأقدم أولًا</option>
-        </AdminSelect>
+        />
       </AdminField>
 
       <AdminField label="بحث" htmlFor="media-filter-q" hint="اسم الملف أو النص البديل">

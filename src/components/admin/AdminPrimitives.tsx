@@ -5,7 +5,6 @@ import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
-  SelectHTMLAttributes,
   TableHTMLAttributes,
   TdHTMLAttributes,
   TextareaHTMLAttributes,
@@ -115,14 +114,11 @@ export function AdminTextarea({
   );
 }
 
-export function AdminSelect({
-  className,
-  ...rest
-}: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select className={`admin-control ${className ?? ""}`.trim()} {...rest} />
-  );
-}
+export {
+  AdminLuxurySelect,
+  type AdminSelectOption,
+} from "@/components/admin/AdminLuxurySelect";
+export { AdminCheckbox } from "@/components/admin/AdminCheckbox";
 
 export function AdminTable({
   children,

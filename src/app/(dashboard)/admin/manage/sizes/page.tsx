@@ -19,7 +19,7 @@ import {
   AdminInput,
   AdminLoadingState,
   AdminSectionHeader,
-  AdminSelect,
+  AdminLuxurySelect,
   AdminTable,
   AdminTd,
 } from "@/components/admin/AdminPrimitives";
@@ -102,18 +102,14 @@ function SizeForm({
           dir="ltr"
         />
       </AdminField>
-      <AdminField label="النوع">
-        <AdminSelect
+      <AdminField label="النوع" htmlFor="size-form-type">
+        <AdminLuxurySelect
+          id="size-form-type"
           value={type}
-          onChange={(e) => setType(e.target.value as SizeOptionType)}
+          options={TYPE_FORM_OPTIONS}
           disabled={Boolean(initial)}
-        >
-          {TYPE_FORM_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </AdminSelect>
+          onChange={(e) => setType(e.target.value as SizeOptionType)}
+        />
       </AdminField>
       <AdminField label="الترتيب">
         <AdminInput
@@ -261,16 +257,12 @@ export default function AdminSizesPage() {
           </label>
           <label style={{ minWidth: 160 }}>
             <span className="admin-field__label">النوع</span>
-            <AdminSelect
+            <AdminLuxurySelect
+              id="sizes-type-filter"
               value={typeFilter}
+              options={TYPE_FILTER_OPTIONS}
               onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              {TYPE_FILTER_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </AdminSelect>
+            />
           </label>
         </div>
 
