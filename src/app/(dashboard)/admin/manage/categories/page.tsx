@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -63,12 +64,12 @@ function CategoryForm({
             sortOrder: Number(sortOrder),
           };
           const r = initial
-            ? await fetch(`/api/admin/categories/${initial.id}`, {
+            ? await adminFetch(`/api/admin/categories/${initial.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
               })
-            : await fetch("/api/admin/categories", {
+            : await adminFetch("/api/admin/categories", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
@@ -135,7 +136,7 @@ export default function AdminCategoriesPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const r = await fetch("/api/admin/categories", { cache: "no-store" });
+      const r = await adminFetch("/api/admin/categories", { cache: "no-store" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         setLoadError(msg);
@@ -178,7 +179,7 @@ export default function AdminCategoriesPage() {
       destructive: true,
     });
     if (!ok) return;
-    const r = await fetch(`/api/admin/categories/${c.id}`, {
+    const r = await adminFetch(`/api/admin/categories/${c.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ softDelete: true }),
@@ -192,7 +193,7 @@ export default function AdminCategoriesPage() {
   }
 
   async function restoreRow(c: Category) {
-    const r = await fetch(`/api/admin/categories/${c.id}`, {
+    const r = await adminFetch(`/api/admin/categories/${c.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ restore: true }),

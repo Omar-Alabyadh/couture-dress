@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminListToolbar } from "@/components/admin/AdminListToolbar";
@@ -104,7 +105,7 @@ function BrandEditPanel({
           e.preventDefault();
           setLoading(true);
           try {
-            const r = await fetch(`/api/admin/brands/${initial.id}`, {
+            const r = await adminFetch(`/api/admin/brands/${initial.id}`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -306,7 +307,7 @@ export default function AdminBrandsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const r = await fetch("/api/admin/brands", { cache: "no-store" });
+      const r = await adminFetch("/api/admin/brands", { cache: "no-store" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         setLoadError(msg);
@@ -330,7 +331,7 @@ export default function AdminBrandsPage() {
   }, [load]);
 
   async function restoreRow(b: Brand) {
-    const r = await fetch(`/api/admin/brands/${b.id}`, {
+    const r = await adminFetch(`/api/admin/brands/${b.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ restore: true }),
@@ -353,7 +354,7 @@ export default function AdminBrandsPage() {
       destructive: true,
     });
     if (!ok) return;
-    const r = await fetch(`/api/admin/brands/${b.id}`, {
+    const r = await adminFetch(`/api/admin/brands/${b.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ softDelete: true }),
@@ -369,7 +370,7 @@ export default function AdminBrandsPage() {
   }
 
   async function togglePublished(b: Brand) {
-    const r = await fetch(`/api/admin/brands/${b.id}`, {
+    const r = await adminFetch(`/api/admin/brands/${b.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isPublished: !b.isPublished }),
@@ -463,7 +464,7 @@ export default function AdminBrandsPage() {
                 e.preventDefault();
                 setCreateLoading(true);
                 try {
-                  const r = await fetch("/api/admin/brands", {
+                  const r = await adminFetch("/api/admin/brands", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

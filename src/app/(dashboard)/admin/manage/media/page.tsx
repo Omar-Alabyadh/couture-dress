@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SortDirection } from "@/lib/admin/list-client";
@@ -108,7 +109,7 @@ export default function AdminMediaLibraryPage() {
     async (asset: MediaAssetDto) => {
       let message = `هل تريد أرشفة «${asset.originalFilename}»؟ لن يُحذف من التخزين في هذه المرحلة.`;
       try {
-        const r = await fetch(`/api/admin/media/${asset.id}/usage`, {
+        const r = await adminFetch(`/api/admin/media/${asset.id}/usage`, {
           cache: "no-store",
         });
         if (r.ok) {

@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { useCallback, useId, useRef, useState } from "react";
 import type { MediaUsageType } from "@/generated/prisma/client";
@@ -41,7 +42,7 @@ export function MediaUploadDropzone({
       const altTrim = alt.trim();
       if (altTrim) form.set("alt", altTrim);
 
-      const r = await fetch("/api/admin/media", {
+      const r = await adminFetch("/api/admin/media", {
         method: "POST",
         body: form,
       });

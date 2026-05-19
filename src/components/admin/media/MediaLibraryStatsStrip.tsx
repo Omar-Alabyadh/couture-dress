@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { useCallback, useEffect, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
@@ -24,7 +25,7 @@ export function MediaLibraryStatsStrip({ refreshKey = 0 }: Props) {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const r = await fetch("/api/admin/media/stats", { cache: "no-store" });
+      const r = await adminFetch("/api/admin/media/stats", { cache: "no-store" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         setError(msg);

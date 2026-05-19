@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -56,7 +57,7 @@ export default function AdminTrashPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const r = await fetch("/api/admin/trash", { cache: "no-store" });
+      const r = await adminFetch("/api/admin/trash", { cache: "no-store" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         setLoadError(msg);
@@ -83,7 +84,7 @@ export default function AdminTrashPage() {
     const key = `${row.entityType}:${row.id}`;
     setRestoringId(key);
     try {
-      const r = await fetch("/api/admin/trash/restore", {
+      const r = await adminFetch("/api/admin/trash/restore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entityType: row.entityType, id: row.id }),

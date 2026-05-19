@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { useCallback, useEffect, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
@@ -24,7 +25,7 @@ export default function AdminLandingPage() {
     setLoading(true);
     setErr(null);
     try {
-      const r = await fetch("/api/admin/landing", { cache: "no-store" });
+      const r = await adminFetch("/api/admin/landing", { cache: "no-store" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         setErr(msg);
@@ -62,7 +63,7 @@ export default function AdminLandingPage() {
           <LandingContentForm
             initial={content}
             onSave={async (next) => {
-              const r = await fetch("/api/admin/landing", {
+              const r = await adminFetch("/api/admin/landing", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(next),

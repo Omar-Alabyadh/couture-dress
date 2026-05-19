@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { useCallback, useEffect, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
@@ -32,7 +33,7 @@ export default function AuditPage() {
     setLoading(true);
     setErr(null);
     try {
-      const r = await fetch("/api/admin/audit-log", { cache: "no-store" });
+      const r = await adminFetch("/api/admin/audit-log", { cache: "no-store" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         setErr(msg);

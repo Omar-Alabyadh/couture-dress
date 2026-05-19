@@ -1,8 +1,8 @@
 import { prisma } from "@/server/db/client";
 import type { UserRole } from "@/generated/prisma/client";
 
-const DB_RETRY_ATTEMPTS = 3;
-const DB_RETRY_BASE_MS = 120;
+const DB_RETRY_ATTEMPTS = 5;
+const DB_RETRY_BASE_MS = 200;
 
 async function withDbRetry<T>(label: string, fn: () => Promise<T>): Promise<T> {
   let last: unknown;

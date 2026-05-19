@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -147,7 +148,7 @@ export default function AdminSizesPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const r = await fetch("/api/admin/sizes", { cache: "no-store" });
+      const r = await adminFetch("/api/admin/sizes", { cache: "no-store" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         setLoadError(msg);
@@ -183,7 +184,7 @@ export default function AdminSizesPage() {
   }, [list, search, typeFilter]);
 
   async function restoreSize(row: SizeRow) {
-    const r = await fetch(`/api/admin/sizes/${row.id}`, {
+    const r = await adminFetch(`/api/admin/sizes/${row.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ restore: true }),
@@ -205,7 +206,7 @@ export default function AdminSizesPage() {
       destructive: true,
     });
     if (!ok) return;
-    const r = await fetch(`/api/admin/sizes/${row.id}`, {
+    const r = await adminFetch(`/api/admin/sizes/${row.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ softDelete: true }),

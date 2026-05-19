@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminListToolbar } from "@/components/admin/AdminListToolbar";
@@ -71,7 +72,7 @@ export default function AdminTestimonialsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const r = await fetch("/api/admin/testimonials", { cache: "no-store" });
+      const r = await adminFetch("/api/admin/testimonials", { cache: "no-store" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         setLoadError(msg);
@@ -95,7 +96,7 @@ export default function AdminTestimonialsPage() {
   }, [load]);
 
   async function restoreRow(t: Testimonial) {
-    const r = await fetch(`/api/admin/testimonials/${t.id}`, {
+    const r = await adminFetch(`/api/admin/testimonials/${t.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ restore: true }),
@@ -118,7 +119,7 @@ export default function AdminTestimonialsPage() {
       destructive: true,
     });
     if (!ok) return;
-    const r = await fetch(`/api/admin/testimonials/${t.id}`, {
+    const r = await adminFetch(`/api/admin/testimonials/${t.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ softDelete: true }),
@@ -133,7 +134,7 @@ export default function AdminTestimonialsPage() {
   }
 
   async function togglePublished(t: Testimonial) {
-    const r = await fetch(`/api/admin/testimonials/${t.id}`, {
+    const r = await adminFetch(`/api/admin/testimonials/${t.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isPublished: !t.isPublished }),
@@ -148,7 +149,7 @@ export default function AdminTestimonialsPage() {
   }
 
   async function patchSortOrder(t: Testimonial, raw: string) {
-    const r = await fetch(`/api/admin/testimonials/${t.id}`, {
+    const r = await adminFetch(`/api/admin/testimonials/${t.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sortOrder: Number(raw) }),
@@ -219,7 +220,7 @@ export default function AdminTestimonialsPage() {
               className="admin-form"
               onSubmit={async (e) => {
                 e.preventDefault();
-                const r = await fetch("/api/admin/testimonials", {
+                const r = await adminFetch("/api/admin/testimonials", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({

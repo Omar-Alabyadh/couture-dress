@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isSafeProductImageUrl } from "@/lib/validation/product-input";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
@@ -193,11 +194,11 @@ export default function AdminProductsPage() {
     setLoadError(null);
     try {
       const [p, c, sz, b, cat] = await Promise.all([
-        fetch("/api/admin/products", { cache: "no-store" }),
-        fetch("/api/admin/colors", { cache: "no-store" }),
-        fetch("/api/admin/sizes", { cache: "no-store" }),
-        fetch("/api/admin/brands", { cache: "no-store" }),
-        fetch("/api/admin/categories", { cache: "no-store" }),
+        adminFetch("/api/admin/products", { cache: "no-store" }),
+        adminFetch("/api/admin/colors", { cache: "no-store" }),
+        adminFetch("/api/admin/sizes", { cache: "no-store" }),
+        adminFetch("/api/admin/brands", { cache: "no-store" }),
+        adminFetch("/api/admin/categories", { cache: "no-store" }),
       ]);
       if (!p.ok) {
         const msg =
@@ -254,7 +255,7 @@ export default function AdminProductsPage() {
       destructive: true,
     });
     if (!ok) return;
-    const r = await fetch(`/api/admin/products/${product.id}`, {
+    const r = await adminFetch(`/api/admin/products/${product.id}`, {
       method: "DELETE",
     });
     if (!r.ok) {
@@ -749,7 +750,7 @@ function ProductForm({
     };
     try {
       if (initial) {
-        const r = await fetch(`/api/admin/products/${initial.id}`, {
+        const r = await adminFetch(`/api/admin/products/${initial.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -761,7 +762,7 @@ function ProductForm({
         }
         pushToast("تم حفظ المنتج بنجاح.", "success");
       } else {
-        const r = await fetch("/api/admin/products", {
+        const r = await adminFetch("/api/admin/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),

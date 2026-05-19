@@ -1,11 +1,13 @@
 import { statSync } from "node:fs";
 import { join } from "node:path";
+import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 
 /** Cached singleton + bundle mtime so dev HMR does not keep a stale client after `prisma generate`. */
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
+  pool?: Pool;
   prismaGeneratedClientMtimeMs?: number;
 };
 
@@ -21,7 +23,7 @@ function generatedPrismaClientMtimeMs(): number {
 
 /**
  * Supabase transaction pooler (:6543) requires `pgbouncer=true` for Prisma.
- * Vercel env copies often omit it — queries then fail with opaque 500s in admin APIs.
+ * Do NOT set connection_limit=1 — admin routes use Promise.all (overview, products).
  */
 export function normalizeDatabaseUrl(connectionString: string): string {
   try {
@@ -31,22 +33,29 @@ export function normalizeDatabaseUrl(connectionString: string): string {
     if (isSupabasePooler && !url.searchParams.has("pgbouncer")) {
       url.searchParams.set("pgbouncer", "true");
     }
-    if (process.env.VERCEL && !url.searchParams.has("connection_limit")) {
-      url.searchParams.set("connection_limit", "1");
-    }
+    url.searchParams.delete("connection_limit");
     return url.toString();
   } catch {
     return connectionString;
   }
 }
 
-function createClient(): PrismaClient {
+function createPool(): Pool {
   const raw = process.env.DATABASE_URL;
   if (!raw) {
     throw new Error("DATABASE_URL is required for Prisma (set it in .env or .env.local).");
   }
-  const connectionString = normalizeDatabaseUrl(raw);
-  const adapter = new PrismaPg({ connectionString });
+  return new Pool({
+    connectionString: normalizeDatabaseUrl(raw),
+    max: process.env.VERCEL ? 5 : 10,
+    connectionTimeoutMillis: 20_000,
+    idleTimeoutMillis: 30_000,
+    allowExitOnIdle: true,
+  });
+}
+
+function createClient(pool: Pool): PrismaClient {
+  const adapter = new PrismaPg(pool);
   return new PrismaClient({
     adapter,
     log: ["error", "warn"],
@@ -61,23 +70,26 @@ function getPrismaSync(): PrismaClient {
       globalForPrisma.prismaGeneratedClientMtimeMs !== bundleMtime
     ) {
       void globalForPrisma.prisma.$disconnect();
+      void globalForPrisma.pool?.end();
       globalForPrisma.prisma = undefined;
+      globalForPrisma.pool = undefined;
     }
     if (!globalForPrisma.prisma) {
-      globalForPrisma.prisma = createClient();
+      globalForPrisma.pool = createPool();
+      globalForPrisma.prisma = createClient(globalForPrisma.pool);
       globalForPrisma.prismaGeneratedClientMtimeMs = bundleMtime;
     }
     return globalForPrisma.prisma;
   }
 
   if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = createClient();
+    globalForPrisma.pool = createPool();
+    globalForPrisma.prisma = createClient(globalForPrisma.pool);
   }
   return globalForPrisma.prisma;
 }
 
 // Lazy proxy: importing this module must not throw when DATABASE_URL is missing at cold start.
-// Dynamic pages wrap DB calls in try/catch; errors should occur on first query, not at import time.
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop, receiver) {
     const client = getPrismaSync();

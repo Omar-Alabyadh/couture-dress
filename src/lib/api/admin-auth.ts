@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { isAllowedAppUser, resolveRoleForEmail } from "@/lib/auth-allowlist";
-import { findUserByEmail } from "@/lib/auth-db";
+import { findUserByEmail, syncOAuthUser } from "@/lib/auth-db";
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
 import type { UserRole } from "@/generated/prisma/client";
@@ -18,59 +18,74 @@ function roleFromSession(session: Session): UserRole | null {
   return null;
 }
 
-/** Ensures session has DB user id + role (JWT may omit id after a transient DB error at login). */
-async function hydrateSession(session: Session): Promise<Session | null> {
-  const email = session.user?.email?.trim().toLowerCase();
+/**
+ * Resolve admin session for API routes. Does not fail when JWT lacks id (reads still work).
+ * Mutations should call `ensureSessionUserId` before audit writes.
+ */
+async function resolveAdminSession(
+  raw: Session | null,
+): Promise<Session | null> {
+  const email = raw?.user?.email?.trim().toLowerCase();
   if (!email || !isAllowedAppUser(email)) return null;
 
-  let id = session.user?.id;
-  let role = roleFromSession(session);
+  const role = roleFromSession(raw!);
+  if (!role) return null;
+
+  let id = hasValidUserId(raw!.user?.id) ? raw!.user!.id.trim() : "";
 
   if (!hasValidUserId(id)) {
     try {
       const row = await findUserByEmail(email);
-      if (row) {
-        id = row.id;
-        role = row.role;
-      }
+      if (row) id = row.id;
     } catch (e) {
-      console.error("[auth] hydrateSession findUser:", e);
+      console.error("[auth] resolveAdminSession:", e);
     }
   }
 
-  if (!hasValidUserId(id) || !role) return null;
-
   return {
-    ...session,
+    ...raw!,
     user: {
-      ...session.user,
-      id: id!,
-      role,
+      ...raw!.user,
+      id,
       email,
+      role,
     },
   };
 }
 
+/** Ensures a DB user id for audit logs / FK writes. */
+export async function ensureSessionUserId(session: Session): Promise<string | null> {
+  if (hasValidUserId(session.user.id)) return session.user.id.trim();
+
+  const email = session.user.email?.trim().toLowerCase();
+  if (!email || !isAllowedAppUser(email)) return null;
+
+  try {
+    const row = await syncOAuthUser({
+      email,
+      name: session.user.name,
+      image: session.user.image,
+      role: roleFromSession(session) ?? resolveRoleForEmail(email),
+    });
+    return row.id;
+  } catch (e) {
+    console.error("[auth] ensureSessionUserId:", e);
+    return null;
+  }
+}
+
 export async function requireSession() {
   const raw = await auth();
-  if (!raw?.user?.email) {
-    return {
-      session: null,
-      error: NextResponse.json({ error: "غير مصرّح — سجّلي الدخول من جديد." }, { status: 401 }),
-    };
-  }
-
-  const session = await hydrateSession(raw);
+  const session = await resolveAdminSession(raw);
   if (!session) {
     return {
       session: null,
       error: NextResponse.json(
-        { error: "تعذّر التحقق من حسابك. سجّلي خروجًا ثم ادخلي من جديد." },
+        { error: "غير مصرّح — سجّلي الدخول من جديد." },
         { status: 401 },
       ),
     };
   }
-
   return { session, error: null };
 }
 
@@ -80,7 +95,10 @@ export async function requireOwner() {
   if (r.session!.user.role !== "OWNER") {
     return {
       session: null,
-      error: NextResponse.json({ error: "غير مسموح بهذا الإجراء." }, { status: 403 }),
+      error: NextResponse.json(
+        { error: "غير مسموح بهذا الإجراء." },
+        { status: 403 },
+      ),
     };
   }
   return { session: r.session, error: null };
@@ -93,7 +111,10 @@ export async function requireAuditAccess() {
   if (role !== "OWNER" && role !== "ENGINEER") {
     return {
       session: null,
-      error: NextResponse.json({ error: "غير مسموح بهذا الإجراء." }, { status: 403 }),
+      error: NextResponse.json(
+        { error: "غير مسموح بهذا الإجراء." },
+        { status: 403 },
+      ),
     };
   }
   return { session: r.session, error: null };

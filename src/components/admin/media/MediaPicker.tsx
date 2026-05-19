@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import Link from "next/link";
 import {
@@ -162,7 +163,7 @@ export function MediaPicker({
       if (defaultUsageType && asset.usageType === "GENERAL") {
         const folder = defaultFolder ?? folderForUsageType(defaultUsageType);
         try {
-          const r = await fetch(`/api/admin/media/${asset.id}`, {
+          const r = await adminFetch(`/api/admin/media/${asset.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

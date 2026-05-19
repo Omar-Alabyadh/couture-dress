@@ -10,7 +10,8 @@ import {
   resolveOAuthSignInEmailAsync,
   resolveRoleForEmail,
 } from "@/lib/auth-allowlist";
-import { findUserByEmail, findUserById, syncOAuthUser } from "@/lib/auth-db";
+import { enrichJwtFromDatabase } from "@/lib/auth-jwt";
+import { syncOAuthUser } from "@/lib/auth-db";
 import { logAudit } from "@/server/services/auditService";
 export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -77,49 +78,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       return true;
     },
     async jwt({ token, user }): Promise<import("next-auth/jwt").JWT> {
-      const email =
-        user?.email?.trim().toLowerCase() ??
-        (typeof token.email === "string"
-          ? token.email.trim().toLowerCase()
-          : undefined);
-
-      try {
-        if (email) {
-          let row = await findUserByEmail(email);
-          if (!row && isAllowedAppUser(email)) {
-            row = await syncOAuthUser({
-              email,
-              name: user?.name ?? null,
-              image: user?.image ?? null,
-              role: resolveRoleForEmail(email),
-            });
-          }
-          if (row) {
-            token.id = row.id;
-            token.role = row.role;
-            token.email = row.email;
-          } else if (isAllowedAppUser(email)) {
-            token.email = email;
-            token.role = resolveRoleForEmail(email);
-          }
-        } else if (token.id) {
-          const row = await findUserById(token.id as string);
-          if (row) {
-            token.role = row.role;
-            token.email = row.email;
-          }
-        }
-        return token;
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.error("[auth] jwt callback:", msg);
-        if (email && isAllowedAppUser(email)) {
-          token.email = email;
-          token.role = resolveRoleForEmail(email);
-          return token;
-        }
-        throw e;
-      }
+      return enrichJwtFromDatabase(token, user);
     },
     async session({ session, token }) {
       return applySessionFromToken(session, token);

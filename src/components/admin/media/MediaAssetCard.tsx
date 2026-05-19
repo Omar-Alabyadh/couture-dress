@@ -1,4 +1,5 @@
 "use client";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { useState } from "react";
 import type { MediaAssetDto } from "@/lib/media/types";
@@ -36,7 +37,7 @@ export function MediaAssetCard({
   async function saveAlt() {
     setSavingAlt(true);
     try {
-      const r = await fetch(`/api/admin/media/${asset.id}`, {
+      const r = await adminFetch(`/api/admin/media/${asset.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ alt: altDraft.trim() || null }),
@@ -67,7 +68,7 @@ export function MediaAssetCard({
     if (!ok) return;
     setActing(true);
     try {
-      const r = await fetch(`/api/admin/media/${asset.id}`, { method: "DELETE" });
+      const r = await adminFetch(`/api/admin/media/${asset.id}`, { method: "DELETE" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         onToast(msg, "error");
@@ -83,7 +84,7 @@ export function MediaAssetCard({
   async function restore() {
     setActing(true);
     try {
-      const r = await fetch(`/api/admin/media/${asset.id}`, {
+      const r = await adminFetch(`/api/admin/media/${asset.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isArchived: false }),

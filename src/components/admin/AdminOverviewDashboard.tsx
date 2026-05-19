@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { adminFetch } from "@/lib/admin/admin-fetch";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import {
@@ -43,7 +44,7 @@ export function AdminOverviewDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch("/api/admin/overview", { cache: "no-store" });
+      const r = await adminFetch("/api/admin/overview", { cache: "no-store" });
       if (!r.ok) {
         const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
         setError(msg);
