@@ -1,30 +1,22 @@
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
-import { prisma } from "@/server/db/client";
+import { authConfig } from "@/auth.config";
 import { resolveAuthSecret } from "@/lib/auth-secret";
 import {
+  emailFromIdToken,
   getEngineerEmails,
   getOwnerEmails,
   isAllowlistConfigured,
   isAllowedAppUser,
-  resolveOAuthSignInEmail,
+  resolveOAuthSignInEmailAsync,
   resolveRoleForEmail,
 } from "@/lib/auth-allowlist";
+import { findUserByEmail, findUserById, syncOAuthUser } from "@/lib/auth-db";
 import { logAudit } from "@/server/services/auditService";
 import type { UserRole } from "@/generated/prisma/client";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
+  ...authConfig,
   secret: resolveAuthSecret(),
-  providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID ?? process.env.GOOGLE_CLIENT_ID,
-      clientSecret:
-        process.env.AUTH_GOOGLE_SECRET ?? process.env.GOOGLE_CLIENT_SECRET,
-    }),
-  ],
-  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
-  pages: { signIn: "/admin/login" },
-  trustHost: true,
   logger: {
     error(error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -32,8 +24,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
+    ...authConfig.callbacks,
     async signIn({ user, account, profile }) {
-      const email = resolveOAuthSignInEmail(user, profile);
+      const email = await resolveOAuthSignInEmailAsync(user, profile, account);
       if (!email || !isAllowedAppUser(email)) {
         if (process.env.AUTH_SIGNIN_DEBUG === "1") {
           console.warn("[auth] signIn denied", {
@@ -43,6 +36,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 typeof profile === "object" &&
                 typeof (profile as { email?: unknown }).email === "string",
             ),
+            hasIdTokenEmail: Boolean(emailFromIdToken(account?.id_token)),
             allowlistConfigured: isAllowlistConfigured(),
             ownerCount: getOwnerEmails().length,
             engineerCount: getEngineerEmails().length,
@@ -55,21 +49,14 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         }
         return false;
       }
+
       const role = resolveRoleForEmail(email);
       try {
-        const row = await prisma.user.upsert({
-          where: { email },
-          create: {
-            email,
-            name: user.name,
-            image: user.image,
-            role,
-          },
-          update: {
-            name: user.name,
-            image: user.image,
-            role,
-          },
+        const row = await syncOAuthUser({
+          email,
+          name: user.name,
+          image: user.image,
+          role,
         });
         try {
           await logAudit({
@@ -84,37 +71,55 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        console.error("[auth] signIn user upsert:", msg);
-        throw e;
+        console.error(
+          "[auth] signIn user upsert failed; allowing login — jwt will retry:",
+          msg,
+        );
       }
       return true;
     },
     async jwt({ token, user }): Promise<import("next-auth/jwt").JWT> {
+      const email =
+        user?.email?.trim().toLowerCase() ??
+        (typeof token.email === "string"
+          ? token.email.trim().toLowerCase()
+          : undefined);
+
       try {
-        const email =
-          user?.email?.toLowerCase() ??
-          (token.email as string | undefined)?.toLowerCase();
         if (email) {
-          const row = await prisma.user.findUnique({
-            where: { email },
-          });
+          let row = await findUserByEmail(email);
+          if (!row && isAllowedAppUser(email)) {
+            row = await syncOAuthUser({
+              email,
+              name: user?.name ?? null,
+              image: user?.image ?? null,
+              role: resolveRoleForEmail(email),
+            });
+          }
           if (row) {
             token.id = row.id;
             token.role = row.role;
             token.email = row.email;
+          } else if (isAllowedAppUser(email)) {
+            token.email = email;
+            token.role = resolveRoleForEmail(email);
           }
         } else if (token.id) {
-          const row = await prisma.user.findUnique({
-            where: { id: token.id as string },
-          });
+          const row = await findUserById(token.id as string);
           if (row) {
             token.role = row.role;
+            token.email = row.email;
           }
         }
         return token;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         console.error("[auth] jwt callback:", msg);
+        if (email && isAllowedAppUser(email)) {
+          token.email = email;
+          token.role = resolveRoleForEmail(email);
+          return token;
+        }
         throw e;
       }
     },

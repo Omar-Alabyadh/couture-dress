@@ -62,20 +62,79 @@ export function resolveRoleForEmail(email: string): UserRole {
   return "ENGINEER";
 }
 
-/** Resolve OAuth sign-in email from user and provider profile. */
+type OAuthAccount = {
+  id_token?: string | null;
+  access_token?: string | null;
+};
+
+function normalizeOAuthEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.toLowerCase() : null;
+}
+
+/** Decode email from Google `id_token` (always present after a successful code exchange). */
+export function emailFromIdToken(idToken: string | null | undefined): string | null {
+  if (!idToken?.trim()) return null;
+  try {
+    const parts = idToken.split(".");
+    if (parts.length < 2) return null;
+    const payload = parts[1]!.replace(/-/g, "+").replace(/_/g, "/");
+    const json = Buffer.from(payload, "base64").toString("utf8");
+    const claims = JSON.parse(json) as { email?: unknown };
+    return normalizeOAuthEmail(claims.email);
+  } catch {
+    return null;
+  }
+}
+
+/** Last-resort: Google userinfo when user/profile omit email (e.g. silent `prompt=none`). */
+export async function emailFromGoogleUserinfo(
+  accessToken: string | null | undefined,
+): Promise<string | null> {
+  if (!accessToken?.trim()) return null;
+  try {
+    const res = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { email?: unknown };
+    return normalizeOAuthEmail(data.email);
+  } catch {
+    return null;
+  }
+}
+
+/** Resolve OAuth sign-in email from user, profile, and token claims. */
 export function resolveOAuthSignInEmail(
   user: { email?: string | null } | null | undefined,
   profile: unknown,
+  account?: OAuthAccount | null,
 ): string | null {
-  const fromUser = user?.email?.trim();
-  if (fromUser) return fromUser.toLowerCase();
+  const fromUser = normalizeOAuthEmail(user?.email);
+  if (fromUser) return fromUser;
 
   if (profile && typeof profile === "object" && profile !== null) {
-    const pe = (profile as { email?: unknown }).email;
-    if (typeof pe === "string" && pe.trim()) {
-      return pe.trim().toLowerCase();
-    }
+    const fromProfile = normalizeOAuthEmail(
+      (profile as { email?: unknown }).email,
+    );
+    if (fromProfile) return fromProfile;
   }
 
+  const fromIdToken = emailFromIdToken(account?.id_token);
+  if (fromIdToken) return fromIdToken;
+
   return null;
+}
+
+/** Async resolver — fetches Google userinfo only when sync sources miss email. */
+export async function resolveOAuthSignInEmailAsync(
+  user: { email?: string | null } | null | undefined,
+  profile: unknown,
+  account?: OAuthAccount | null,
+): Promise<string | null> {
+  const sync = resolveOAuthSignInEmail(user, profile, account);
+  if (sync) return sync;
+  return emailFromGoogleUserinfo(account?.access_token);
 }
