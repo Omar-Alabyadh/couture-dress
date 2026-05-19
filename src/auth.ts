@@ -1,5 +1,5 @@
 import NextAuth from "next-auth";
-import { authConfig } from "@/auth.config";
+import { applySessionFromToken, authConfig } from "@/auth.config";
 import { resolveAuthSecret } from "@/lib/auth-secret";
 import {
   emailFromIdToken,
@@ -12,8 +12,6 @@ import {
 } from "@/lib/auth-allowlist";
 import { findUserByEmail, findUserById, syncOAuthUser } from "@/lib/auth-db";
 import { logAudit } from "@/server/services/auditService";
-import type { UserRole } from "@/generated/prisma/client";
-
 export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
   secret: resolveAuthSecret(),
@@ -124,14 +122,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       }
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = (token.id as string) ?? "";
-        session.user.role = (token.role as UserRole) ?? "ENGINEER";
-        if (token.email) {
-          session.user.email = token.email as string;
-        }
-      }
-      return session;
+      return applySessionFromToken(session, token);
     },
   },
 });
