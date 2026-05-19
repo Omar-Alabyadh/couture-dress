@@ -1,6 +1,8 @@
 .env
 .vercel
-.cursor/
+# Cursor — تتبّع قواعد المشروع فقط، تجاهل باقي إعدادات IDE المحلية
+.cursor/*
+!.cursor/rules/
 .env*.local
 node_modules
 src/generated/prisma
