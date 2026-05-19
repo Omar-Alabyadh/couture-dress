@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/client";
 import { requireOwner } from "@/lib/api/admin-auth";
+import { adminLoadErrorResponse } from "@/lib/api/admin-route-error";
 import { deriveProductAdminStatus } from "@/lib/admin/product-status";
 
 export async function GET() {
@@ -75,7 +76,6 @@ export async function GET() {
       },
     });
   } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: "تعذر التحميل" }, { status: 500 });
+    return adminLoadErrorResponse("overview", e);
   }
 }

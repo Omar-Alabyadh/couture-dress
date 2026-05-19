@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/client";
 import { requireOwner } from "@/lib/api/admin-auth";
+import { adminLoadErrorResponse } from "@/lib/api/admin-route-error";
 import { logAudit } from "@/server/services/auditService";
 import { getClientIp } from "@/lib/api/get-client-ip";
 import { listColorsForAdmin } from "@/server/repositories/contentRepository";
@@ -19,8 +20,8 @@ export async function GET() {
     await ensureDefaultFilterColors();
     const data = await listColorsForAdmin();
     return NextResponse.json({ data });
-  } catch {
-    return NextResponse.json({ error: "تعذر التحميل" }, { status: 500 });
+  } catch (e) {
+    return adminLoadErrorResponse("colors", e);
   }
 }
 

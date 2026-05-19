@@ -3,22 +3,44 @@ import type { Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import Google from "next-auth/providers/google";
 import { NextResponse } from "next/server";
+import {
+  isAllowedAppUser,
+  resolveRoleForEmail,
+} from "@/lib/auth-allowlist";
 import type { UserRole } from "@/generated/prisma/client";
 
 /** Maps JWT claims to session — must live in auth.config for Edge middleware. */
 export function applySessionFromToken(session: Session, token: JWT): Session {
   if (session.user) {
-    session.user.id = (token.id as string) ?? "";
-    session.user.role = (token.role as UserRole) ?? "ENGINEER";
+    const email =
+      (typeof token.email === "string" ? token.email : session.user.email)?.trim().toLowerCase() ??
+      "";
+
+    session.user.id = typeof token.id === "string" ? token.id : "";
     if (token.email) {
       session.user.email = token.email as string;
+    } else if (email) {
+      session.user.email = email;
+    }
+
+    const tokenRole = token.role as UserRole | undefined;
+    if (tokenRole === "OWNER" || tokenRole === "ENGINEER") {
+      session.user.role = tokenRole;
+    } else if (email && isAllowedAppUser(email)) {
+      session.user.role = resolveRoleForEmail(email);
+    } else {
+      session.user.role = "ENGINEER";
     }
   }
   return session;
 }
 
 function resolveSessionRole(auth: Session | null): UserRole | undefined {
-  return auth?.user?.role;
+  const role = auth?.user?.role;
+  if (role === "OWNER" || role === "ENGINEER") return role;
+  const email = auth?.user?.email?.trim().toLowerCase();
+  if (email && isAllowedAppUser(email)) return resolveRoleForEmail(email);
+  return undefined;
 }
 
 function isGet(request: { method: string }) {
