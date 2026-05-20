@@ -348,8 +348,8 @@ export default function ProductsPage({
   }
 
   return (
-    <>
-      <header ref={headerRef} className="topbar">
+    <div className="products-page">
+      <header ref={headerRef} className="topbar products-page__topbar">
         <div className="container topbar__inner">
           <Link className="brand" href="/" aria-label="العودة للرئيسية">
             <img
@@ -445,7 +445,7 @@ export default function ProductsPage({
         </ul>
       </MobileNavShell>
 
-      <main className="section" style={{ paddingTop: 28 }}>
+      <main className="section products-page__main">
         <div className="container">
           <h1 className="section__title" style={{ marginTop: 0 }}>المنتجات</h1>
           <p className="section__text">
@@ -640,6 +640,6 @@ export default function ProductsPage({
         whatsappLinkTemplate="product_inquiry"
         whatsappLinkSource="products_footer"
       />
-    </>
+    </div>
   );
 }

@@ -9,6 +9,9 @@
 /* EN: Motion + polish layer — loaded AFTER the base stylesheet so it wins by cascade order. */
 @import "./motion.css";
 
+/* Mobile S (≤359px) — /products page scoped overrides */
+@import "./products-mobile-s.css";
+
 /* ============================================================
    Global selection + scrollbar — brand burgundy (public + admin)
    EN: Couture-tinted selection; thin scrollbar without layout tricks.
