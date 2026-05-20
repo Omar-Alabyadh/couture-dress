@@ -3,11 +3,13 @@ import { join } from "node:path";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
+import { resolveDatabaseUrl, type DatabaseUrlInfo } from "@/server/db/connection";
 
 /** Cached singleton + bundle mtime so dev HMR does not keep a stale client after `prisma generate`. */
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
   pool?: Pool;
+  dbUrlInfo?: DatabaseUrlInfo;
   prismaGeneratedClientMtimeMs?: number;
 };
 
@@ -21,23 +23,15 @@ function generatedPrismaClientMtimeMs(): number {
   }
 }
 
-/**
- * Supabase transaction pooler (:6543) requires `pgbouncer=true` for Prisma.
- * Do NOT set connection_limit=1 — admin routes use Promise.all (overview, products).
- */
+/** @deprecated Use resolveDatabaseUrl — kept for imports */
 export function normalizeDatabaseUrl(connectionString: string): string {
-  try {
-    const url = new URL(connectionString);
-    const isSupabasePooler =
-      url.hostname.includes("pooler.supabase.com") || url.port === "6543";
-    if (isSupabasePooler && !url.searchParams.has("pgbouncer")) {
-      url.searchParams.set("pgbouncer", "true");
-    }
-    url.searchParams.delete("connection_limit");
-    return url.toString();
-  } catch {
-    return connectionString;
-  }
+  return resolveDatabaseUrl(connectionString).normalized;
+}
+
+export function getDatabaseDiagnostics(): DatabaseUrlInfo | null {
+  const raw = process.env.DATABASE_URL?.trim();
+  if (!raw) return null;
+  return globalForPrisma.dbUrlInfo ?? resolveDatabaseUrl(raw);
 }
 
 function createPool(): Pool {
@@ -45,11 +39,16 @@ function createPool(): Pool {
   if (!raw) {
     throw new Error("DATABASE_URL is required for Prisma (set it in .env or .env.local).");
   }
+  const info = resolveDatabaseUrl(raw);
+  globalForPrisma.dbUrlInfo = info;
+  if (info.hint) {
+    console.warn("[db]", info.hint);
+  }
   return new Pool({
-    connectionString: normalizeDatabaseUrl(raw),
-    max: process.env.VERCEL ? 5 : 10,
+    connectionString: info.normalized,
+    max: info.poolMax,
     connectionTimeoutMillis: 20_000,
-    idleTimeoutMillis: 30_000,
+    idleTimeoutMillis: 10_000,
     allowExitOnIdle: true,
   });
 }
@@ -73,6 +72,7 @@ function getPrismaSync(): PrismaClient {
       void globalForPrisma.pool?.end();
       globalForPrisma.prisma = undefined;
       globalForPrisma.pool = undefined;
+      globalForPrisma.dbUrlInfo = undefined;
     }
     if (!globalForPrisma.prisma) {
       globalForPrisma.pool = createPool();
