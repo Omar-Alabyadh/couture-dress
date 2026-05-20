@@ -6,7 +6,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { normalizeSearch } from "@/lib/admin/list-client";
-import { nextSortOrder } from "@/lib/admin/sort-order";
+import {
+  nextSortOrder,
+  sortOrderFromAdminDisplay,
+  sortOrderToAdminDisplay,
+  sortOrderToAdminDisplayString,
+} from "@/lib/admin/sort-order";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import { AdminModal } from "@/components/admin/AdminModal";
@@ -42,7 +47,7 @@ function CategoryForm({
   onSaved,
 }: {
   initial?: Category;
-  /** Used when creating — next slot after active categories */
+  /** Used when creating — next internal slot (0-based); shown as +1 in the form */
   defaultSortOrder?: number;
   onClose: () => void;
   onSaved: () => void | Promise<void>;
@@ -51,8 +56,10 @@ function CategoryForm({
   const [nameAr, setNameAr] = useState(initial?.nameAr ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [descriptionAr, setDescriptionAr] = useState(initial?.descriptionAr ?? "");
-  const [sortOrder, setSortOrder] = useState(
-    String(initial?.sortOrder ?? defaultSortOrder),
+  const [sortOrder, setSortOrder] = useState(() =>
+    sortOrderToAdminDisplayString(
+      initial?.sortOrder ?? defaultSortOrder ?? 0,
+    ),
   );
   const [loading, setLoading] = useState(false);
 
@@ -67,7 +74,7 @@ function CategoryForm({
             nameAr: nameAr.trim(),
             slug: slug.trim() || undefined,
             descriptionAr: descriptionAr.trim() || null,
-            sortOrder: Number(sortOrder),
+            sortOrder: sortOrderFromAdminDisplay(sortOrder),
           };
           const r = initial
             ? await adminFetch(`/api/admin/categories/${initial.id}`, {
@@ -113,13 +120,13 @@ function CategoryForm({
         label="الترتيب"
         hint={
           initial
-            ? "رقم أصغر = يظهر أولًا في الموقع."
+            ? "1 = أول قسم في الموقع، 2 = الثاني، وهكذا."
             : "يُقترح تلقائيًا كالتالي في القائمة (يمكنك تغييره)."
         }
       >
         <AdminInput
           type="number"
-          min={0}
+          min={1}
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
           dir="ltr"
@@ -326,7 +333,9 @@ export default function AdminCategoriesPage() {
                   <AdminTd label="الوصف" className="admin-table__cell--full">
                     {c.descriptionAr?.trim() || "—"}
                   </AdminTd>
-                  <AdminTd label="ترتيب">{c.sortOrder}</AdminTd>
+                  <AdminTd label="ترتيب">
+                    {sortOrderToAdminDisplay(c.sortOrder)}
+                  </AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
                     <AdminRowActions
                       archived={Boolean(c.deletedAt)}

@@ -9,7 +9,11 @@ import {
   sortByDateString,
   type SortDirection,
 } from "@/lib/admin/list-client";
-import { nextSortOrder } from "@/lib/admin/sort-order";
+import {
+  nextSortOrderForAdminDisplay,
+  sortOrderFromAdminDisplay,
+  sortOrderToAdminDisplay,
+} from "@/lib/admin/sort-order";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
@@ -60,7 +64,7 @@ export default function AdminTestimonialsPage() {
   const [text, setText] = useState("");
   const [rating, setRating] = useState("5");
   const [imageUrl, setImageUrl] = useState("");
-  const [sortOrder, setSortOrder] = useState("0");
+  const [sortOrder, setSortOrder] = useState("1");
   const activeTestimonials = useMemo(
     () => list.filter((t) => !t.deletedAt),
     [list],
@@ -157,7 +161,7 @@ export default function AdminTestimonialsPage() {
     const r = await adminFetch(`/api/admin/testimonials/${t.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sortOrder: Number(raw) }),
+      body: JSON.stringify({ sortOrder: sortOrderFromAdminDisplay(raw) }),
     });
     if (!r.ok) {
       const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
@@ -205,7 +209,7 @@ export default function AdminTestimonialsPage() {
               variant="primary"
               icon={Plus}
               onClick={() => {
-                setSortOrder(String(nextSortOrder(activeTestimonials)));
+                setSortOrder(String(nextSortOrderForAdminDisplay(activeTestimonials)));
                 setCreating(true);
               }}
             >
@@ -236,7 +240,7 @@ export default function AdminTestimonialsPage() {
                     text: text.trim(),
                     rating: Number(rating),
                     imageUrl: imageUrl.trim() || null,
-                    sortOrder: Number(sortOrder),
+                    sortOrder: sortOrderFromAdminDisplay(sortOrder),
                   }),
                 });
                 if (!r.ok) {
@@ -299,12 +303,12 @@ export default function AdminTestimonialsPage() {
           <AdminField
             label="الترتيب"
             htmlFor="tm-sort"
-            hint="يُقترح تلقائيًا كالتالي في القائمة — رقم أصغر يظهر أولًا في الصفحة الرئيسية."
+            hint="يُقترح تلقائيًا كالتالي في القائمة — 1 يظهر أولًا في الصفحة الرئيسية."
           >
             <AdminInput
               id="tm-sort"
               type="number"
-              min={0}
+              min={1}
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
               dir="ltr"
@@ -379,14 +383,20 @@ export default function AdminTestimonialsPage() {
                   <AdminTd label="تقييم">{t.rating}</AdminTd>
                   <AdminTd label="ترتيب">
                     {t.deletedAt ? (
-                      t.sortOrder
+                      sortOrderToAdminDisplay(t.sortOrder)
                     ) : (
                       <AdminInput
                         type="number"
-                        defaultValue={t.sortOrder}
+                        min={1}
+                        defaultValue={sortOrderToAdminDisplay(t.sortOrder)}
                         key={`${t.id}-${t.sortOrder}`}
                         onBlur={(e) => {
-                          if (e.target.value === String(t.sortOrder)) return;
+                          if (
+                            e.target.value ===
+                            String(sortOrderToAdminDisplay(t.sortOrder))
+                          ) {
+                            return;
+                          }
                           void patchSortOrder(t, e.target.value);
                         }}
                         style={{ maxWidth: "100%" }}

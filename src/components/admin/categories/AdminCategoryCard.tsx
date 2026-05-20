@@ -2,6 +2,8 @@
 
 import { AdminButton } from "@/components/admin/AdminPrimitives";
 
+import { sortOrderToAdminDisplay } from "@/lib/admin/sort-order";
+
 export function AdminCategoryCard({
   nameAr,
   slug,
@@ -41,7 +43,9 @@ export function AdminCategoryCard({
             بدون وصف
           </p>
         )}
-        <p className="admin-category-card__order">الترتيب: {sortOrder}</p>
+        <p className="admin-category-card__order">
+          الترتيب: {sortOrderToAdminDisplay(sortOrder)}
+        </p>
         <div className="admin-category-card__actions">
           {archived ? (
             <AdminButton type="button" variant="secondary" onClick={onRestore}>

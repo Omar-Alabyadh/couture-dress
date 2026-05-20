@@ -3,7 +3,13 @@ import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { nextSortOrder } from "@/lib/admin/sort-order";
+import {
+  nextSortOrder,
+  nextSortOrderForAdminDisplay,
+  sortOrderFromAdminDisplay,
+  sortOrderToAdminDisplay,
+  sortOrderToAdminDisplayString,
+} from "@/lib/admin/sort-order";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { normalizeSearch } from "@/lib/admin/list-client";
@@ -71,8 +77,8 @@ function SizeForm({
     return nextSortOrder(sameType);
   }, [existing, type]);
 
-  const [sortOrder, setSortOrder] = useState(
-    String(initial?.sortOrder ?? suggestedSort),
+  const [sortOrder, setSortOrder] = useState(() =>
+    sortOrderToAdminDisplayString(initial?.sortOrder ?? suggestedSort),
   );
   const [loading, setLoading] = useState(false);
 
@@ -80,7 +86,7 @@ function SizeForm({
     const sameType = existing.filter(
       (s) => !s.archivedAt && s.type === nextType,
     );
-    setSortOrder(String(nextSortOrder(sameType)));
+    setSortOrder(String(nextSortOrderForAdminDisplay(sameType)));
   }
 
   return (
@@ -93,7 +99,7 @@ function SizeForm({
           const body = {
             label: label.trim(),
             type,
-            sortOrder: parseInt(sortOrder.trim(), 10) || 0,
+            sortOrder: sortOrderFromAdminDisplay(sortOrder),
           };
           const r = await fetch(
             initial ? `/api/admin/sizes/${initial.id}` : "/api/admin/sizes",
@@ -140,13 +146,13 @@ function SizeForm({
         label="الترتيب"
         hint={
           initial
-            ? "ترتيب العرض ضمن نفس نوع المقاس."
-            : "يُحدَّث تلقائيًا حسب النوع — الرقم الأصغر يظهر أولًا."
+            ? "1 = أول مقاس ضمن نفس النوع في القوائم."
+            : "يُحدَّث تلقائيًا حسب النوع — 1 يظهر أولًا ضمن نفس النوع."
         }
       >
         <AdminInput
           type="number"
-          min={0}
+          min={1}
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
           dir="ltr"
@@ -353,7 +359,9 @@ export default function AdminSizesPage() {
                     {s.label}
                   </AdminTd>
                   <AdminTd label="النوع">{SIZE_TYPE_LABELS[s.type]}</AdminTd>
-                  <AdminTd label="الترتيب">{s.sortOrder}</AdminTd>
+                  <AdminTd label="الترتيب">
+                    {sortOrderToAdminDisplay(s.sortOrder)}
+                  </AdminTd>
                   <AdminTd label="الحالة">
                     {s.archivedAt ? "مؤرشف" : "نشط"}
                   </AdminTd>

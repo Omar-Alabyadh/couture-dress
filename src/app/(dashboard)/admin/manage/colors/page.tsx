@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { normalizeSearch } from "@/lib/admin/list-client";
+import { sortOrderToAdminDisplay } from "@/lib/admin/sort-order";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import { AdminModal } from "@/components/admin/AdminModal";
@@ -286,7 +287,9 @@ export default function AdminColorsPage() {
                   <AdminTd label="Hex" dir="ltr" style={{ fontSize: 12 }}>
                     {c.hex ? `#${c.hex.replace(/^#/, "")}` : "—"}
                   </AdminTd>
-                  <AdminTd label="ترتيب">{c.sortOrder}</AdminTd>
+                  <AdminTd label="ترتيب">
+                    {sortOrderToAdminDisplay(c.sortOrder)}
+                  </AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
                     <AdminRowActions
                       archived={Boolean(c.deletedAt)}

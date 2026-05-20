@@ -9,7 +9,12 @@ import {
   sortByDateString,
   type SortDirection,
 } from "@/lib/admin/list-client";
-import { nextSortOrder } from "@/lib/admin/sort-order";
+import {
+  nextSortOrderForAdminDisplay,
+  sortOrderFromAdminDisplay,
+  sortOrderToAdminDisplay,
+  sortOrderToAdminDisplayString,
+} from "@/lib/admin/sort-order";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
@@ -95,7 +100,9 @@ function BrandEditPanel({
   const [logoUrl, setLogoUrl] = useState(initial.logoUrl ?? "");
   const [descriptionAr, setDescriptionAr] = useState(initial.descriptionAr ?? "");
   const [descriptionEn, setDescriptionEn] = useState(initial.descriptionEn ?? "");
-  const [sortOrder, setSortOrder] = useState(String(initial.sortOrder));
+  const [sortOrder, setSortOrder] = useState(
+    sortOrderToAdminDisplayString(initial.sortOrder),
+  );
   const [isPublished, setIsPublished] = useState(initial.isPublished);
   const [loading, setLoading] = useState(false);
 
@@ -116,7 +123,7 @@ function BrandEditPanel({
                 logoUrl: logoUrl.trim() || null,
                 descriptionAr: descriptionAr.trim() || null,
                 descriptionEn: descriptionEn.trim() || null,
-                sortOrder: Number(sortOrder),
+                sortOrder: sortOrderFromAdminDisplay(sortOrder),
                 isPublished,
               }),
             });
@@ -183,11 +190,16 @@ function BrandEditPanel({
             dir="ltr"
           />
         </AdminField>
-        <AdminField label="الترتيب">
+        <AdminField
+          label="الترتيب"
+          hint="1 = أول ظهور في الموقع، 2 = الثاني، وهكذا."
+        >
           <AdminInput
             type="number"
+            min={1}
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
+            dir="ltr"
           />
         </AdminField>
         <AdminCheckbox
@@ -271,11 +283,11 @@ function BrandCreateForm({
       </AdminField>
       <AdminField
         label="الترتيب"
-        hint="يُقترح تلقائيًا عند الإضافة — رقم أصغر يظهر أولًا في الموقع."
+        hint="يُقترح تلقائيًا عند الإضافة — 1 يظهر أولًا في الموقع."
       >
         <AdminInput
           type="number"
-          min={0}
+          min={1}
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
           dir="ltr"
@@ -302,7 +314,7 @@ export default function AdminBrandsPage() {
   const [type, setType] = useState<Brand["type"]>("BRAND");
   const [logoUrl, setLogoUrl] = useState("");
   const [descriptionAr, setDescriptionAr] = useState("");
-  const [sortOrder, setSortOrder] = useState("0");
+  const [sortOrder, setSortOrder] = useState("1");
   const activeBrands = useMemo(
     () => list.filter((b) => !b.deletedAt),
     [list],
@@ -436,7 +448,7 @@ export default function AdminBrandsPage() {
               variant="primary"
               icon={Plus}
               onClick={() => {
-                setSortOrder(String(nextSortOrder(activeBrands)));
+                setSortOrder(String(nextSortOrderForAdminDisplay(activeBrands)));
                 setCreating(true);
                 setEditing(null);
               }}
@@ -488,7 +500,7 @@ export default function AdminBrandsPage() {
                       type,
                       logoUrl: logoUrl.trim() || null,
                       descriptionAr: descriptionAr.trim() || null,
-                      sortOrder: Number(sortOrder),
+                      sortOrder: sortOrderFromAdminDisplay(sortOrder),
                     }),
                   });
                   if (!r.ok) {
@@ -582,7 +594,9 @@ export default function AdminBrandsPage() {
                   </AdminTd>
                   <AdminTd label="الاسم">{b.nameAr}</AdminTd>
                   <AdminTd label="النوع">{typeLabel(b.type)}</AdminTd>
-                  <AdminTd label="ترتيب">{b.sortOrder}</AdminTd>
+                  <AdminTd label="ترتيب">
+                    {sortOrderToAdminDisplay(b.sortOrder)}
+                  </AdminTd>
                   <AdminTd label="نشر">
                     {b.deletedAt ? (
                       "—"
