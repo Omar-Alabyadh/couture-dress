@@ -211,6 +211,7 @@ export default function AdminSizesPage() {
   const filtered = useMemo(() => {
     const q = normalizeSearch(search);
     return list.filter((s) => {
+      if (s.archivedAt) return false;
       if (typeFilter !== "all" && s.type !== typeFilter) return false;
       if (!q) return true;
       return (
@@ -219,20 +220,6 @@ export default function AdminSizesPage() {
       );
     });
   }, [list, search, typeFilter]);
-
-  async function restoreSize(row: SizeRow) {
-    const r = await adminFetch(`/api/admin/sizes/${row.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restore: true }),
-    });
-    if (!r.ok) {
-      pushToast((await readApiErrorMessage(r)) ?? fallbackErrorMessage(r), "error");
-      return;
-    }
-    pushToast("تم الاسترجاع.", "success");
-    await load();
-  }
 
   async function archiveSize(row: SizeRow) {
     const ok = await requestConfirm({
@@ -261,7 +248,7 @@ export default function AdminSizesPage() {
       <AdminCard>
         <AdminSectionHeader
           title="المقاسات"
-          description="نظّم المقاسات التي ستظهر عند إضافة المنتجات."
+          description="تظهر عند إضافة المنتجات. المؤرشف يُسترجع من الأرشيف الموحّد."
           actions={
             <AdminButton
               type="button"
@@ -325,6 +312,7 @@ export default function AdminSizesPage() {
           {editing ? (
             <SizeForm
               initial={editing}
+              existing={list}
               onClose={() => setEditing(null)}
               onSaved={async () => {
                 setEditing(null);
@@ -334,7 +322,7 @@ export default function AdminSizesPage() {
           ) : null}
         </AdminModal>
 
-        {!loading && !loadError && list.length === 0 ? (
+        {!loading && !loadError && list.filter((s) => !s.archivedAt).length === 0 ? (
           <AdminEmptyState
             title="لا توجد مقاسات"
             description='اضغط "إضافة مقاس" أو حدّث الصفحة لتحميل المقاسات الافتراضية.'
@@ -348,13 +336,12 @@ export default function AdminSizesPage() {
                 <th>الاسم</th>
                 <th>النوع</th>
                 <th>الترتيب</th>
-                <th>الحالة</th>
                 <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((s) => (
-                <tr key={s.id} style={{ opacity: s.archivedAt ? 0.55 : 1 }}>
+                <tr key={s.id}>
                   <AdminTd label="الاسم" dir="ltr">
                     {s.label}
                   </AdminTd>
@@ -362,19 +349,11 @@ export default function AdminSizesPage() {
                   <AdminTd label="الترتيب">
                     {sortOrderToAdminDisplay(s.sortOrder)}
                   </AdminTd>
-                  <AdminTd label="الحالة">
-                    {s.archivedAt ? "مؤرشف" : "نشط"}
-                  </AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
                     <AdminRowActions
-                      archived={Boolean(s.archivedAt)}
-                      onEdit={
-                        s.archivedAt
-                          ? undefined
-                          : () => setEditing(s)
-                      }
-                      onArchive={s.archivedAt ? undefined : () => void archiveSize(s)}
-                      onRestore={s.archivedAt ? () => void restoreSize(s) : undefined}
+                      archived={false}
+                      onEdit={() => setEditing(s)}
+                      onArchive={() => void archiveSize(s)}
                     />
                   </AdminTd>
                 </tr>

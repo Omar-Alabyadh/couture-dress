@@ -11,6 +11,7 @@ import {
   parseSizeOptionType,
 } from "@/lib/validation/size-input";
 import {
+  compactSizeSortOrdersAfterRemoval,
   prepareSizeSortOrderInsert,
   prepareSizeSortOrderMove,
 } from "@/server/services/sortOrderShiftService";
@@ -55,9 +56,21 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   if (json.softDelete === true) {
     try {
-      const row = await prisma.sizeOption.update({
-        where: { id },
-        data: { archivedAt: new Date() },
+      const existing = await prisma.sizeOption.findUnique({ where: { id } });
+      if (!existing) {
+        return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+      }
+      const row = await prisma.$transaction(async (tx) => {
+        const updated = await tx.sizeOption.update({
+          where: { id },
+          data: { archivedAt: new Date() },
+        });
+        await compactSizeSortOrdersAfterRemoval(
+          existing.type,
+          existing.sortOrder,
+          tx,
+        );
+        return updated;
       });
       await logAudit({
         userId: r.session!.user.id,
@@ -146,9 +159,21 @@ export async function DELETE(req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   const ip = getClientIp(req);
   try {
-    const row = await prisma.sizeOption.update({
-      where: { id },
-      data: { archivedAt: new Date() },
+    const existing = await prisma.sizeOption.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+    }
+    const row = await prisma.$transaction(async (tx) => {
+      const updated = await tx.sizeOption.update({
+        where: { id },
+        data: { archivedAt: new Date() },
+      });
+      await compactSizeSortOrdersAfterRemoval(
+        existing.type,
+        existing.sortOrder,
+        tx,
+      );
+      return updated;
     });
     await logAudit({
       userId: r.session!.user.id,

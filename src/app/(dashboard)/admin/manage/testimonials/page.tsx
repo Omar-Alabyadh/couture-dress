@@ -30,6 +30,7 @@ import {
   AdminTable,
   AdminTd,
   AdminTextarea,
+  AdminCheckbox,
 } from "@/components/admin/AdminPrimitives";
 import { MediaPickerButton } from "@/components/admin/media/MediaPicker";
 import { AdminModal } from "@/components/admin/AdminModal";
@@ -53,18 +54,144 @@ const TESTIMONIAL_STATUS_OPTIONS = [
   { value: "all", label: "كل الحالات" },
   { value: "published", label: "منشور" },
   { value: "draft", label: "مسودة" },
-  { value: "archived", label: "مؤرشف" },
 ];
+
+function TestimonialForm({
+  initial,
+  defaultSortDisplay,
+  onClose,
+  onSaved,
+}: {
+  initial?: Testimonial;
+  defaultSortDisplay?: string;
+  onClose: () => void;
+  onSaved: () => void | Promise<void>;
+}) {
+  const { pushToast } = useAdminToast();
+  const [customerName, setCustomerName] = useState(initial?.customerName ?? "");
+  const [text, setText] = useState(initial?.text ?? "");
+  const [rating, setRating] = useState(String(initial?.rating ?? 5));
+  const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? "");
+  const [sortOrder, setSortOrder] = useState(
+    initial
+      ? String(sortOrderToAdminDisplay(initial.sortOrder))
+      : (defaultSortDisplay ?? "1"),
+  );
+  const [isPublished, setIsPublished] = useState(initial?.isPublished ?? true);
+
+  return (
+    <form
+      className="admin-form"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const body = {
+          customerName: customerName.trim(),
+          text: text.trim(),
+          rating: Number(rating),
+          imageUrl: imageUrl.trim() || null,
+          sortOrder: sortOrderFromAdminDisplay(sortOrder),
+          isPublished,
+        };
+        const r = await adminFetch(
+          initial
+            ? `/api/admin/testimonials/${initial.id}`
+            : "/api/admin/testimonials",
+          {
+            method: initial ? "PATCH" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+        );
+        if (!r.ok) {
+          const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+          pushToast(msg, "error");
+          return;
+        }
+        pushToast(initial ? "تم التحديث." : "تمت الإضافة.", "success");
+        await onSaved();
+      }}
+    >
+      <AdminField label="اسم العميل" htmlFor="tm-name">
+        <AdminInput
+          id="tm-name"
+          value={customerName}
+          onChange={(e) => setCustomerName(e.target.value)}
+          required
+        />
+      </AdminField>
+      <AdminField label="النص" htmlFor="tm-text">
+        <AdminTextarea
+          id="tm-text"
+          rows={3}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          required
+        />
+      </AdminField>
+      <AdminField label="التقييم (1–5)" htmlFor="tm-rating">
+        <AdminInput
+          id="tm-rating"
+          type="number"
+          min={1}
+          max={5}
+          value={rating}
+          onChange={(e) => setRating(e.target.value)}
+        />
+      </AdminField>
+      <AdminField label="رابط صورة (اختياري)" htmlFor="tm-img">
+        <AdminInput
+          id="tm-img"
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+          dir="ltr"
+          placeholder="https://… أو /assets/…"
+        />
+      </AdminField>
+      <MediaPickerButton
+        label="اختر صورة من مكتبة الوسائط"
+        defaultUsageType="TESTIMONIAL_AVATAR"
+        defaultFolder="testimonials"
+        onSelect={(asset) => setImageUrl(asset.url)}
+      />
+      <AdminField
+        label="الترتيب"
+        htmlFor="tm-sort"
+        hint="1 يظهر أولًا في الصفحة الرئيسية."
+      >
+        <AdminInput
+          id="tm-sort"
+          type="number"
+          min={1}
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+          dir="ltr"
+        />
+      </AdminField>
+      {initial ? (
+        <AdminCheckbox
+          id="tm-published"
+          label="منشور للعامة"
+          checked={isPublished}
+          onChange={(e) => setIsPublished(e.target.checked)}
+        />
+      ) : null}
+      <div className="admin-form__submit-row">
+        <AdminButton type="submit" variant="primary">
+          {initial ? "حفظ" : "إضافة"}
+        </AdminButton>
+        <AdminButton type="button" variant="secondary" onClick={onClose}>
+          إلغاء
+        </AdminButton>
+      </div>
+    </form>
+  );
+}
 
 export default function AdminTestimonialsPage() {
   const { pushToast } = useAdminToast();
   const { requestConfirm } = useAdminConfirm();
   const [list, setList] = useState<Testimonial[]>([]);
-  const [customerName, setCustomerName] = useState("");
-  const [text, setText] = useState("");
-  const [rating, setRating] = useState("5");
-  const [imageUrl, setImageUrl] = useState("");
-  const [sortOrder, setSortOrder] = useState("1");
+  const [createSortDisplay, setCreateSortDisplay] = useState("1");
   const activeTestimonials = useMemo(
     () => list.filter((t) => !t.deletedAt),
     [list],
@@ -76,6 +203,7 @@ export default function AdminTestimonialsPage() {
   const [sort, setSort] = useState<SortDirection>("newest");
   const [page, setPage] = useState(1);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Testimonial | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -103,21 +231,6 @@ export default function AdminTestimonialsPage() {
       void load();
     });
   }, [load]);
-
-  async function restoreRow(t: Testimonial) {
-    const r = await adminFetch(`/api/admin/testimonials/${t.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restore: true }),
-    });
-    if (!r.ok) {
-      const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
-      pushToast(msg, "error");
-      return;
-    }
-    pushToast("تم الاسترجاع.", "success");
-    await load();
-  }
 
   async function archiveRow(t: Testimonial) {
     const ok = await requestConfirm({
@@ -182,12 +295,11 @@ export default function AdminTestimonialsPage() {
           t.text.toLowerCase().includes(q),
       );
     }
-    if (statusFilter === "archived") {
-      rows = rows.filter((t) => t.deletedAt);
-    } else if (statusFilter === "published") {
-      rows = rows.filter((t) => !t.deletedAt && t.isPublished);
+    rows = rows.filter((t) => !t.deletedAt);
+    if (statusFilter === "published") {
+      rows = rows.filter((t) => t.isPublished);
     } else if (statusFilter === "draft") {
-      rows = rows.filter((t) => !t.deletedAt && !t.isPublished);
+      rows = rows.filter((t) => !t.isPublished);
     }
     return sortByDateString(rows, sort);
   }, [list, search, statusFilter, sort]);
@@ -202,14 +314,16 @@ export default function AdminTestimonialsPage() {
       <AdminCard>
         <AdminSectionHeader
           title="آراء العملاء"
-          description="تظهر المنشورة فقط في الصفحة الرئيسية — مرتبة حسب الترتيب ثم التاريخ."
+          description="تظهر المنشورة في الصفحة الرئيسية. المؤرشف يُسترجع من الأرشيف الموحّد."
           actions={
             <AdminButton
               type="button"
               variant="primary"
               icon={Plus}
               onClick={() => {
-                setSortOrder(String(nextSortOrderForAdminDisplay(activeTestimonials)));
+                setCreateSortDisplay(
+                  String(nextSortOrderForAdminDisplay(activeTestimonials)),
+                );
                 setCreating(true);
               }}
             >
@@ -228,101 +342,32 @@ export default function AdminTestimonialsPage() {
 
         <AdminModal open={creating} title="رأي عميل جديد" onClose={() => setCreating(false)}>
           {creating ? (
-            <form
-              className="admin-form"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const r = await adminFetch("/api/admin/testimonials", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    customerName: customerName.trim(),
-                    text: text.trim(),
-                    rating: Number(rating),
-                    imageUrl: imageUrl.trim() || null,
-                    sortOrder: sortOrderFromAdminDisplay(sortOrder),
-                  }),
-                });
-                if (!r.ok) {
-                  const msg =
-                    (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
-                  pushToast(msg, "error");
-                  return;
-                }
-                setCustomerName("");
-                setText("");
-                setRating("5");
-                setImageUrl("");
-                pushToast("تمت الإضافة.", "success");
+            <TestimonialForm
+              defaultSortDisplay={createSortDisplay}
+              onClose={() => setCreating(false)}
+              onSaved={async () => {
                 setCreating(false);
                 await load();
               }}
-            >
-          <AdminField label="اسم العميل" htmlFor="tm-name">
-            <AdminInput
-              id="tm-name"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              required
             />
-          </AdminField>
-          <AdminField label="النص" htmlFor="tm-text">
-            <AdminTextarea
-              id="tm-text"
-              rows={3}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              required
+          ) : null}
+        </AdminModal>
+
+        <AdminModal
+          open={Boolean(editing)}
+          title={editing ? `تعديل: ${editing.customerName}` : "تعديل"}
+          onClose={() => setEditing(null)}
+        >
+          {editing ? (
+            <TestimonialForm
+              key={editing.id}
+              initial={editing}
+              onClose={() => setEditing(null)}
+              onSaved={async () => {
+                setEditing(null);
+                await load();
+              }}
             />
-          </AdminField>
-          <AdminField label="التقييم (1–5)" htmlFor="tm-rating">
-            <AdminInput
-              id="tm-rating"
-              type="number"
-              min={1}
-              max={5}
-              value={rating}
-              onChange={(e) => setRating(e.target.value)}
-            />
-          </AdminField>
-          <AdminField label="رابط صورة (اختياري)" htmlFor="tm-img">
-            <AdminInput
-              id="tm-img"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              dir="ltr"
-              placeholder="https://… أو /assets/…"
-            />
-          </AdminField>
-          <MediaPickerButton
-            label="اختر صورة من مكتبة الوسائط"
-            defaultUsageType="TESTIMONIAL_AVATAR"
-            defaultFolder="testimonials"
-            onSelect={(asset) => setImageUrl(asset.url)}
-          />
-          <AdminField
-            label="الترتيب"
-            htmlFor="tm-sort"
-            hint="يُقترح تلقائيًا كالتالي في القائمة — 1 يظهر أولًا في الصفحة الرئيسية."
-          >
-            <AdminInput
-              id="tm-sort"
-              type="number"
-              min={1}
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              dir="ltr"
-            />
-          </AdminField>
-          <div className="admin-form__submit-row">
-            <AdminButton type="submit" variant="primary">
-              حفظ
-            </AdminButton>
-            <AdminButton type="button" variant="secondary" onClick={() => setCreating(false)}>
-              إلغاء
-            </AdminButton>
-          </div>
-            </form>
           ) : null}
         </AdminModal>
 
@@ -367,60 +412,49 @@ export default function AdminTestimonialsPage() {
                 <th>تقييم</th>
                 <th>ترتيب</th>
                 <th>نشر</th>
-                <th>—</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
               {paginated.items.map((t) => (
-                <tr
-                  key={t.id}
-                  style={{ opacity: t.deletedAt ? 0.45 : 1 }}
-                >
+                <tr key={t.id}>
                   <AdminTd label="العميلة">{t.customerName}</AdminTd>
                   <AdminTd label="مقتطف" className="admin-table__cell--full" style={{ fontSize: 12 }}>
                     {t.text.length > 120 ? `${t.text.slice(0, 120)}…` : t.text}
                   </AdminTd>
                   <AdminTd label="تقييم">{t.rating}</AdminTd>
                   <AdminTd label="ترتيب">
-                    {t.deletedAt ? (
-                      sortOrderToAdminDisplay(t.sortOrder)
-                    ) : (
-                      <AdminInput
-                        type="number"
-                        min={1}
-                        defaultValue={sortOrderToAdminDisplay(t.sortOrder)}
-                        key={`${t.id}-${t.sortOrder}`}
-                        onBlur={(e) => {
-                          if (
-                            e.target.value ===
-                            String(sortOrderToAdminDisplay(t.sortOrder))
-                          ) {
-                            return;
-                          }
-                          void patchSortOrder(t, e.target.value);
-                        }}
-                        style={{ maxWidth: "100%" }}
-                      />
-                    )}
+                    <AdminInput
+                      type="number"
+                      min={1}
+                      defaultValue={sortOrderToAdminDisplay(t.sortOrder)}
+                      key={`${t.id}-${t.sortOrder}`}
+                      onBlur={(e) => {
+                        if (
+                          e.target.value ===
+                          String(sortOrderToAdminDisplay(t.sortOrder))
+                        ) {
+                          return;
+                        }
+                        void patchSortOrder(t, e.target.value);
+                      }}
+                      style={{ maxWidth: "100%" }}
+                    />
                   </AdminTd>
                   <AdminTd label="نشر">
-                    {t.deletedAt ? (
-                      "—"
-                    ) : (
-                      <AdminButton
-                        type="button"
-                        variant="ghost"
-                        onClick={() => void togglePublished(t)}
-                      >
-                        {t.isPublished ? "إخفاء" : "نشر"}
-                      </AdminButton>
-                    )}
+                    <AdminButton
+                      type="button"
+                      variant="ghost"
+                      onClick={() => void togglePublished(t)}
+                    >
+                      {t.isPublished ? "إخفاء" : "نشر"}
+                    </AdminButton>
                   </AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
                     <AdminRowActions
-                      archived={Boolean(t.deletedAt)}
-                      onArchive={t.deletedAt ? undefined : () => void archiveRow(t)}
-                      onRestore={t.deletedAt ? () => void restoreRow(t) : undefined}
+                      archived={false}
+                      onEdit={() => setEditing(t)}
+                      onArchive={() => void archiveRow(t)}
                     />
                   </AdminTd>
                 </tr>

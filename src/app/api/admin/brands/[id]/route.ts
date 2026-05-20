@@ -13,7 +13,10 @@ import {
   parseBrandDesignerType,
   parseBrandSortOrder,
 } from "@/lib/validation/brand-designer-input";
-import { prepareBrandSortOrderMove } from "@/server/services/sortOrderShiftService";
+import {
+  compactBrandSortOrdersAfterRemoval,
+  prepareBrandSortOrderMove,
+} from "@/server/services/sortOrderShiftService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -55,9 +58,17 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   if (json.softDelete === true) {
     try {
-      const row = await prisma.brandDesigner.update({
-        where: { id },
-        data: { deletedAt: new Date() },
+      const existing = await prisma.brandDesigner.findUnique({ where: { id } });
+      if (!existing) {
+        return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+      }
+      const row = await prisma.$transaction(async (tx) => {
+        const updated = await tx.brandDesigner.update({
+          where: { id },
+          data: { deletedAt: new Date() },
+        });
+        await compactBrandSortOrdersAfterRemoval(existing.sortOrder, tx);
+        return updated;
       });
       await logAudit({
         userId: r.session!.user.id,

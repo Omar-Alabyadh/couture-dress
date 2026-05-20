@@ -9,7 +9,10 @@ import {
   normalizeColorLabel,
   normalizeOptionalColorHex,
 } from "@/lib/validation/color-input";
-import { prepareColorSortOrderMove } from "@/server/services/sortOrderShiftService";
+import {
+  compactColorSortOrdersAfterRemoval,
+  prepareColorSortOrderMove,
+} from "@/server/services/sortOrderShiftService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -50,9 +53,17 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   if (json.softDelete === true) {
     try {
-      const row = await prisma.color.update({
-        where: { id },
-        data: { deletedAt: new Date() },
+      const existing = await prisma.color.findUnique({ where: { id } });
+      if (!existing) {
+        return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+      }
+      const row = await prisma.$transaction(async (tx) => {
+        const updated = await tx.color.update({
+          where: { id },
+          data: { deletedAt: new Date() },
+        });
+        await compactColorSortOrdersAfterRemoval(existing.sortOrder, tx);
+        return updated;
       });
       await logAudit({
         userId: r.session!.user.id,

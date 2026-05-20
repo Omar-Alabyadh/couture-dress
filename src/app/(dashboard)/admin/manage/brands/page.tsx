@@ -63,7 +63,6 @@ const BRAND_STATUS_OPTIONS = [
   { value: "all", label: "كل الحالات" },
   { value: "published", label: "منشور" },
   { value: "draft", label: "مسودة" },
-  { value: "archived", label: "مؤرشف" },
 ];
 
 function typeLabel(t: Brand["type"]) {
@@ -356,21 +355,6 @@ export default function AdminBrandsPage() {
     });
   }, [load]);
 
-  async function restoreRow(b: Brand) {
-    const r = await adminFetch(`/api/admin/brands/${b.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restore: true }),
-    });
-    if (!r.ok) {
-      const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
-      pushToast(msg, "error");
-      return;
-    }
-    pushToast("تم الاسترجاع.", "success");
-    await load();
-  }
-
   async function archiveRow(b: Brand) {
     const ok = await requestConfirm({
       title: "أرشفة السجل",
@@ -421,12 +405,11 @@ export default function AdminBrandsPage() {
           (b.descriptionAr?.toLowerCase().includes(q) ?? false),
       );
     }
-    if (statusFilter === "archived") {
-      rows = rows.filter((b) => b.deletedAt);
-    } else if (statusFilter === "published") {
-      rows = rows.filter((b) => !b.deletedAt && b.isPublished);
+    rows = rows.filter((b) => !b.deletedAt);
+    if (statusFilter === "published") {
+      rows = rows.filter((b) => b.isPublished);
     } else if (statusFilter === "draft") {
-      rows = rows.filter((b) => !b.deletedAt && !b.isPublished);
+      rows = rows.filter((b) => !b.isPublished);
     }
     return sortByDateString(rows, sort);
   }, [list, search, statusFilter, sort]);
@@ -441,7 +424,7 @@ export default function AdminBrandsPage() {
       <AdminCard>
         <AdminSectionHeader
           title="ماركات ومصممون"
-          description="يُربَط اختياريًا بالمنتجات من صفحة المنتجات. الأرشفة لا تحذف الربط لكن تخفي الظهور العام."
+          description="يُربَط اختياريًا بالمنتجات. المؤرشف يُسترجع من الأرشيف الموحّد."
           actions={
             <AdminButton
               type="button"
@@ -530,7 +513,7 @@ export default function AdminBrandsPage() {
           title={editing ? `تعديل: ${editing.nameAr}` : "تعديل"}
           onClose={() => setEditing(null)}
         >
-          {editing && !editing.deletedAt ? (
+          {editing ? (
             <BrandEditPanel
               initial={editing}
               onClose={() => setEditing(null)}
@@ -583,12 +566,12 @@ export default function AdminBrandsPage() {
                 <th>النوع</th>
                 <th>ترتيب</th>
                 <th>نشر</th>
-                <th>—</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
               {paginated.items.map((b) => (
-                <tr key={b.id} style={{ opacity: b.deletedAt ? 0.45 : 1 }}>
+                <tr key={b.id}>
                   <AdminTd label="">
                     <BrandLogoThumb url={b.logoUrl} />
                   </AdminTd>
@@ -598,24 +581,19 @@ export default function AdminBrandsPage() {
                     {sortOrderToAdminDisplay(b.sortOrder)}
                   </AdminTd>
                   <AdminTd label="نشر">
-                    {b.deletedAt ? (
-                      "—"
-                    ) : (
-                      <AdminButton
-                        type="button"
-                        variant="ghost"
-                        onClick={() => void togglePublished(b)}
-                      >
-                        {b.isPublished ? "إخفاء" : "نشر"}
-                      </AdminButton>
-                    )}
+                    <AdminButton
+                      type="button"
+                      variant="ghost"
+                      onClick={() => void togglePublished(b)}
+                    >
+                      {b.isPublished ? "إخفاء" : "نشر"}
+                    </AdminButton>
                   </AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
                     <AdminRowActions
-                      archived={Boolean(b.deletedAt)}
-                      onEdit={b.deletedAt ? undefined : () => setEditing(b)}
-                      onArchive={b.deletedAt ? undefined : () => void archiveRow(b)}
-                      onRestore={b.deletedAt ? () => void restoreRow(b) : undefined}
+                      archived={false}
+                      onEdit={() => setEditing(b)}
+                      onArchive={() => void archiveRow(b)}
                     />
                   </AdminTd>
                 </tr>

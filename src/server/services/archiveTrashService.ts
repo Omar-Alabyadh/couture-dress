@@ -225,3 +225,80 @@ export async function restoreArchivedItem(
       throw new Error("INVALID_TYPE");
   }
 }
+
+export async function permanentlyDeleteArchivedItem(
+  entityType: TrashEntityType,
+  id: string,
+): Promise<void> {
+  switch (entityType) {
+    case "product": {
+      const row = await prisma.collectionItem.findFirst({
+        where: { id, NOT: { deletedAt: null } },
+      });
+      if (!row) throw new Error("NOT_FOUND");
+      await prisma.collectionItem.delete({ where: { id } });
+      return;
+    }
+    case "brand": {
+      const row = await prisma.brandDesigner.findFirst({
+        where: { id, NOT: { deletedAt: null } },
+      });
+      if (!row) throw new Error("NOT_FOUND");
+      await prisma.brandDesigner.delete({ where: { id } });
+      return;
+    }
+    case "testimonial": {
+      const row = await prisma.testimonial.findFirst({
+        where: { id, NOT: { deletedAt: null } },
+      });
+      if (!row) throw new Error("NOT_FOUND");
+      await prisma.testimonial.delete({ where: { id } });
+      return;
+    }
+    case "color": {
+      const row = await prisma.color.findFirst({
+        where: { id, NOT: { deletedAt: null } },
+      });
+      if (!row) throw new Error("NOT_FOUND");
+      await prisma.productVariant.updateMany({
+        where: { colorId: id },
+        data: { colorId: null },
+      });
+      await prisma.color.update({
+        where: { id },
+        data: { items: { set: [] } },
+      });
+      await prisma.color.delete({ where: { id } });
+      return;
+    }
+    case "size": {
+      const row = await prisma.sizeOption.findFirst({
+        where: { id, NOT: { archivedAt: null } },
+      });
+      if (!row) throw new Error("NOT_FOUND");
+      await prisma.sizeOption.delete({ where: { id } });
+      return;
+    }
+    case "media": {
+      const row = await prisma.mediaAsset.findFirst({
+        where: { id, isArchived: true },
+      });
+      if (!row) throw new Error("NOT_FOUND");
+      await prisma.mediaAsset.delete({ where: { id } });
+      return;
+    }
+    case "category": {
+      const all = await getProductCategories(true);
+      const idx = all.findIndex((c) => c.id === id && c.deletedAt);
+      if (idx < 0) throw new Error("NOT_FOUND");
+      const next = all.filter((c) => c.id !== id);
+      const { saveProductCategories } = await import(
+        "@/lib/categories/product-categories"
+      );
+      await saveProductCategories(next);
+      return;
+    }
+    default:
+      throw new Error("INVALID_TYPE");
+  }
+}

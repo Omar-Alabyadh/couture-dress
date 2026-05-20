@@ -5,6 +5,7 @@ import {
   saveProductCategories,
 } from "@/lib/categories/product-categories";
 import { isRecord } from "@/lib/validation/record";
+import { compactCategorySortOrdersAfterRemoval } from "@/server/services/sortOrderShiftService";
 import { clampSortOrder } from "@/lib/validation/color-input";
 import { shiftCategorySortOrdersForMove } from "@/server/services/sortOrderShiftService";
 
@@ -35,6 +36,7 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ data: all[idx] });
   }
   if (json.softDelete === true) {
+    compactCategorySortOrdersAfterRemoval(all, cur.sortOrder);
     all[idx] = { ...cur, deletedAt: new Date().toISOString() };
     await saveProductCategories(all);
     return NextResponse.json({ data: all[idx] });

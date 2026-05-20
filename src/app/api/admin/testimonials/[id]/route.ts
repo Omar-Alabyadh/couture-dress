@@ -11,7 +11,10 @@ import {
   normalizeTestimonialText,
   parseTestimonialSortOrder,
 } from "@/lib/validation/testimonial-input";
-import { prepareTestimonialSortOrderMove } from "@/server/services/sortOrderShiftService";
+import {
+  compactTestimonialSortOrdersAfterRemoval,
+  prepareTestimonialSortOrderMove,
+} from "@/server/services/sortOrderShiftService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -53,9 +56,17 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   if (json.softDelete === true) {
     try {
-      const row = await prisma.testimonial.update({
-        where: { id },
-        data: { deletedAt: new Date() },
+      const existing = await prisma.testimonial.findUnique({ where: { id } });
+      if (!existing) {
+        return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+      }
+      const row = await prisma.$transaction(async (tx) => {
+        const updated = await tx.testimonial.update({
+          where: { id },
+          data: { deletedAt: new Date() },
+        });
+        await compactTestimonialSortOrdersAfterRemoval(existing.sortOrder, tx);
+        return updated;
       });
       await logAudit({
         userId: r.session!.user.id,

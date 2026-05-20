@@ -193,13 +193,16 @@ export default function AdminCategoriesPage() {
 
   const filtered = useMemo(() => {
     const q = normalizeSearch(search);
-    if (!q) return list;
-    return list.filter(
-      (c) =>
-        c.nameAr.toLowerCase().includes(q) ||
-        c.slug.toLowerCase().includes(q) ||
-        (c.descriptionAr?.toLowerCase().includes(q) ?? false),
-    );
+    let rows = list.filter((c) => !c.deletedAt);
+    if (q) {
+      rows = rows.filter(
+        (c) =>
+          c.nameAr.toLowerCase().includes(q) ||
+          c.slug.toLowerCase().includes(q) ||
+          (c.descriptionAr?.toLowerCase().includes(q) ?? false),
+      );
+    }
+    return rows;
   }, [list, search]);
 
   async function archiveRow(c: Category) {
@@ -224,26 +227,12 @@ export default function AdminCategoriesPage() {
     await load();
   }
 
-  async function restoreRow(c: Category) {
-    const r = await adminFetch(`/api/admin/categories/${c.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restore: true }),
-    });
-    if (!r.ok) {
-      pushToast((await readApiErrorMessage(r)) ?? fallbackErrorMessage(r), "error");
-      return;
-    }
-    pushToast("تم استرجاع القسم.", "success");
-    await load();
-  }
-
   return (
     <div className="admin-page admin-page--catalog" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="أقسام المتجر"
-          description="نظّم أقسام المنتجات — تظهر في الصفحة الرئيسية وفلتر المنتجات."
+          description="تظهر في الصفحة الرئيسية وفلتر المنتجات. المؤرشف يُسترجع من الأرشيف الموحّد."
           actions={
             <AdminButton
               type="button"
@@ -325,7 +314,7 @@ export default function AdminCategoriesPage() {
             </thead>
             <tbody>
               {filtered.map((c) => (
-                <tr key={c.id} style={{ opacity: c.deletedAt ? 0.55 : 1 }}>
+                <tr key={c.id}>
                   <AdminTd label="الاسم">{c.nameAr}</AdminTd>
                   <AdminTd label="المعرّف" dir="ltr">
                     {c.slug}
@@ -338,17 +327,12 @@ export default function AdminCategoriesPage() {
                   </AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
                     <AdminRowActions
-                      archived={Boolean(c.deletedAt)}
-                      onEdit={
-                        c.deletedAt
-                          ? undefined
-                          : () => {
-                              setEditing(c);
-                              setCreating(false);
-                            }
-                      }
-                      onArchive={c.deletedAt ? undefined : () => void archiveRow(c)}
-                      onRestore={c.deletedAt ? () => void restoreRow(c) : undefined}
+                      archived={false}
+                      onEdit={() => {
+                        setEditing(c);
+                        setCreating(false);
+                      }}
+                      onArchive={() => void archiveRow(c)}
                     />
                   </AdminTd>
                 </tr>

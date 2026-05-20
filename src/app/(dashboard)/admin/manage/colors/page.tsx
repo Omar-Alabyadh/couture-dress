@@ -6,7 +6,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { normalizeSearch } from "@/lib/admin/list-client";
-import { sortOrderToAdminDisplay } from "@/lib/admin/sort-order";
+import {
+  sortOrderFromAdminDisplay,
+  sortOrderToAdminDisplay,
+  sortOrderToAdminDisplayString,
+} from "@/lib/admin/sort-order";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import { AdminModal } from "@/components/admin/AdminModal";
@@ -45,15 +49,20 @@ function ColorSwatch({ hex }: { hex: string | null }) {
 }
 
 function ColorForm({
+  initial,
   onClose,
   onSaved,
 }: {
+  initial?: Color;
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
   const { pushToast } = useAdminToast();
-  const [label, setLabel] = useState("");
-  const [hex, setHex] = useState("");
+  const [label, setLabel] = useState(initial?.label ?? "");
+  const [hex, setHex] = useState(initial?.hex ?? "");
+  const [sortOrder, setSortOrder] = useState(
+    initial ? sortOrderToAdminDisplayString(initial.sortOrder) : "",
+  );
   const [loading, setLoading] = useState(false);
 
   const previewHex = hex.trim().replace(/^#/, "");
@@ -69,21 +78,30 @@ function ColorForm({
         e.preventDefault();
         setLoading(true);
         try {
-          const r = await adminFetch("/api/admin/colors", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              label: label.trim(),
-              hex: hex.trim() || null,
-            }),
-          });
+          const body = {
+            label: label.trim(),
+            hex: hex.trim() || null,
+            ...(initial && sortOrder.trim()
+              ? { sortOrder: sortOrderFromAdminDisplay(sortOrder) }
+              : {}),
+          };
+          const r = await adminFetch(
+            initial ? `/api/admin/colors/${initial.id}` : "/api/admin/colors",
+            {
+              method: initial ? "PATCH" : "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            },
+          );
           if (!r.ok) {
             pushToast((await readApiErrorMessage(r)) ?? fallbackErrorMessage(r), "error");
             return;
           }
-          setLabel("");
-          setHex("");
-          pushToast("تمت إضافة اللون.", "success");
+          if (!initial) {
+            setLabel("");
+            setHex("");
+          }
+          pushToast(initial ? "تم تحديث اللون." : "تمت إضافة اللون.", "success");
           await onSaved();
         } finally {
           setLoading(false);
@@ -114,9 +132,27 @@ function ColorForm({
           />
         </div>
       </AdminField>
+      {initial ? (
+        <AdminField
+          label="الترتيب"
+          hint="1 = أول لون في قائمة الفلاتر."
+        >
+          <AdminInput
+            type="number"
+            min={1}
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            dir="ltr"
+          />
+        </AdminField>
+      ) : null}
       <div className="admin-form__submit-row">
         <AdminButton type="submit" variant="primary" disabled={loading}>
-          {loading ? "جارٍ الإضافة…" : "إضافة"}
+          {loading
+            ? "جارٍ الحفظ…"
+            : initial
+              ? "حفظ"
+              : "إضافة"}
         </AdminButton>
         <AdminButton type="button" variant="secondary" onClick={onClose}>
           إلغاء
@@ -134,6 +170,7 @@ export default function AdminColorsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Color | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -162,29 +199,20 @@ export default function AdminColorsPage() {
     });
   }, [load]);
 
+  const activeList = useMemo(() => list.filter((c) => !c.deletedAt), [list]);
+
   const filtered = useMemo(() => {
     const q = normalizeSearch(search);
-    if (!q) return list;
-    return list.filter(
-      (c) =>
-        c.label.toLowerCase().includes(q) ||
-        (c.hex?.toLowerCase().includes(q) ?? false),
-    );
-  }, [list, search]);
-
-  async function restoreColor(c: Color) {
-    const r = await adminFetch(`/api/admin/colors/${c.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restore: true }),
-    });
-    if (!r.ok) {
-      pushToast((await readApiErrorMessage(r)) ?? fallbackErrorMessage(r), "error");
-      return;
+    let rows = activeList;
+    if (q) {
+      rows = rows.filter(
+        (c) =>
+          c.label.toLowerCase().includes(q) ||
+          (c.hex?.toLowerCase().includes(q) ?? false),
+      );
     }
-    pushToast("تم الاسترجاع.", "success");
-    await load();
-  }
+    return rows;
+  }, [activeList, search]);
 
   async function archiveColor(c: Color) {
     const ok = await requestConfirm({
@@ -213,7 +241,7 @@ export default function AdminColorsPage() {
       <AdminCard>
         <AdminSectionHeader
           title="ألوان الفلتر"
-          description="تظهر في صفحة المنتجات كفلاتر. الألوان الافتراضية تُضاف تلقائيًا عند أول فتح."
+          description="تظهر في صفحة المنتجات كفلاتر. المؤرشف يُسترجع من الأرشيف الموحّد."
           actions={
             <AdminButton
               type="button"
@@ -256,7 +284,25 @@ export default function AdminColorsPage() {
           ) : null}
         </AdminModal>
 
-        {!loading && !loadError && list.length === 0 ? (
+        <AdminModal
+          open={Boolean(editing)}
+          title={editing ? `تعديل: ${editing.label}` : "تعديل"}
+          onClose={() => setEditing(null)}
+        >
+          {editing ? (
+            <ColorForm
+              key={editing.id}
+              initial={editing}
+              onClose={() => setEditing(null)}
+              onSaved={async () => {
+                setEditing(null);
+                await load();
+              }}
+            />
+          ) : null}
+        </AdminModal>
+
+        {!loading && !loadError && activeList.length === 0 ? (
           <AdminEmptyState
             title="لا توجد ألوان"
             description='اضغط "لون جديد" أو حدّث الصفحة لتحميل الألوان الافتراضية.'
@@ -276,14 +322,11 @@ export default function AdminColorsPage() {
             </thead>
             <tbody>
               {filtered.map((c) => (
-                <tr key={c.id} style={{ opacity: c.deletedAt ? 0.55 : 1 }}>
-                  <AdminTd label="">
+                <tr key={c.id}>
+                  <AdminTd label="لون">
                     <ColorSwatch hex={c.hex} />
                   </AdminTd>
-                  <AdminTd label="الاسم">
-                    {c.label}
-                    {c.deletedAt ? " (مؤرشف)" : null}
-                  </AdminTd>
+                  <AdminTd label="الاسم">{c.label}</AdminTd>
                   <AdminTd label="Hex" dir="ltr" style={{ fontSize: 12 }}>
                     {c.hex ? `#${c.hex.replace(/^#/, "")}` : "—"}
                   </AdminTd>
@@ -292,9 +335,9 @@ export default function AdminColorsPage() {
                   </AdminTd>
                   <AdminTd label="إجراءات" className="admin-table__cell--actions">
                     <AdminRowActions
-                      archived={Boolean(c.deletedAt)}
-                      onArchive={c.deletedAt ? undefined : () => void archiveColor(c)}
-                      onRestore={c.deletedAt ? () => void restoreColor(c) : undefined}
+                      archived={false}
+                      onEdit={() => setEditing(c)}
+                      onArchive={() => void archiveColor(c)}
                     />
                   </AdminTd>
                 </tr>

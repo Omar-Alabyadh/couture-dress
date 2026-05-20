@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
+import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import {
   AdminButton,
@@ -48,10 +49,12 @@ const TYPE_LABELS: Record<TrashEntityType, string> = {
 
 export default function AdminTrashPage() {
   const { pushToast } = useAdminToast();
+  const { requestConfirm } = useAdminConfirm();
   const [list, setList] = useState<TrashRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,6 +83,35 @@ export default function AdminTrashPage() {
     });
   }, [load]);
 
+  async function permanentDeleteRow(row: TrashRow) {
+    const ok = await requestConfirm({
+      title: "حذف نهائي",
+      message: `هل تريد حذف «${row.label}» نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.`,
+      confirmLabel: "حذف نهائي",
+      cancelLabel: "إلغاء",
+      destructive: true,
+    });
+    if (!ok) return;
+    const key = `${row.entityType}:${row.id}`;
+    setDeletingId(key);
+    try {
+      const r = await adminFetch("/api/admin/trash/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entityType: row.entityType, id: row.id }),
+      });
+      if (!r.ok) {
+        const msg = (await readApiErrorMessage(r)) ?? fallbackErrorMessage(r);
+        pushToast(msg, "error");
+        return;
+      }
+      pushToast("تم الحذف النهائي.", "success");
+      await load();
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   async function restoreRow(row: TrashRow) {
     const key = `${row.entityType}:${row.id}`;
     setRestoringId(key);
@@ -106,7 +138,7 @@ export default function AdminTrashPage() {
       <AdminCard>
         <AdminSectionHeader
           title="الأرشيف الموحّد"
-          description="استرجع المنتجات والماركات والآراء والوسائط والأقسام المؤرشفة دون حذف نهائي."
+          description="استرجع العناصر المؤرشفة أو احذفها نهائيًا — لا يمكن التراجع عن الحذف النهائي."
         />
 
         <p className="admin-hint" style={{ marginBottom: 12 }}>
@@ -135,7 +167,7 @@ export default function AdminTrashPage() {
                 <th>الاسم</th>
                 <th>تاريخ الأرشفة</th>
                 <th>المصدر</th>
-                <th>—</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -152,14 +184,24 @@ export default function AdminTrashPage() {
                       <Link href={row.moduleHref}>{row.moduleLabel}</Link>
                     </AdminTd>
                     <AdminTd label="إجراءات" className="admin-table__cell--actions">
-                      <AdminButton
-                        type="button"
-                        variant="primary"
-                        disabled={restoringId === key}
-                        onClick={() => void restoreRow(row)}
-                      >
-                        استرجاع
-                      </AdminButton>
+                      <div className="admin-table__actions">
+                        <AdminButton
+                          type="button"
+                          variant="secondary"
+                          disabled={restoringId === key || deletingId === key}
+                          onClick={() => void restoreRow(row)}
+                        >
+                          استرجاع
+                        </AdminButton>
+                        <AdminButton
+                          type="button"
+                          variant="ghost"
+                          disabled={restoringId === key || deletingId === key}
+                          onClick={() => void permanentDeleteRow(row)}
+                        >
+                          حذف نهائي
+                        </AdminButton>
+                      </div>
                     </AdminTd>
                   </tr>
                 );

@@ -182,6 +182,59 @@ export function shiftCategorySortOrdersForInsert(
   }
 }
 
+/** After archive/delete: close gap in active list (decrement sortOrder > removed). */
+export async function compactBrandSortOrdersAfterRemoval(
+  removedSortOrder: number,
+  db: SortOrderDb = prisma,
+): Promise<void> {
+  await db.brandDesigner.updateMany({
+    where: { deletedAt: null, sortOrder: { gt: removedSortOrder } },
+    data: { sortOrder: { decrement: 1 } },
+  });
+}
+
+export async function compactTestimonialSortOrdersAfterRemoval(
+  removedSortOrder: number,
+  db: SortOrderDb = prisma,
+): Promise<void> {
+  await db.testimonial.updateMany({
+    where: { deletedAt: null, sortOrder: { gt: removedSortOrder } },
+    data: { sortOrder: { decrement: 1 } },
+  });
+}
+
+export async function compactColorSortOrdersAfterRemoval(
+  removedSortOrder: number,
+  db: SortOrderDb = prisma,
+): Promise<void> {
+  await db.color.updateMany({
+    where: { deletedAt: null, sortOrder: { gt: removedSortOrder } },
+    data: { sortOrder: { decrement: 1 } },
+  });
+}
+
+export async function compactSizeSortOrdersAfterRemoval(
+  type: SizeOptionType,
+  removedSortOrder: number,
+  db: SortOrderDb = prisma,
+): Promise<void> {
+  await db.sizeOption.updateMany({
+    where: { ...sizeWhereActive(type), sortOrder: { gt: removedSortOrder } },
+    data: { sortOrder: { decrement: 1 } },
+  });
+}
+
+export function compactCategorySortOrdersAfterRemoval(
+  all: ProductCategoryRecord[],
+  removedSortOrder: number,
+): void {
+  for (const c of all) {
+    if (!c.deletedAt && c.sortOrder > removedSortOrder) {
+      c.sortOrder -= 1;
+    }
+  }
+}
+
 export function shiftCategorySortOrdersForMove(
   all: ProductCategoryRecord[],
   id: string,
