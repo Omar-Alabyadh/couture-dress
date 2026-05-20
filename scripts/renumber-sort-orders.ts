@@ -10,6 +10,7 @@ import { prisma } from "../src/server/db/client";
 import {
   buildRenumberPlan,
   countDuplicateSortOrders,
+  type RenumberPlanRow,
 } from "../src/lib/admin/renumber-sort-orders";
 import {
   getProductCategories,
@@ -18,6 +19,23 @@ import {
 } from "../src/lib/categories/product-categories";
 
 const apply = process.argv.includes("--apply");
+
+async function applySortOrderPlan<T extends { id: string }>(
+  plan: RenumberPlanRow<T>[],
+  update: (id: string, sortOrder: number) => Promise<unknown>,
+): Promise<void> {
+  await Promise.all(plan.map((p) => update(p.item.id, p.to)));
+}
+
+function tieCreatedAtThenId(
+  a: { createdAt?: Date | null; id: string },
+  b: { createdAt?: Date | null; id: string },
+): number {
+  const ta = a.createdAt?.getTime() ?? 0;
+  const tb = b.createdAt?.getTime() ?? 0;
+  if (ta !== tb) return ta - tb;
+  return a.id.localeCompare(b.id);
+}
 
 function logSection(title: string) {
   console.log(`\n── ${title} ──`);
@@ -45,12 +63,7 @@ async function renumberColors() {
     orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
   });
   const dupesBefore = countDuplicateSortOrders(colors);
-  const plan = buildRenumberPlan(
-    colors,
-    (a, b) =>
-      a.createdAt.getTime() - b.createdAt.getTime() ||
-      a.id.localeCompare(b.id),
-  );
+  const plan = buildRenumberPlan(colors, (a, b) => a.id.localeCompare(b.id));
   printPlan(
     "الألوان",
     plan.map((p) => ({
@@ -64,13 +77,8 @@ async function renumberColors() {
     console.log(`  (تكرارات sortOrder قبل الإصلاح: ${dupesBefore})`);
   }
   if (apply && plan.length > 0) {
-    await prisma.$transaction(
-      plan.map((p) =>
-        prisma.color.update({
-          where: { id: p.item.id },
-          data: { sortOrder: p.to },
-        }),
-      ),
+    await applySortOrderPlan(plan, (id, sortOrder) =>
+      prisma.color.update({ where: { id }, data: { sortOrder } }),
     );
   }
   return plan.length;
@@ -81,12 +89,7 @@ async function renumberBrands() {
     orderBy: [{ sortOrder: "asc" }, { nameAr: "asc" }],
   });
   const dupesBefore = countDuplicateSortOrders(rows);
-  const plan = buildRenumberPlan(
-    rows,
-    (a, b) =>
-      a.createdAt.getTime() - b.createdAt.getTime() ||
-      a.id.localeCompare(b.id),
-  );
+  const plan = buildRenumberPlan(rows, tieCreatedAtThenId);
   printPlan(
     "الماركات / المصممون",
     plan.map((p) => ({
@@ -100,13 +103,8 @@ async function renumberBrands() {
     console.log(`  (تكرارات sortOrder قبل الإصلاح: ${dupesBefore})`);
   }
   if (apply && plan.length > 0) {
-    await prisma.$transaction(
-      plan.map((p) =>
-        prisma.brandDesigner.update({
-          where: { id: p.item.id },
-          data: { sortOrder: p.to },
-        }),
-      ),
+    await applySortOrderPlan(plan, (id, sortOrder) =>
+      prisma.brandDesigner.update({ where: { id }, data: { sortOrder } }),
     );
   }
   return plan.length;
@@ -117,12 +115,7 @@ async function renumberTestimonials() {
     orderBy: [{ sortOrder: "asc" }, { customerName: "asc" }],
   });
   const dupesBefore = countDuplicateSortOrders(rows);
-  const plan = buildRenumberPlan(
-    rows,
-    (a, b) =>
-      a.createdAt.getTime() - b.createdAt.getTime() ||
-      a.id.localeCompare(b.id),
-  );
+  const plan = buildRenumberPlan(rows, tieCreatedAtThenId);
   printPlan(
     "آراء العملاء",
     plan.map((p) => ({
@@ -136,13 +129,8 @@ async function renumberTestimonials() {
     console.log(`  (تكرارات sortOrder قبل الإصلاح: ${dupesBefore})`);
   }
   if (apply && plan.length > 0) {
-    await prisma.$transaction(
-      plan.map((p) =>
-        prisma.testimonial.update({
-          where: { id: p.item.id },
-          data: { sortOrder: p.to },
-        }),
-      ),
+    await applySortOrderPlan(plan, (id, sortOrder) =>
+      prisma.testimonial.update({ where: { id }, data: { sortOrder } }),
     );
   }
   return plan.length;
@@ -162,12 +150,7 @@ async function renumberSizes() {
   let total = 0;
   for (const [type, group] of byType) {
     const dupesBefore = countDuplicateSortOrders(group);
-    const plan = buildRenumberPlan(
-      group,
-      (a, b) =>
-        a.createdAt.getTime() - b.createdAt.getTime() ||
-        a.id.localeCompare(b.id),
-    );
+    const plan = buildRenumberPlan(group, tieCreatedAtThenId);
     printPlan(
       `المقاسات (${type})`,
       plan.map((p) => ({
@@ -181,13 +164,8 @@ async function renumberSizes() {
       console.log(`  (تكرارات sortOrder قبل الإصلاح: ${dupesBefore})`);
     }
     if (apply && plan.length > 0) {
-      await prisma.$transaction(
-        plan.map((p) =>
-          prisma.sizeOption.update({
-            where: { id: p.item.id },
-            data: { sortOrder: p.to },
-          }),
-        ),
+      await applySortOrderPlan(plan, (id, sortOrder) =>
+        prisma.sizeOption.update({ where: { id }, data: { sortOrder } }),
       );
     }
     total += plan.length;
