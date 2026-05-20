@@ -11,6 +11,7 @@ import {
   normalizeSizeLabel,
   parseSizeOptionType,
 } from "@/lib/validation/size-input";
+import { prepareSizeSortOrderInsert } from "@/server/services/sortOrderShiftService";
 
 export async function GET() {
   const r = await requireOwner();
@@ -51,8 +52,11 @@ export async function POST(req: Request) {
     Number.isFinite(Number(json.sortOrder)) ? Number(json.sortOrder) : 0,
   );
   try {
-    const row = await prisma.sizeOption.create({
-      data: { label, type, sortOrder, archivedAt: null },
+    const row = await prisma.$transaction(async (tx) => {
+      await prepareSizeSortOrderInsert(type, sortOrder, tx);
+      return tx.sizeOption.create({
+        data: { label, type, sortOrder, archivedAt: null },
+      });
     });
     await logAudit({
       userId: r.session!.user.id,

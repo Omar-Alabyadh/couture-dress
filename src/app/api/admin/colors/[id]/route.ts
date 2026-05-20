@@ -9,6 +9,7 @@ import {
   normalizeColorLabel,
   normalizeOptionalColorHex,
 } from "@/lib/validation/color-input";
+import { prepareColorSortOrderMove } from "@/server/services/sortOrderShiftService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -90,10 +91,22 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "لا حقول للتحديث" }, { status: 400 });
   }
   try {
-    const row = await prisma.color.update({
-      where: { id },
-      data,
-    });
+    const existing = await prisma.color.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+    }
+    const row =
+      data.sortOrder !== undefined && data.sortOrder !== existing.sortOrder
+        ? await prisma.$transaction(async (tx) => {
+            await prepareColorSortOrderMove(
+              id,
+              existing.sortOrder,
+              data.sortOrder!,
+              tx,
+            );
+            return tx.color.update({ where: { id }, data });
+          })
+        : await prisma.color.update({ where: { id }, data });
     await logAudit({
       userId: r.session!.user.id,
       action: "UPDATE",

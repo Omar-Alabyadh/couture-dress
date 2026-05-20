@@ -6,6 +6,9 @@ import {
   type ProductCategoryRecord,
 } from "@/lib/categories/product-categories";
 import { isRecord } from "@/lib/validation/record";
+import { clampSortOrder } from "@/lib/validation/color-input";
+import { nextSortOrder } from "@/lib/admin/sort-order";
+import { shiftCategorySortOrdersForInsert } from "@/server/services/sortOrderShiftService";
 
 function slugify(raw: string): string {
   return raw
@@ -52,13 +55,20 @@ export async function POST(req: Request) {
   if (all.some((c) => c.slug === slug && !c.deletedAt)) {
     return NextResponse.json({ error: "هذا القسم موجود مسبقًا." }, { status: 400 });
   }
+  const active = all.filter((c) => !c.deletedAt);
+  const sortOrder = clampSortOrder(
+    Number.isFinite(Number(json.sortOrder))
+      ? Number(json.sortOrder)
+      : nextSortOrder(active),
+  );
+  shiftCategorySortOrdersForInsert(all, sortOrder);
   const row: ProductCategoryRecord = {
     id: `cat-${slug}-${Date.now()}`,
     slug,
     nameAr,
     nameEn: String(json.nameEn ?? "").trim() || null,
     descriptionAr: String(json.descriptionAr ?? "").trim() || null,
-    sortOrder: Number(json.sortOrder) || all.length,
+    sortOrder,
     deletedAt: null,
   };
   await saveProductCategories([...all, row]);

@@ -10,6 +10,10 @@ import {
   normalizeSizeLabel,
   parseSizeOptionType,
 } from "@/lib/validation/size-input";
+import {
+  prepareSizeSortOrderInsert,
+  prepareSizeSortOrderMove,
+} from "@/server/services/sortOrderShiftService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -96,9 +100,31 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "لا حقول للتحديث" }, { status: 400 });
   }
   try {
-    const row = await prisma.sizeOption.update({
-      where: { id },
-      data,
+    const existing = await prisma.sizeOption.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+    }
+    const targetType = data.type ?? existing.type;
+    const targetSort = data.sortOrder ?? existing.sortOrder;
+    const typeChanged = data.type !== undefined && data.type !== existing.type;
+    const sortChanged =
+      data.sortOrder !== undefined && data.sortOrder !== existing.sortOrder;
+
+    const row = await prisma.$transaction(async (tx) => {
+      if (sortChanged || typeChanged) {
+        if (typeChanged) {
+          await prepareSizeSortOrderInsert(targetType, targetSort, tx);
+        } else {
+          await prepareSizeSortOrderMove(
+            id,
+            existing.type,
+            existing.sortOrder,
+            targetSort,
+            tx,
+          );
+        }
+      }
+      return tx.sizeOption.update({ where: { id }, data });
     });
     await logAudit({
       userId: r.session!.user.id,

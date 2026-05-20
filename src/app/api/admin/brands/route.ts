@@ -13,6 +13,7 @@ import {
   parseBrandDesignerType,
   parseBrandSortOrder,
 } from "@/lib/validation/brand-designer-input";
+import { prepareBrandSortOrderInsert } from "@/server/services/sortOrderShiftService";
 
 export async function GET() {
   const r = await requireOwner();
@@ -56,18 +57,21 @@ export async function POST(req: Request) {
   const sortOrder = parseBrandSortOrder(json.sortOrder);
   const isPublished = json.isPublished !== false;
   try {
-    const row = await prisma.brandDesigner.create({
-      data: {
-        nameAr,
-        nameEn,
-        type,
-        logoUrl: logo.value,
-        descriptionAr,
-        descriptionEn,
-        isPublished,
-        sortOrder,
-        deletedAt: null,
-      },
+    const row = await prisma.$transaction(async (tx) => {
+      await prepareBrandSortOrderInsert(sortOrder, tx);
+      return tx.brandDesigner.create({
+        data: {
+          nameAr,
+          nameEn,
+          type,
+          logoUrl: logo.value,
+          descriptionAr,
+          descriptionEn,
+          isPublished,
+          sortOrder,
+          deletedAt: null,
+        },
+      });
     });
     await logAudit({
       userId: r.session!.user.id,

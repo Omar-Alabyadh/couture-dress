@@ -11,6 +11,7 @@ import {
   normalizeTestimonialText,
   parseTestimonialSortOrder,
 } from "@/lib/validation/testimonial-input";
+import { prepareTestimonialSortOrderMove } from "@/server/services/sortOrderShiftService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -120,10 +121,22 @@ export async function PATCH(req: Request, ctx: Ctx) {
   }
 
   try {
-    const row = await prisma.testimonial.update({
-      where: { id },
-      data,
-    });
+    const existing = await prisma.testimonial.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+    }
+    const row =
+      data.sortOrder !== undefined && data.sortOrder !== existing.sortOrder
+        ? await prisma.$transaction(async (tx) => {
+            await prepareTestimonialSortOrderMove(
+              id,
+              existing.sortOrder,
+              data.sortOrder!,
+              tx,
+            );
+            return tx.testimonial.update({ where: { id }, data });
+          })
+        : await prisma.testimonial.update({ where: { id }, data });
     await logAudit({
       userId: r.session!.user.id,
       action: "UPDATE",

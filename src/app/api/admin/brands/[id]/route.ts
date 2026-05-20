@@ -13,6 +13,7 @@ import {
   parseBrandDesignerType,
   parseBrandSortOrder,
 } from "@/lib/validation/brand-designer-input";
+import { prepareBrandSortOrderMove } from "@/server/services/sortOrderShiftService";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -130,10 +131,22 @@ export async function PATCH(req: Request, ctx: Ctx) {
   }
 
   try {
-    const row = await prisma.brandDesigner.update({
-      where: { id },
-      data,
-    });
+    const existing = await prisma.brandDesigner.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+    }
+    const row =
+      data.sortOrder !== undefined && data.sortOrder !== existing.sortOrder
+        ? await prisma.$transaction(async (tx) => {
+            await prepareBrandSortOrderMove(
+              id,
+              existing.sortOrder,
+              data.sortOrder!,
+              tx,
+            );
+            return tx.brandDesigner.update({ where: { id }, data });
+          })
+        : await prisma.brandDesigner.update({ where: { id }, data });
     await logAudit({
       userId: r.session!.user.id,
       action: "UPDATE",

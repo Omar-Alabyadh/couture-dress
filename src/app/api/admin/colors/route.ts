@@ -12,6 +12,7 @@ import {
   normalizeColorLabel,
   normalizeOptionalColorHex,
 } from "@/lib/validation/color-input";
+import { prepareColorSortOrderInsert } from "@/server/services/sortOrderShiftService";
 
 export async function GET() {
   const r = await requireOwner();
@@ -51,8 +52,11 @@ export async function POST(req: Request) {
     Number.isFinite(Number(json.sortOrder)) ? Number(json.sortOrder) : 0,
   );
   try {
-    const row = await prisma.color.create({
-      data: { label, hex, sortOrder, deletedAt: null },
+    const row = await prisma.$transaction(async (tx) => {
+      await prepareColorSortOrderInsert(sortOrder, tx);
+      return tx.color.create({
+        data: { label, hex, sortOrder, deletedAt: null },
+      });
     });
     await logAudit({
       userId: r.session!.user.id,

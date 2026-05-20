@@ -12,6 +12,7 @@ import {
   normalizeTestimonialText,
   parseTestimonialSortOrder,
 } from "@/lib/validation/testimonial-input";
+import { prepareTestimonialSortOrderInsert } from "@/server/services/sortOrderShiftService";
 
 export async function GET() {
   const r = await requireOwner();
@@ -55,16 +56,19 @@ export async function POST(req: Request) {
   const sortOrder = parseTestimonialSortOrder(json.sortOrder);
   const isPublished = json.isPublished !== false;
   try {
-    const row = await prisma.testimonial.create({
-      data: {
-        customerName,
-        text,
-        rating,
-        imageUrl: img.value,
-        isPublished,
-        sortOrder,
-        deletedAt: null,
-      },
+    const row = await prisma.$transaction(async (tx) => {
+      await prepareTestimonialSortOrderInsert(sortOrder, tx);
+      return tx.testimonial.create({
+        data: {
+          customerName,
+          text,
+          rating,
+          imageUrl: img.value,
+          isPublished,
+          sortOrder,
+          deletedAt: null,
+        },
+      });
     });
     await logAudit({
       userId: r.session!.user.id,

@@ -5,6 +5,8 @@ import {
   saveProductCategories,
 } from "@/lib/categories/product-categories";
 import { isRecord } from "@/lib/validation/record";
+import { clampSortOrder } from "@/lib/validation/color-input";
+import { shiftCategorySortOrdersForMove } from "@/server/services/sortOrderShiftService";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -42,19 +44,26 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!nameAr) {
     return NextResponse.json({ error: "اسم القسم مطلوب." }, { status: 400 });
   }
+  const newSort =
+    json.sortOrder !== undefined
+      ? clampSortOrder(Number(json.sortOrder))
+      : cur.sortOrder;
+  if (json.sortOrder !== undefined && newSort !== cur.sortOrder) {
+    shiftCategorySortOrdersForMove(all, id, cur.sortOrder, newSort);
+  }
+  const updated = all[idx]!;
   all[idx] = {
-    ...cur,
+    ...updated,
     nameAr,
     nameEn:
       json.nameEn !== undefined
         ? String(json.nameEn).trim() || null
-        : cur.nameEn,
+        : updated.nameEn,
     descriptionAr:
       json.descriptionAr !== undefined
         ? String(json.descriptionAr).trim() || null
-        : cur.descriptionAr,
-    sortOrder:
-      json.sortOrder !== undefined ? Number(json.sortOrder) : cur.sortOrder,
+        : updated.descriptionAr,
+    sortOrder: newSort,
   };
   await saveProductCategories(all);
   return NextResponse.json({ data: all[idx] });
