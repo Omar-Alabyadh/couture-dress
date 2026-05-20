@@ -11,6 +11,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { AdminPortal } from "@/components/admin/AdminPortal";
 
 export type AdminConfirmOptions = {
   title: string;
@@ -80,8 +81,9 @@ export function AdminConfirmProvider({ children }: { children: ReactNode }) {
     <ConfirmContext.Provider value={value}>
       {children}
       {open ? (
+        <AdminPortal>
         <div
-          className="admin-modal-root"
+          className="admin-modal-root admin-overlay-root"
           role="presentation"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) e.preventDefault();
@@ -123,6 +125,7 @@ export function AdminConfirmProvider({ children }: { children: ReactNode }) {
             </div>
           </div>
         </div>
+        </AdminPortal>
       ) : null}
     </ConfirmContext.Provider>
   );

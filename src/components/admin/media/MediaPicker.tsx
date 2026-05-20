@@ -35,6 +35,7 @@ import {
   type MediaPickerSelection,
   type MediaUIFilters,
 } from "@/lib/admin/media-ui";
+import { AdminPortal } from "@/components/admin/AdminPortal";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import type { MediaAssetDto, MediaListResult } from "@/lib/media/types";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
@@ -196,8 +197,9 @@ export function MediaPicker({
   if (!open) return null;
 
   return (
+    <AdminPortal>
     <div
-      className="admin-modal-root admin-picker-root"
+      className="admin-modal-root admin-overlay-root admin-picker-root"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -361,6 +363,7 @@ export function MediaPicker({
         </footer>
       </div>
     </div>
+    </AdminPortal>
   );
 }
 

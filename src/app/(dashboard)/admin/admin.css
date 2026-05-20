@@ -1,5 +1,12 @@
 /* لوحة التحكم — مدمجة مع ألوان الموقع؛ الخط من `next/font` في الجذر (`src/app/fonts.ts`). */
 
+/* طبقات ثابتة — كل overlays تُعرض عبر AdminPortal على document.body */
+:root {
+  --admin-z-form-modal: 200;
+  --admin-z-overlay: 320;
+  --admin-z-toast: 500;
+}
+
 .admin-canvas {
   min-height: 100vh;
   display: flex;
@@ -538,7 +545,7 @@ select.admin-control {
 /* —— Toasts —— */
 .admin-toast-region {
   position: fixed;
-  z-index: 60;
+  z-index: var(--admin-z-toast);
   inset-inline: 12px;
   bottom: 12px;
   display: flex;
@@ -605,7 +612,7 @@ select.admin-control {
 .admin-modal-root {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--admin-z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1042,10 +1049,6 @@ select.admin-control {
 }
 
 /* --- Media picker modal --- */
-.admin-picker-root {
-  z-index: 55;
-}
-
 .admin-picker-modal {
   max-width: min(920px, 96vw);
   max-height: min(90vh, 900px);
@@ -1762,10 +1765,6 @@ select.admin-control {
   gap: 0.35rem;
 }
 
-.admin-image-preview-root {
-  z-index: 56;
-}
-
 .admin-image-preview {
   width: min(920px, 96vw);
   max-height: 92vh;
@@ -1843,7 +1842,7 @@ select.admin-control {
 .admin-form-modal-root {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: var(--admin-z-form-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1854,6 +1853,8 @@ select.admin-control {
   -webkit-backdrop-filter: blur(10px);
 }
 .admin-form-modal__panel {
+  position: relative;
+  z-index: 1;
   width: min(100%, 720px);
   max-height: min(92vh, 900px);
   display: flex;
@@ -1862,6 +1863,7 @@ select.admin-control {
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: #121218;
   box-shadow: 0 28px 72px rgba(0, 0, 0, 0.55);
+  overflow: visible;
 }
 .admin-form-modal__panel--wide {
   width: min(100%, 960px);
@@ -2055,7 +2057,7 @@ select.admin-control {
 .admin-luxury-dd-inline .luxury-dd__list,
 .admin-variant-editor .luxury-dd__list {
   position: absolute;
-  z-index: 280;
+  z-index: 30;
   top: calc(100% + 6px);
   inset-inline: 0;
   margin: 0;

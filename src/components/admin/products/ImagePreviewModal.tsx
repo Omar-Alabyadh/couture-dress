@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { AdminPortal } from "@/components/admin/AdminPortal";
 import { AdminButton } from "@/components/admin/AdminPrimitives";
 
 type ImagePreviewModalProps = {
@@ -28,8 +29,9 @@ export function ImagePreviewModal({
   if (!open) return null;
 
   return (
+    <AdminPortal>
     <div
-      className="admin-modal-root admin-image-preview-root"
+      className="admin-modal-root admin-overlay-root admin-image-preview-root"
       role="dialog"
       aria-modal="true"
       aria-label="معاينة الصورة"
@@ -48,5 +50,6 @@ export function ImagePreviewModal({
         <img src={src} alt={alt} className="admin-image-preview__img" />
       </div>
     </div>
+    </AdminPortal>
   );
 }

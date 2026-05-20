@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { AdminPortal } from "@/components/admin/AdminPortal";
 
 export type AdminToastVariant = "success" | "error" | "info";
 
@@ -77,32 +78,34 @@ export function AdminToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div
-        id={regionId}
-        className="admin-toast-region"
-        aria-live="polite"
-        aria-relevant="additions text"
-        aria-atomic="true"
-      >
-        {items.map((t) => (
-          <div
-            key={t.id}
-            role={t.variant === "error" ? "alert" : "status"}
-            className={`admin-toast admin-toast--${t.variant}`}
-            tabIndex={0}
-          >
-            <span className="admin-toast__text">{t.message}</span>
-            <button
-              type="button"
-              className="admin-toast__close"
-              aria-label="إغلاق الإشعار"
-              onClick={() => dismiss(t.id)}
+      <AdminPortal>
+        <div
+          id={regionId}
+          className="admin-toast-region"
+          aria-live="polite"
+          aria-relevant="additions text"
+          aria-atomic="true"
+        >
+          {items.map((t) => (
+            <div
+              key={t.id}
+              role={t.variant === "error" ? "alert" : "status"}
+              className={`admin-toast admin-toast--${t.variant}`}
+              tabIndex={0}
             >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
+              <span className="admin-toast__text">{t.message}</span>
+              <button
+                type="button"
+                className="admin-toast__close"
+                aria-label="إغلاق الإشعار"
+                onClick={() => dismiss(t.id)}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      </AdminPortal>
     </ToastContext.Provider>
   );
 }

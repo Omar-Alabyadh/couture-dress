@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
+import { AdminPortal } from "@/components/admin/AdminPortal";
 import { AdminButton } from "@/components/admin/AdminPrimitives";
 
 type AdminModalProps = {
@@ -36,6 +37,7 @@ export function AdminModal({
   if (!open) return null;
 
   return (
+    <AdminPortal>
     <div
       className="admin-form-modal-root"
       role="dialog"
@@ -62,5 +64,6 @@ export function AdminModal({
         <div className="admin-form-modal__body">{children}</div>
       </div>
     </div>
+    </AdminPortal>
   );
 }
