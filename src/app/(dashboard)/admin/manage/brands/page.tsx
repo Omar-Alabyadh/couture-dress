@@ -9,6 +9,7 @@ import {
   sortByDateString,
   type SortDirection,
 } from "@/lib/admin/list-client";
+import { nextSortOrder } from "@/lib/admin/sort-order";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
@@ -268,8 +269,17 @@ function BrandCreateForm({
       <AdminField label="وصف عربي (اختياري)">
         <AdminTextarea rows={2} value={descriptionAr} onChange={(e) => setDescriptionAr(e.target.value)} />
       </AdminField>
-      <AdminField label="الترتيب">
-        <AdminInput type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
+      <AdminField
+        label="الترتيب"
+        hint="يُقترح تلقائيًا عند الإضافة — رقم أصغر يظهر أولًا في الموقع."
+      >
+        <AdminInput
+          type="number"
+          min={0}
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+          dir="ltr"
+        />
       </AdminField>
       <div className="admin-form__submit-row">
         <AdminButton type="submit" variant="primary" disabled={loading}>
@@ -293,6 +303,10 @@ export default function AdminBrandsPage() {
   const [logoUrl, setLogoUrl] = useState("");
   const [descriptionAr, setDescriptionAr] = useState("");
   const [sortOrder, setSortOrder] = useState("0");
+  const activeBrands = useMemo(
+    () => list.filter((b) => !b.deletedAt),
+    [list],
+  );
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Brand | null>(null);
@@ -422,6 +436,7 @@ export default function AdminBrandsPage() {
               variant="primary"
               icon={Plus}
               onClick={() => {
+                setSortOrder(String(nextSortOrder(activeBrands)));
                 setCreating(true);
                 setEditing(null);
               }}
@@ -488,7 +503,6 @@ export default function AdminBrandsPage() {
                   setType("BRAND");
                   setLogoUrl("");
                   setDescriptionAr("");
-                  setSortOrder("0");
                   pushToast("تمت الإضافة.", "success");
                   setCreating(false);
                   await load();

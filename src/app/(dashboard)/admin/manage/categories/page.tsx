@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { normalizeSearch } from "@/lib/admin/list-client";
+import { nextSortOrder } from "@/lib/admin/sort-order";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import { AdminModal } from "@/components/admin/AdminModal";
@@ -36,10 +37,13 @@ type Category = {
 
 function CategoryForm({
   initial,
+  defaultSortOrder = 0,
   onClose,
   onSaved,
 }: {
   initial?: Category;
+  /** Used when creating — next slot after active categories */
+  defaultSortOrder?: number;
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
@@ -47,7 +51,9 @@ function CategoryForm({
   const [nameAr, setNameAr] = useState(initial?.nameAr ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [descriptionAr, setDescriptionAr] = useState(initial?.descriptionAr ?? "");
-  const [sortOrder, setSortOrder] = useState(String(initial?.sortOrder ?? 0));
+  const [sortOrder, setSortOrder] = useState(
+    String(initial?.sortOrder ?? defaultSortOrder),
+  );
   const [loading, setLoading] = useState(false);
 
   return (
@@ -103,11 +109,20 @@ function CategoryForm({
           onChange={(e) => setDescriptionAr(e.target.value)}
         />
       </AdminField>
-      <AdminField label="الترتيب">
+      <AdminField
+        label="الترتيب"
+        hint={
+          initial
+            ? "رقم أصغر = يظهر أولًا في الموقع."
+            : "يُقترح تلقائيًا كالتالي في القائمة (يمكنك تغييره)."
+        }
+      >
         <AdminInput
           type="number"
+          min={0}
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
+          dir="ltr"
         />
       </AdminField>
       <div className="admin-form__submit-row">
@@ -158,6 +173,16 @@ export default function AdminCategoriesPage() {
       void load();
     });
   }, [load]);
+
+  const activeCategories = useMemo(
+    () => list.filter((c) => !c.deletedAt),
+    [list],
+  );
+
+  const nextCategorySort = useMemo(
+    () => nextSortOrder(activeCategories),
+    [activeCategories],
+  );
 
   const filtered = useMemo(() => {
     const q = normalizeSearch(search);
@@ -245,7 +270,8 @@ export default function AdminCategoriesPage() {
         <AdminModal open={creating} title="قسم جديد" onClose={() => setCreating(false)}>
           {creating ? (
             <CategoryForm
-              key="create-category"
+              key={`create-category-${nextCategorySort}`}
+              defaultSortOrder={nextCategorySort}
               onClose={() => setCreating(false)}
               onSaved={async () => {
                 setCreating(false);

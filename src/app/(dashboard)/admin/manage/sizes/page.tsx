@@ -3,6 +3,7 @@ import { adminFetch } from "@/lib/admin/admin-fetch";
 
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { nextSortOrder } from "@/lib/admin/sort-order";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { normalizeSearch } from "@/lib/admin/list-client";
@@ -50,18 +51,37 @@ const TYPE_FORM_OPTIONS: { value: SizeOptionType; label: string }[] = [
 
 function SizeForm({
   initial,
+  existing = [],
   onClose,
   onSaved,
 }: {
   initial?: SizeRow;
+  existing?: SizeRow[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
   const { pushToast } = useAdminToast();
   const [label, setLabel] = useState(initial?.label ?? "");
   const [type, setType] = useState<SizeOptionType>(initial?.type ?? "LETTER");
-  const [sortOrder, setSortOrder] = useState(String(initial?.sortOrder ?? 0));
+
+  const suggestedSort = useMemo(() => {
+    const sameType = existing.filter(
+      (s) => !s.archivedAt && s.type === type,
+    );
+    return nextSortOrder(sameType);
+  }, [existing, type]);
+
+  const [sortOrder, setSortOrder] = useState(
+    String(initial?.sortOrder ?? suggestedSort),
+  );
   const [loading, setLoading] = useState(false);
+
+  function applySuggestedSortForType(nextType: SizeOptionType) {
+    const sameType = existing.filter(
+      (s) => !s.archivedAt && s.type === nextType,
+    );
+    setSortOrder(String(nextSortOrder(sameType)));
+  }
 
   return (
     <form
@@ -109,10 +129,21 @@ function SizeForm({
           value={type}
           options={TYPE_FORM_OPTIONS}
           disabled={Boolean(initial)}
-          onChange={(e) => setType(e.target.value as SizeOptionType)}
+          onChange={(e) => {
+            const nextType = e.target.value as SizeOptionType;
+            setType(nextType);
+            if (!initial) applySuggestedSortForType(nextType);
+          }}
         />
       </AdminField>
-      <AdminField label="الترتيب">
+      <AdminField
+        label="الترتيب"
+        hint={
+          initial
+            ? "ترتيب العرض ضمن نفس نوع المقاس."
+            : "يُحدَّث تلقائيًا حسب النوع — الرقم الأصغر يظهر أولًا."
+        }
+      >
         <AdminInput
           type="number"
           min={0}
@@ -270,6 +301,7 @@ export default function AdminSizesPage() {
         <AdminModal open={creating} title="إضافة مقاس" onClose={() => setCreating(false)}>
           {creating ? (
             <SizeForm
+              existing={list}
               onClose={() => setCreating(false)}
               onSaved={async () => {
                 setCreating(false);

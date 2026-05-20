@@ -9,6 +9,7 @@ import {
   sortByDateString,
   type SortDirection,
 } from "@/lib/admin/list-client";
+import { nextSortOrder } from "@/lib/admin/sort-order";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import { readApiErrorMessage, fallbackErrorMessage } from "@/lib/admin/read-api-error";
 import { useAdminConfirm } from "@/components/admin/AdminConfirmProvider";
@@ -60,6 +61,10 @@ export default function AdminTestimonialsPage() {
   const [rating, setRating] = useState("5");
   const [imageUrl, setImageUrl] = useState("");
   const [sortOrder, setSortOrder] = useState("0");
+  const activeTestimonials = useMemo(
+    () => list.filter((t) => !t.deletedAt),
+    [list],
+  );
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -199,7 +204,10 @@ export default function AdminTestimonialsPage() {
               type="button"
               variant="primary"
               icon={Plus}
-              onClick={() => setCreating(true)}
+              onClick={() => {
+                setSortOrder(String(nextSortOrder(activeTestimonials)));
+                setCreating(true);
+              }}
             >
               رأي جديد
             </AdminButton>
@@ -241,7 +249,6 @@ export default function AdminTestimonialsPage() {
                 setText("");
                 setRating("5");
                 setImageUrl("");
-                setSortOrder("0");
                 pushToast("تمت الإضافة.", "success");
                 setCreating(false);
                 await load();
@@ -289,12 +296,18 @@ export default function AdminTestimonialsPage() {
             defaultFolder="testimonials"
             onSelect={(asset) => setImageUrl(asset.url)}
           />
-          <AdminField label="الترتيب" htmlFor="tm-sort">
+          <AdminField
+            label="الترتيب"
+            htmlFor="tm-sort"
+            hint="يُقترح تلقائيًا كالتالي في القائمة — رقم أصغر يظهر أولًا في الصفحة الرئيسية."
+          >
             <AdminInput
               id="tm-sort"
               type="number"
+              min={0}
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
+              dir="ltr"
             />
           </AdminField>
           <div className="admin-form__submit-row">
