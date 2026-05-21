@@ -9,11 +9,8 @@
 /* EN: Motion + polish layer — loaded AFTER the base stylesheet so it wins by cascade order. */
 @import "./motion.css";
 
-/* Mobile S (≤359px) — /products page scoped overrides */
+/* Compact mobile (≤429px) — /products page scoped overrides */
 @import "./products-mobile-s.css";
-
-/* Mobile M (360px–429px, incl. 375px) — /products page scoped overrides */
-@import "./products-mobile-m.css";
 
 /* ============================================================
    Global selection + scrollbar — brand burgundy (public + admin)
