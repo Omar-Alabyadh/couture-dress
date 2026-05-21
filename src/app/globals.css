@@ -12,6 +12,9 @@
 /* Compact mobile (≤429px) — /products page scoped overrides */
 @import "./products-mobile-s.css";
 
+/* Tablet (768px–1023px) — /products page scoped overrides */
+@import "./products-tablet.css";
+
 /* ============================================================
    Global selection + scrollbar — brand burgundy (public + admin)
    EN: Couture-tinted selection; thin scrollbar without layout tricks.
