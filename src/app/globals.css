@@ -18,6 +18,9 @@
 /* Small laptop (992px–1199px) — /products page scoped overrides */
 @import "./products-laptop.css";
 
+/* Large laptop (1200px–1599px, ~1440px) — /products page scoped overrides */
+@import "./products-laptop-l.css";
+
 /* ============================================================
    Global selection + scrollbar — brand burgundy (public + admin)
    EN: Couture-tinted selection; thin scrollbar without layout tricks.

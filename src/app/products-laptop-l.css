@@ -1,0 +1,307 @@
+/* Large laptop (1200px–1599px, ~1440px) — /products page only (.products-page wrapper) */
+
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .products-page .container {
+    width: min(1240px, 86%);
+  }
+
+  /* --- Navbar: balanced breathing room, compact height --- */
+  .products-page .topbar__inner {
+    padding: 11px 6px;
+    gap: 22px;
+  }
+
+  .products-page .brand {
+    gap: 14px;
+  }
+
+  .products-page .brand img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .products-page .nav {
+    gap: 22px;
+  }
+
+  .products-page .nav a,
+  .products-page .nav .nav__current {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  .products-page .nav__toggle {
+    display: none;
+  }
+
+  /* --- Intro / hero spacing --- */
+  .products-page .products-page__main {
+    padding-top: 40px;
+    padding-bottom: 72px;
+  }
+
+  .products-page .section__title {
+    font-size: 30px;
+    margin-bottom: 12px;
+    letter-spacing: -0.3px;
+  }
+
+  .products-page .section__text {
+    font-size: 15px;
+    line-height: 1.8;
+    max-width: 62ch;
+    margin-bottom: 4px;
+  }
+
+  /* --- Filters: premium single-row bar (search dominant) --- */
+  .products-page .products-page__main,
+  .products-page .products-page__main .container {
+    overflow: visible;
+  }
+
+  .products-page .products-filters {
+    position: relative;
+    z-index: 120;
+    isolation: isolate;
+    margin-bottom: 32px;
+    gap: 16px 20px;
+    grid-template-columns: minmax(280px, 2.15fr) repeat(3, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .products-page .products-filters .field {
+    overflow: visible;
+    min-width: 0;
+  }
+
+  .products-page .products-filters .field--wide {
+    grid-column: auto;
+  }
+
+  .products-page .products-filters .luxury-dd {
+    overflow: visible;
+    min-width: 0;
+  }
+
+  .products-page .products-filters .luxury-dd__btn {
+    min-width: 0;
+    padding: 11px 14px;
+  }
+
+  .products-page .products-filters .luxury-dd__value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .products-page .products-filters .luxury-dd__list {
+    z-index: 300;
+    max-height: min(44vh, 280px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .products-page .products-filters label {
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+
+  .products-page .products-filters input {
+    min-height: 44px;
+    padding: 11px 14px;
+    font-size: 14.5px;
+  }
+
+  .products-page .products-filters .luxury-dd__option {
+    min-height: 42px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+  }
+
+  .products-page .container .products-filters ~ .gallery {
+    position: relative;
+    z-index: 1;
+    margin-top: 32px;
+  }
+
+  /* --- Product grid: 4 columns, premium catalog spacing --- */
+  .products-page .gallery {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 24px 22px;
+  }
+
+  .products-page .gallery > .reveal {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+  }
+
+  .products-page .gallery > .reveal > .product-card {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* --- Product cards: luxury rhythm --- */
+  .products-page .product-card .item__body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 14px 14px;
+    gap: 7px;
+    min-height: 0;
+  }
+
+  .products-page .product-card .item__body h3 {
+    font-size: 15.5px;
+    line-height: 1.35;
+    flex-shrink: 0;
+  }
+
+  .products-page .product-card__brand {
+    font-size: 0.74rem;
+    margin-bottom: 2px;
+    flex-shrink: 0;
+  }
+
+  .products-page .product-card__desc {
+    font-size: 13px;
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .products-page .product-card__price {
+    font-size: 1.08rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .products-page .product-card__picker {
+    margin-top: 0.35rem;
+    flex-shrink: 0;
+    max-width: 100%;
+  }
+
+  .products-page .product-card__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    max-width: 100%;
+  }
+
+  .products-page .product-card__picker-label {
+    font-size: 0.78rem;
+    margin-bottom: 0.28rem;
+  }
+
+  .products-page .product-choice-pill {
+    min-height: 32px;
+    padding: 0.32rem 0.7rem;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+  }
+
+  .products-page .product-card__delivery {
+    font-size: 12px;
+    margin-top: 6px;
+    line-height: 1.45;
+    flex-shrink: 0;
+  }
+
+  .products-page .product-card__delivery--intl {
+    margin-top: 0.12rem;
+  }
+
+  .products-page .product-card .product-card__order-btn {
+    margin-top: auto;
+    margin-bottom: 0;
+    min-height: 40px;
+    width: 100%;
+    font-size: 13px;
+    padding: 10px 12px;
+    flex-shrink: 0;
+  }
+
+  /* --- Footer CTA: balanced horizontal composition --- */
+  .products-page .site-footer {
+    padding: 56px 0 40px;
+    margin-top: 44px;
+  }
+
+  .products-page .site-footer__cta {
+    padding: 30px 36px;
+    gap: 36px;
+    align-items: center;
+  }
+
+  .products-page .site-footer__cta-text {
+    gap: 8px;
+    max-width: none;
+  }
+
+  .products-page .site-footer__cta-title {
+    font-size: clamp(22px, 1.8vw, 26px);
+  }
+
+  .products-page .site-footer__cta-sub {
+    font-size: 14.5px;
+    line-height: 1.75;
+    max-width: 52ch;
+  }
+
+  .products-page .site-footer__cta-btn {
+    padding: 14px 24px;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .products-page .site-footer__rule {
+    margin: 46px 0 38px;
+  }
+
+  .products-page .site-footer__grid {
+    grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+    gap: 40px 36px;
+    align-items: start;
+  }
+
+  .products-page .site-footer__col--brand {
+    max-width: 100%;
+  }
+
+  .products-page .site-footer__social-block {
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .products-page .social-links--footer {
+    justify-content: flex-start;
+    gap: 14px;
+  }
+
+  .products-page .site-footer__bottom {
+    margin-top: 44px;
+    padding: 22px 0 10px;
+    gap: 18px;
+  }
+
+  .products-page .site-footer__tagline {
+    font-size: 14.5px;
+    line-height: 1.7;
+    max-width: 40ch;
+  }
+}
