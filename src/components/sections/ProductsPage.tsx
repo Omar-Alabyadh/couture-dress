@@ -324,7 +324,7 @@ export default function ProductsPage({
       { value: "", label: "— أي لون —" },
       ...colors.map((c) => ({
         value: c.id,
-        label: `${c.label}${c.hex ? ` (#${c.hex})` : ""}`,
+        label: c.label.trim() || c.id,
       })),
     ],
     [colors],
