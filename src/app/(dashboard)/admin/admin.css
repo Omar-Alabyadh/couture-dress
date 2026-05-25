@@ -158,14 +158,20 @@
   color: #b9856f;
   font-weight: 800;
 }
+/* --- Admin login card — base + responsive --- */
 .login-card {
   max-width: 420px;
+  width: 90%;
   margin: 3rem auto;
   padding: 1.5rem 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
   text-align: center;
+}
+.login-card h1 {
+  font-size: 1.35rem;
+  line-height: 1.3;
 }
 .login-error {
   margin: 0.75rem 0 0;
@@ -177,6 +183,7 @@
   font-size: 0.88rem;
   line-height: 1.45;
   text-align: right;
+  overflow-wrap: anywhere;
 }
 .login-btn {
   margin-top: 0.7rem;
@@ -185,10 +192,20 @@
   background: #4285f4;
   color: #fff;
   border: 0;
-  padding: 0.6rem 1rem;
+  padding: 0.7rem 1rem;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 800;
+  min-height: 44px;
+  font-size: 0.95rem;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.login-btn:hover {
+  background: #3367d6;
+  transform: translateY(-1px);
+}
+.login-btn:active {
+  transform: translateY(0);
 }
 .login-to-site {
   display: inline-block;
@@ -197,6 +214,113 @@
   font-size: 0.9rem;
   font-weight: 800;
   text-decoration: none;
+  min-height: 36px;
+  line-height: 36px;
+}
+
+/* Mobile S (≤375px) */
+@media (max-width: 375px) {
+  .login-card {
+    margin: 2rem auto;
+    padding: 1.25rem 1rem;
+    border-radius: 12px;
+  }
+  .login-card h1 {
+    font-size: 1.2rem;
+  }
+  .login-card .admin-hint {
+    font-size: 0.76rem;
+  }
+  .login-btn {
+    font-size: 0.88rem;
+    padding: 0.65rem 0.85rem;
+  }
+}
+
+/* Large laptop (≥1440px) */
+@media (min-width: 1440px) {
+  .login-card {
+    max-width: 480px;
+    padding: 2rem 1.75rem;
+    border-radius: 18px;
+    border-color: rgba(185, 133, 111, 0.18);
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.05) 0%,
+        rgba(72, 17, 38, 0.06) 100%
+      );
+    box-shadow:
+      0 24px 56px rgba(0, 0, 0, 0.35),
+      0 0 0 1px rgba(185, 133, 111, 0.08) inset;
+  }
+  .login-card h1 {
+    font-size: 1.55rem;
+    margin-bottom: 0.4rem;
+  }
+  .login-card .admin-hint {
+    font-size: 0.88rem;
+  }
+  .login-btn {
+    padding: 0.8rem 1.2rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    min-height: 48px;
+  }
+  .login-to-site {
+    font-size: 0.95rem;
+  }
+}
+
+/* Ultra-wide / 4K (≥1600px) */
+@media (min-width: 1600px) {
+  .login-card {
+    max-width: 520px;
+    padding: 2.25rem 2rem;
+    margin: 4rem auto;
+  }
+  .login-card h1 {
+    font-size: 1.65rem;
+  }
+  .login-card .admin-hint {
+    font-size: 0.92rem;
+  }
+  .login-btn {
+    font-size: 1.05rem;
+    padding: 0.85rem 1.25rem;
+    min-height: 50px;
+  }
+}
+
+/* 4K+ (≥2560px) */
+@media (min-width: 2560px) {
+  .login-card {
+    max-width: 580px;
+    padding: 2.5rem 2.25rem;
+    margin: 5rem auto;
+    border-radius: 20px;
+  }
+  .login-card h1 {
+    font-size: 1.8rem;
+  }
+  .login-card .admin-hint {
+    font-size: 0.96rem;
+    line-height: 1.55;
+  }
+  .login-error {
+    font-size: 0.95rem;
+    padding: 0.8rem 0.9rem;
+  }
+  .login-btn {
+    font-size: 1.1rem;
+    padding: 0.9rem 1.35rem;
+    min-height: 52px;
+    border-radius: 14px;
+  }
+  .login-to-site {
+    font-size: 1rem;
+    margin-top: 1.5rem;
+  }
 }
 .admin-json {
   min-height: 200px;
