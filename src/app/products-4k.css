@@ -1,0 +1,323 @@
+/* Ultra-wide / 4K (≥1600px) — /products page only (.products-page wrapper)
+   Expands container, grid, filters, CTA, and footer to fill wide viewports. */
+
+@media (min-width: 1600px) {
+  /* --- Wider container — fills ultra-wide without feeling empty --- */
+  .products-page .container {
+    width: min(1800px, 88%);
+  }
+
+  /* --- Navbar: spread comfortably --- */
+  .products-page .topbar__inner {
+    padding: 12px 8px;
+    gap: 28px;
+  }
+
+  .products-page .brand {
+    gap: 16px;
+  }
+
+  .products-page .brand img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .products-page .brand__ar {
+    font-size: 17px;
+  }
+
+  .products-page .brand__en {
+    font-size: 12.5px;
+  }
+
+  .products-page .nav {
+    gap: 28px;
+  }
+
+  .products-page .nav a,
+  .products-page .nav .nav__current {
+    padding: 8px 12px;
+    font-size: 14.5px;
+  }
+
+  .products-page .nav__toggle {
+    display: none;
+  }
+
+  /* --- Intro section: more breathing room --- */
+  .products-page .products-page__main {
+    padding-top: 48px;
+    padding-bottom: 80px;
+  }
+
+  .products-page .section__title {
+    font-size: 32px;
+    margin-bottom: 14px;
+    letter-spacing: -0.3px;
+  }
+
+  .products-page .section__text {
+    font-size: 15.5px;
+    line-height: 1.8;
+    max-width: 68ch;
+    margin-bottom: 6px;
+  }
+
+  /* --- Filters: premium single-row, wider proportions --- */
+  .products-page .products-page__main,
+  .products-page .products-page__main .container {
+    overflow: visible;
+  }
+
+  .products-page .products-filters {
+    position: relative;
+    z-index: 120;
+    isolation: isolate;
+    margin-bottom: 36px;
+    gap: 18px 24px;
+    grid-template-columns: minmax(320px, 2.4fr) repeat(3, minmax(0, 1fr));
+    align-items: end;
+    max-width: 1400px;
+  }
+
+  .products-page .products-filters .field {
+    overflow: visible;
+    min-width: 0;
+  }
+
+  .products-page .products-filters .field--wide {
+    grid-column: auto;
+  }
+
+  .products-page .products-filters .luxury-dd {
+    overflow: visible;
+    min-width: 0;
+  }
+
+  .products-page .products-filters .luxury-dd__btn {
+    min-width: 0;
+    padding: 12px 16px;
+    font-size: 14.5px;
+  }
+
+  .products-page .products-filters .luxury-dd__value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .products-page .products-filters .luxury-dd__list {
+    z-index: 300;
+    max-height: min(44vh, 320px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .products-page .products-filters label {
+    font-size: 13.5px;
+    margin-bottom: 3px;
+  }
+
+  .products-page .products-filters input {
+    min-height: 46px;
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+
+  .products-page .products-filters .luxury-dd__option {
+    min-height: 44px;
+    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+  }
+
+  .products-page .container .products-filters ~ .gallery {
+    position: relative;
+    z-index: 1;
+    margin-top: 36px;
+  }
+
+  /* --- Product grid: 5 columns, premium spacing --- */
+  .products-page .gallery {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 26px 24px;
+  }
+
+  .products-page .gallery > .reveal {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+  }
+
+  .products-page .gallery > .reveal > .product-card {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* --- Product cards: refined rhythm for wider columns --- */
+  .products-page .product-card .item__body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 13px 14px 15px;
+    gap: 7px;
+    min-height: 0;
+  }
+
+  .products-page .product-card .item__body h3 {
+    font-size: 15.5px;
+    line-height: 1.38;
+    flex-shrink: 0;
+  }
+
+  .products-page .product-card__brand {
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+    flex-shrink: 0;
+  }
+
+  .products-page .product-card__desc {
+    font-size: 13px;
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .products-page .product-card__price {
+    font-size: 1.08rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .products-page .product-card__picker {
+    margin-top: 0.35rem;
+    flex-shrink: 0;
+    max-width: 100%;
+  }
+
+  .products-page .product-card__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    max-width: 100%;
+  }
+
+  .products-page .product-card__picker-label {
+    font-size: 0.78rem;
+    margin-bottom: 0.28rem;
+  }
+
+  .products-page .product-choice-pill {
+    min-height: 32px;
+    padding: 0.32rem 0.7rem;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+  }
+
+  .products-page .product-card__delivery {
+    font-size: 12px;
+    margin-top: 6px;
+    line-height: 1.45;
+    flex-shrink: 0;
+  }
+
+  .products-page .product-card__delivery--intl {
+    margin-top: 0.12rem;
+  }
+
+  .products-page .product-card .product-card__order-btn {
+    margin-top: auto;
+    margin-bottom: 0;
+    min-height: 42px;
+    width: 100%;
+    font-size: 13.5px;
+    padding: 10px 14px;
+    flex-shrink: 0;
+  }
+
+  /* --- Footer CTA: moderately expanded --- */
+  .products-page .site-footer {
+    padding: 64px 0 44px;
+    margin-top: 52px;
+  }
+
+  .products-page .site-footer__cta {
+    padding: 34px 42px;
+    gap: 40px;
+    align-items: center;
+    max-width: 1600px;
+    margin-inline: auto;
+  }
+
+  .products-page .site-footer__cta-text {
+    gap: 9px;
+    max-width: none;
+  }
+
+  .products-page .site-footer__cta-title {
+    font-size: clamp(24px, 1.6vw, 28px);
+  }
+
+  .products-page .site-footer__cta-sub {
+    font-size: 15px;
+    line-height: 1.8;
+    max-width: 56ch;
+  }
+
+  .products-page .site-footer__cta-btn {
+    padding: 14px 26px;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .products-page .site-footer__rule {
+    margin: 52px 0 42px;
+  }
+
+  /* --- Footer grid: premium spacing --- */
+  .products-page .site-footer__grid {
+    grid-template-columns: 1.5fr 1fr 1fr 1.3fr;
+    gap: 48px 44px;
+    align-items: start;
+  }
+
+  .products-page .site-footer__col--brand {
+    max-width: 100%;
+  }
+
+  .products-page .site-footer__social-block {
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .products-page .social-links--footer {
+    justify-content: flex-start;
+    gap: 16px;
+  }
+
+  .products-page .site-footer__bottom {
+    margin-top: 48px;
+    padding: 24px 0 12px;
+    gap: 20px;
+  }
+
+  .products-page .site-footer__tagline {
+    font-size: 15px;
+    line-height: 1.7;
+    max-width: 44ch;
+  }
+}
