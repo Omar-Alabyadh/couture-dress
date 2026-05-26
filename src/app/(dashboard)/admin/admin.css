@@ -465,6 +465,14 @@
   background: rgba(255, 255, 255, 0.06);
   color: #f6f1ee;
   cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  min-height: 40px;
+}
+
+.admin-topbar__toggle:focus-visible {
+  outline: 2px solid rgba(185, 133, 111, 0.7);
+  outline-offset: 2px;
+  border-color: rgba(185, 133, 111, 0.5);
 }
 
 .admin-sidebar__nav {
@@ -2040,12 +2048,16 @@ select.admin-control {
   gap: 1rem;
 }
 
+/* Kill base .admin-card margin inside overview grid to prevent double spacing */
+.admin-overview .admin-card {
+  margin-bottom: 0;
+}
+
 /* --- Statistics grid --- */
 .admin-overview__stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
-  margin-bottom: 0;
 }
 
 .admin-overview__stat-card {
@@ -2060,6 +2072,7 @@ select.admin-control {
   margin: 0;
   font-size: 0.8rem;
   opacity: 0.85;
+  line-height: 1.35;
 }
 
 .admin-overview__stat-value {
@@ -2067,11 +2080,16 @@ select.admin-control {
   font-size: 1.5rem;
   font-weight: 800;
   color: #e8c4a8;
+  line-height: 1.2;
 }
 
 /* --- Activity card (compact) --- */
 .admin-overview__activity {
   padding: 0.75rem 1rem;
+}
+
+.admin-overview__activity .admin-overview__stat-label {
+  font-size: 0.82rem;
 }
 
 .admin-overview__activity .admin-hint {
@@ -2091,12 +2109,13 @@ select.admin-control {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  padding: 0.85rem 1rem;
+  padding: 0.9rem 1rem;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
   text-decoration: none;
   color: inherit;
+  min-height: 44px;
   transition:
     transform 0.2s ease,
     border-color 0.2s ease,
@@ -2121,6 +2140,44 @@ select.admin-control {
   outline-offset: 2px;
 }
 
+/* --- Overview: 320px refinement --- */
+@media (max-width: 359px) {
+  .admin-overview__stat-card {
+    padding: 0.7rem 0.75rem;
+    min-height: 72px;
+  }
+  .admin-overview__stat-value {
+    font-size: 1.25rem;
+  }
+  .admin-overview__stat-label {
+    font-size: 0.75rem;
+  }
+  .admin-overview__link-card {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.85rem;
+  }
+  .admin-overview__stats,
+  .admin-overview__links {
+    gap: 0.55rem;
+  }
+}
+
+/* --- Overview: mobile ≤425px --- */
+@media (max-width: 425px) {
+  .admin-page--wide > h1 {
+    font-size: 1.15rem;
+    line-height: 1.4;
+    margin-bottom: 0.15rem;
+  }
+  .admin-page--wide > .admin-hint {
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+  .admin-overview__stat-value {
+    font-size: 1.35rem;
+  }
+}
+
 /* --- Overview: tablet (≥600px) — 3-col stats --- */
 @media (min-width: 600px) {
   .admin-overview__stats {
@@ -2131,13 +2188,48 @@ select.admin-control {
   }
 }
 
-/* --- Overview: desktop (≥900px) — auto-fit stats --- */
+/* --- Overview: desktop (≥901px) — auto-fit stats --- */
 @media (min-width: 901px) {
   .admin-overview__stats {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.85rem;
   }
   .admin-overview__links {
     grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 0.75rem;
+  }
+  .admin-overview__stat-card {
+    min-height: 84px;
+  }
+}
+
+/* --- Overview: laptop (≥1024px) — refine density --- */
+@media (min-width: 1024px) {
+  .admin-overview__stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .admin-overview__links {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+/* --- Overview: large laptop (≥1440px) — widen container --- */
+@media (min-width: 1440px) {
+  .admin-page--wide {
+    max-width: min(1100px, 100%);
+    margin-inline: auto;
+  }
+  .admin-overview__stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+  .admin-overview__stat-card {
+    padding: 0.95rem 1.05rem;
+    min-height: 86px;
+  }
+  .admin-overview__link-card {
+    padding: 0.95rem 1.05rem;
+    gap: 0.3rem;
   }
 }
 
@@ -2145,6 +2237,7 @@ select.admin-control {
 @media (min-width: 1600px) {
   .admin-page--wide {
     max-width: min(1200px, 100%);
+    margin-inline: auto;
   }
   .admin-overview__stat-card {
     padding: 1rem 1.1rem;
@@ -2163,6 +2256,7 @@ select.admin-control {
 @media (min-width: 2560px) {
   .admin-page--wide {
     max-width: min(1600px, 92vw);
+    margin-inline: auto;
   }
   .admin-overview__stat-card {
     padding: 1.15rem 1.25rem;
@@ -2177,26 +2271,11 @@ select.admin-control {
   }
 }
 
-/* --- Hero heading: balanced wrapping on mobile --- */
+/* --- Hero heading: balanced wrapping --- */
 .admin-page--wide > h1 {
   text-wrap: balance;
   overflow-wrap: anywhere;
   line-height: 1.35;
-}
-
-@media (max-width: 425px) {
-  .admin-page--wide > h1 {
-    font-size: 1.15rem;
-    line-height: 1.4;
-    margin-bottom: 0.15rem;
-  }
-  .admin-page--wide > .admin-hint {
-    font-size: 0.78rem;
-    line-height: 1.5;
-  }
-  .admin-overview__stat-value {
-    font-size: 1.35rem;
-  }
 }
 
 .admin-form-modal-root {
