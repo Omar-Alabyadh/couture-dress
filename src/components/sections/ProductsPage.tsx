@@ -547,7 +547,7 @@ export default function ProductsPage({
                       <span className="product-card__overlay-badge">غير متوفر</span>
                     ) : cardDiscount.hasDiscount ? (
                       <span className="product-card__sale-badge">
-                        -{cardDiscount.percent}%
+                        خصم {cardDiscount.percent}%
                       </span>
                     ) : null}
                   </div>
