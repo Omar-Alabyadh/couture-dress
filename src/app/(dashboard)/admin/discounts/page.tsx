@@ -124,9 +124,19 @@ function DiscountCard({
             inputMode="numeric"
             value={draft.percent}
             disabled={!hasPrice}
-            onChange={(e) =>
-              onDraftChange({ ...draft, percent: e.target.value })
-            }
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === "") {
+                onDraftChange({ ...draft, percent: "" });
+                return;
+              }
+              const n = Number(raw);
+              if (!Number.isFinite(n)) return;
+              onDraftChange({
+                ...draft,
+                percent: String(clampDiscountPercent(n)),
+              });
+            }}
             placeholder="0"
           />
         </label>
