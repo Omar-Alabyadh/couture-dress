@@ -80,6 +80,10 @@ export type CollectionItemView = {
   /** تمثيل عشري كنص للعرض و JSON */
   price: string | null;
   currency: string;
+  /** نسبة الخصم المئوية المحفوظة (0–100) */
+  discountPercent: number;
+  /** هل الخصم مفعّل حاليًا */
+  discountActive: boolean;
   category: CollectionCategory;
   /** Legacy sizes array — kept in sync when saving from admin with variants */
   sizes: string[];

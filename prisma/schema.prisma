@@ -96,6 +96,10 @@ model CollectionItem {
   /// سعر بالدينار الليبي أو عملة `currency` — اختياري
   price            Decimal?        @db.Decimal(12, 2)
   currency         String          @default("LYD")
+  /// نسبة خصم مئوية (0–100) — تُطبَّق فقط عند تفعيل `discountActive` ووجود سعر
+  discountPercent  Int             @default(0)
+  /// تفعيل/إيقاف الخصم دون فقدان النسبة المحفوظة
+  discountActive   Boolean         @default(false)
   category         String
   isPublished      Boolean         @default(true)
   /// Legacy compatibility — يُزامن مع المقاسات المتاحة من variants عند الحفظ من لوحة التحكم

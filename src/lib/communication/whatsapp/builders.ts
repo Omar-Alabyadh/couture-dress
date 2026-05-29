@@ -38,9 +38,24 @@ function optionalCustomerBlock(ctx: ProductWhatsappContext): string[] {
   return lines;
 }
 
+/** Build the price line, appending the active offer note when present. */
+function productPriceLine(ctx: ProductWhatsappContext): string {
+  const finalLine = formatProductPriceForWhatsapp(ctx.price, ctx.currency);
+  const hasOffer =
+    typeof ctx.discountPercent === "number" &&
+    ctx.discountPercent > 0 &&
+    Boolean(ctx.originalPrice);
+  if (!hasOffer) return finalLine;
+  const oldLine = formatProductPriceForWhatsapp(
+    ctx.originalPrice ?? null,
+    ctx.currency,
+  );
+  return `${finalLine} (بعد خصم ${ctx.discountPercent}% — بدلاً من ${oldLine})`;
+}
+
 /** Body text for product order / special / unavailable flows (Arabic). */
 export function buildProductWhatsappBody(ctx: ProductWhatsappContext): string {
-  const priceLine = formatProductPriceForWhatsapp(ctx.price, ctx.currency);
+  const priceLine = productPriceLine(ctx);
   const { size, color } = sizeColorLines(ctx);
   const extra = optionalCustomerBlock(ctx);
 

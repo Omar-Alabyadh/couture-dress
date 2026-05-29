@@ -18,6 +18,8 @@ export type AdminProductJson = {
   imageUrl: string;
   price: string | null;
   currency: string;
+  discountPercent: number;
+  discountActive: boolean;
   category: string;
   isPublished: boolean;
   deletedAt: string | null;
@@ -63,6 +65,8 @@ export function serializeProductForAdmin(
     imageUrl: row.imageUrl,
     price: row.price != null ? row.price.toString() : null,
     currency: row.currency || "LYD",
+    discountPercent: row.discountPercent ?? 0,
+    discountActive: row.discountActive ?? false,
     category: row.category,
     isPublished: row.isPublished,
     deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,

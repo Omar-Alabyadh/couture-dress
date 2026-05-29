@@ -169,6 +169,8 @@ function mapCollectionItem(
     primaryImage: primary,
     price: row.price != null ? row.price.toString() : null,
     currency: row.currency || "LYD",
+    discountPercent: row.discountPercent ?? 0,
+    discountActive: row.discountActive ?? false,
     category,
     sizes: row.sizes ?? [],
     colors: (colorRows ?? []).map(mapColor),

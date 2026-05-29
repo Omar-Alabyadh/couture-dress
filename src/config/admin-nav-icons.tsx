@@ -1,6 +1,7 @@
 import type { IconType } from "react-icons";
 import {
   LuArchive,
+  LuBadgePercent,
   LuFolderTree,
   LuHouse,
   LuImage,
@@ -16,6 +17,7 @@ import {
 const ICON_BY_HREF: Record<string, IconType> = {
   "/admin": LuLayoutDashboard,
   "/admin/manage/products": LuShirt,
+  "/admin/discounts": LuBadgePercent,
   "/admin/manage/categories": LuFolderTree,
   "/admin/manage/colors": LuPalette,
   "/admin/manage/sizes": LuRuler,

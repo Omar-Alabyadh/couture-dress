@@ -21,6 +21,7 @@ import {
 } from "@/lib/communication/whatsapp";
 import { getShopName } from "@/lib/customer-service";
 import { formatProductPriceDisplay } from "@/lib/product-price";
+import { resolveProductDiscount } from "@/lib/products/discount";
 import {
   PRODUCT_DELIVERY_INTERNATIONAL,
   PRODUCT_DELIVERY_LIBYA,
@@ -335,10 +336,17 @@ export default function ProductsPage({
     const sellable = v ? isVariantSellable(v) : false;
     const special = Boolean(v && !sellable && v.allowSpecialOrder);
     const unavailableNoSpecial = Boolean(v && !sellable && !v.allowSpecialOrder);
+    const discount = resolveProductDiscount({
+      price: item.price,
+      discountPercent: item.discountPercent,
+      discountActive: item.discountActive,
+    });
     const message = buildProductWhatsappBody({
       productTitle: item.title,
-      price: item.price,
+      price: discount.finalPrice,
       currency: item.currency,
+      discountPercent: discount.hasDiscount ? discount.percent : null,
+      originalPrice: discount.hasDiscount ? discount.originalPrice : null,
       selectedSize: v?.size ?? null,
       selectedColorLabel: v?.colorLabel ?? null,
       specialOrderMode: special,
@@ -515,6 +523,11 @@ export default function ProductsPage({
                 !item.inStock && !productHasSpecialOrderOption(item);
               const colorOptions = uniqueVariantColors(item);
               const sizeOptions = uniqueVariantSizes(item);
+              const cardDiscount = resolveProductDiscount({
+                price: item.price,
+                discountPercent: item.discountPercent,
+                discountActive: item.discountActive,
+              });
               return (
               <Reveal
                 key={item.id}
@@ -532,6 +545,10 @@ export default function ProductsPage({
                     />
                     {fullyUnavailable ? (
                       <span className="product-card__overlay-badge">غير متوفر</span>
+                    ) : cardDiscount.hasDiscount ? (
+                      <span className="product-card__sale-badge">
+                        -{cardDiscount.percent}%
+                      </span>
                     ) : null}
                   </div>
                   <div className="item__body">
@@ -547,7 +564,27 @@ export default function ProductsPage({
                     {item.description ? (
                       <p className="product-card__desc">{item.description}</p>
                     ) : null}
-                    <p className="product-card__price">{priceLine(item)}</p>
+                    {cardDiscount.hasDiscount ? (
+                      <div className="product-card__price product-card__price--discounted">
+                        <span className="product-card__price-old">
+                          {formatProductPriceDisplay(
+                            cardDiscount.originalPrice,
+                            item.currency,
+                          )}
+                        </span>
+                        <span className="product-card__price-new">
+                          {formatProductPriceDisplay(
+                            cardDiscount.finalPrice,
+                            item.currency,
+                          )}
+                        </span>
+                        <span className="product-card__discount-badge">
+                          خصم {cardDiscount.percent}%
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="product-card__price">{priceLine(item)}</p>
+                    )}
                     {colorOptions.length > 0 ? (
                       <div className="product-card__picker" aria-label="اختيار اللون">
                         <span className="product-card__picker-label">اللون</span>

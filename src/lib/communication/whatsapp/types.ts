@@ -15,6 +15,10 @@ export type ProductWhatsappContext = {
   productTitle: string;
   price: string | null;
   currency: string;
+  /** Active discount percentage (1–100) when the product is on offer. */
+  discountPercent?: number | null;
+  /** Pre-discount price string when the product is on offer. */
+  originalPrice?: string | null;
   selectedSize?: string | null;
   selectedColorLabel?: string | null;
   specialOrderMode?: boolean;

@@ -63,6 +63,24 @@ export function parseOptionalPrice(
   return s;
 }
 
+/**
+ * Validate a discount percentage from request input.
+ * Returns an integer in [0, 100], or "invalid" for out-of-range / non-numeric.
+ * Empty / null / undefined is treated as 0 (no discount).
+ */
+export function parseDiscountPercent(value: unknown): number | "invalid" {
+  if (value === null || value === undefined || value === "") return 0;
+  const raw =
+    typeof value === "number" ? value : Number(String(value).trim());
+  if (!Number.isFinite(raw)) return "invalid";
+  if (!Number.isInteger(raw)) {
+    if (Math.trunc(raw) !== raw) return "invalid";
+  }
+  const i = Math.trunc(raw);
+  if (i < 0 || i > 100) return "invalid";
+  return i;
+}
+
 export function parseCurrency(value: unknown, fallback = "LYD"): string {
   const t = String(value ?? "").trim().toUpperCase();
   if (!t) return fallback;
