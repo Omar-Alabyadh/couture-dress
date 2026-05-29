@@ -66,7 +66,9 @@ export function resolveProductDiscount(
   const n = Number(priceStr);
   if (!Number.isFinite(n) || n <= 0) return noDiscount;
 
-  const final = (n * (MAX_DISCOUNT_PERCENT - percent)) / 100;
+  const discounted = n - (n * percent) / 100;
+  // Always round the final price UP to the nearest multiple of 5 (no decimals).
+  const final = Math.ceil(discounted / 5) * 5;
   return {
     hasDiscount: true,
     percent,
