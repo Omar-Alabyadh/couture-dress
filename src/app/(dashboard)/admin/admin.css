@@ -3157,9 +3157,15 @@ select.admin-control {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   Products management — responsive refinement layers
+   ═══════════════════════════════════════════════════════════ */
+
+/* --- Mobile cards (≤720px): single column + modal safety --- */
 @media (max-width: 720px) {
   .admin-product-grid {
     grid-template-columns: 1fr;
+    gap: 0.85rem;
   }
 
   .admin-color-grid,
@@ -3167,4 +3173,180 @@ select.admin-control {
     grid-template-columns: 1fr;
   }
 
+  .admin-product-card__body {
+    padding: 0.75rem 0.85rem 0.85rem;
+    gap: 0.45rem;
+  }
+
+  .admin-product-card__actions .admin-btn {
+    min-height: 40px;
+  }
+
+  .admin-form-modal__body {
+    padding-bottom: 4.5rem;
+  }
+
+  .admin-form__sticky-footer {
+    margin-inline: -1.1rem;
+    padding-inline: 1.1rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* --- Narrow mobile (≤425px): compact typography + touch targets --- */
+@media (max-width: 425px) {
+  .admin-page--catalog .admin-section-header__title {
+    font-size: 1.15rem;
+  }
+
+  .admin-page--catalog .admin-section-header__desc {
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .admin-product-card__title {
+    font-size: 0.92rem;
+  }
+
+  .admin-product-card__price {
+    font-size: 0.85rem;
+  }
+
+  .admin-product-card__chip {
+    font-size: 0.64rem;
+    padding: 0.18rem 0.38rem;
+  }
+
+  .admin-product-card__media {
+    aspect-ratio: 3 / 3.5;
+  }
+
+  .admin-color-picker-chip {
+    font-size: 0.75rem;
+    padding: 0.32rem 0.5rem;
+    gap: 0.35rem;
+  }
+
+  .admin-color-picker-chip__swatch {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+
+  .admin-list-toolbar__pager-btns .admin-btn {
+    min-height: 38px;
+    font-size: 0.8rem;
+  }
+}
+
+/* --- Extreme narrow (≤359px): extra-tight spacing --- */
+@media (max-width: 359px) {
+  .admin-product-card__body {
+    padding: 0.6rem 0.7rem 0.75rem;
+  }
+
+  .admin-product-card__actions .admin-btn {
+    min-width: 4.5rem;
+    font-size: 0.78rem;
+  }
+
+  .admin-form-modal__header h2 {
+    font-size: 0.95rem;
+  }
+
+  .admin-form-modal__body {
+    padding-inline: 0.75rem;
+  }
+}
+
+/* --- Tablet cards (≥600px ≤720px): 2-col grid --- */
+@media (min-width: 600px) and (max-width: 720px) {
+  .admin-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+}
+
+/* --- Desktop (≥901px): refine product grid density --- */
+@media (min-width: 901px) {
+  .admin-product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* --- Small laptop (≥1024px): 3-col products grid --- */
+@media (min-width: 1024px) {
+  .admin-product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.05rem;
+  }
+}
+
+/* --- Large laptop (≥1440px): expand catalog, 4-col grid --- */
+@media (min-width: 1440px) {
+  .admin-page--catalog {
+    max-width: min(1400px, 100%);
+    margin-inline: auto;
+  }
+
+  .admin-product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.1rem;
+  }
+
+  .admin-product-card__body {
+    padding: 0.95rem 1.05rem 1.05rem;
+  }
+
+  .admin-list-toolbar__row {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 0.8fr) auto;
+  }
+}
+
+/* --- Large screens (≥1600px): widen catalog --- */
+@media (min-width: 1600px) {
+  .admin-page--catalog {
+    max-width: min(1500px, 100%);
+  }
+
+  .admin-product-card__body {
+    gap: 0.6rem;
+  }
+
+  .admin-form-modal__panel--wide {
+    width: min(100%, 1040px);
+  }
+}
+
+/* --- Ultra-wide (≥2560px): maximize space utilization --- */
+@media (min-width: 2560px) {
+  .admin-page--catalog {
+    max-width: min(1800px, 92vw);
+  }
+
+  .admin-product-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1.15rem;
+  }
+
+  .admin-product-card__body {
+    padding: 1rem 1.1rem 1.1rem;
+  }
+
+  .admin-form-modal__panel--wide {
+    width: min(100%, 1100px);
+  }
+}
+
+/* --- Super-ultra-wide (≥3440px): fill space --- */
+@media (min-width: 3440px) {
+  .admin-page--catalog {
+    max-width: min(2100px, 88vw);
+  }
+
+  .admin-product-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1.2rem;
+  }
 }
