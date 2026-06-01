@@ -806,9 +806,9 @@ function ProductForm({
   return (
     <form
       onSubmit={submit}
-      className="admin-form admin-form--luxury"
-      style={{ margin: "0.25rem 0 0.5rem" }}
+      className="admin-form admin-form--luxury admin-product-form"
     >
+      <div className="admin-form__scroll">
       <AdminCollapsibleSection
         title="المعلومات الأساسية"
         description="العنوان، الوصف، والماركة"
@@ -977,6 +977,7 @@ function ProductForm({
           onChange={(e) => setIsPublished(e.target.checked)}
         />
       </AdminCollapsibleSection>
+      </div>
       <div className="admin-form__sticky-footer">
         <p className="admin-product-form-actions">
           <AdminButton type="submit" variant="primary" disabled={loading}>
