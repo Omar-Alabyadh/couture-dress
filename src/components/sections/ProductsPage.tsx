@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- match marketing site */
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runAfterEffectFlush } from "@/lib/react/effect-schedule";
 import type {
   CollectionItemView,
@@ -259,6 +259,69 @@ export default function ProductsPage({
   const [categoryLabels, setCategoryLabels] = useState<Record<string, string>>(
     {},
   );
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [draftCategory, setDraftCategory] = useState<Category>("all");
+  const [draftSize, setDraftSize] = useState("");
+  const [draftColorId, setDraftColorId] = useState("");
+  const mobileFiltersPanelRef = useRef<HTMLDivElement>(null);
+
+  const closeMobileFilters = useCallback(() => setMobileFiltersOpen(false), []);
+
+  const openMobileFilters = useCallback(() => {
+    setDraftCategory(category);
+    setDraftSize(size);
+    setDraftColorId(colorId);
+    setMobileFiltersOpen(true);
+  }, [category, size, colorId]);
+
+  const applyMobileFilters = useCallback(() => {
+    setCategory(draftCategory);
+    setSize(draftSize);
+    setColorId(draftColorId);
+    setMobileFiltersOpen(false);
+  }, [draftCategory, draftSize, draftColorId]);
+
+  const resetMobileFilterDraft = useCallback(() => {
+    setDraftCategory("all");
+    setDraftSize("");
+    setDraftColorId("");
+  }, []);
+
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (category !== "all") n += 1;
+    if (size) n += 1;
+    if (colorId) n += 1;
+    return n;
+  }, [category, size, colorId]);
+
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [mobileFiltersOpen]);
+
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") closeMobileFilters();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileFiltersOpen, closeMobileFilters]);
+
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    const t = requestAnimationFrame(() => {
+      mobileFiltersPanelRef.current
+        ?.querySelector<HTMLElement>(".products-mobile-filter-sheet__close")
+        ?.focus();
+    });
+    return () => cancelAnimationFrame(t);
+  }, [mobileFiltersOpen]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q), 320);
@@ -488,44 +551,164 @@ export default function ProductsPage({
           </p>
 
           <div className="products-filters" dir="rtl">
-            <div className="field field--wide">
-              <label htmlFor="pq">بحث</label>
-              <input
-                id="pq"
-                name="q"
-                type="search"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="ابحثي بالاسم أو الوصف…"
-                autoComplete="off"
-              />
+            <div className="products-filters__bar">
+              <div className="field field--wide products-filters__search">
+                <label htmlFor="pq">بحث</label>
+                <input
+                  id="pq"
+                  name="q"
+                  type="search"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="ابحثي بالاسم أو الوصف…"
+                  autoComplete="off"
+                />
+              </div>
+              <button
+                type="button"
+                className="products-filters__open-btn"
+                aria-expanded={mobileFiltersOpen}
+                aria-controls="productsMobileFilters"
+                onClick={openMobileFilters}
+              >
+                <span className="products-filters__open-btn-label">الفلاتر</span>
+                {activeFilterCount > 0 ? (
+                  <span
+                    className="products-filters__open-btn-badge"
+                    aria-label={`${activeFilterCount} فلاتر مفعّلة`}
+                  >
+                    {activeFilterCount}
+                  </span>
+                ) : null}
+              </button>
             </div>
-            <div className="field">
-              <label htmlFor="pcat">التصنيف</label>
-              <LuxuryListbox
-                id="pcat"
-                value={category}
-                options={categoryOptions}
-                onChange={(v) => setCategory(v as Category)}
-              />
+            <div className="products-filters__desktop-fields">
+              <div className="field">
+                <label htmlFor="pcat">التصنيف</label>
+                <LuxuryListbox
+                  id="pcat"
+                  value={category}
+                  options={categoryOptions}
+                  onChange={(v) => setCategory(v as Category)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="psize">المقاس</label>
+                <LuxuryListbox
+                  id="psize"
+                  value={size}
+                  options={sizeOptions}
+                  onChange={setSize}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="pcol">اللون</label>
+                <LuxuryListbox
+                  id="pcol"
+                  value={colorId}
+                  options={colorOptions}
+                  onChange={setColorId}
+                />
+              </div>
             </div>
-            <div className="field">
-              <label htmlFor="psize">المقاس</label>
-              <LuxuryListbox
-                id="psize"
-                value={size}
-                options={sizeOptions}
-                onChange={setSize}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="pcol">اللون</label>
-              <LuxuryListbox
-                id="pcol"
-                value={colorId}
-                options={colorOptions}
-                onChange={setColorId}
-              />
+          </div>
+
+          <div
+            className={`products-mobile-filter-sheet${
+              mobileFiltersOpen ? " products-mobile-filter-sheet--open" : ""
+            }`}
+            aria-hidden={!mobileFiltersOpen}
+          >
+            <button
+              type="button"
+              className="products-mobile-filter-sheet__backdrop"
+              tabIndex={-1}
+              aria-hidden="true"
+              onClick={closeMobileFilters}
+            />
+            <div
+              ref={mobileFiltersPanelRef}
+              id="productsMobileFilters"
+              className="products-mobile-filter-sheet__panel"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="productsMobileFiltersTitle"
+              dir="rtl"
+            >
+              <header className="products-mobile-filter-sheet__head">
+                <h2
+                  id="productsMobileFiltersTitle"
+                  className="products-mobile-filter-sheet__title"
+                >
+                  الفلاتر
+                </h2>
+                <button
+                  type="button"
+                  className="products-mobile-filter-sheet__close"
+                  aria-label="إغلاق الفلاتر"
+                  onClick={closeMobileFilters}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M6 6l12 12M18 6L6 18"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </header>
+              <div className="products-mobile-filter-sheet__body products-filters">
+                <div className="field">
+                  <label htmlFor="pcat-mobile">التصنيف</label>
+                  <LuxuryListbox
+                    id="pcat-mobile"
+                    value={draftCategory}
+                    options={categoryOptions}
+                    onChange={(v) => setDraftCategory(v as Category)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="psize-mobile">المقاس</label>
+                  <LuxuryListbox
+                    id="psize-mobile"
+                    value={draftSize}
+                    options={sizeOptions}
+                    onChange={setDraftSize}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="pcol-mobile">اللون</label>
+                  <LuxuryListbox
+                    id="pcol-mobile"
+                    value={draftColorId}
+                    options={colorOptions}
+                    onChange={setDraftColorId}
+                  />
+                </div>
+              </div>
+              <footer className="products-mobile-filter-sheet__footer">
+                <button
+                  type="button"
+                  className="products-mobile-filter-sheet__reset"
+                  onClick={resetMobileFilterDraft}
+                >
+                  إعادة تعيين
+                </button>
+                <button
+                  type="button"
+                  className="products-mobile-filter-sheet__apply"
+                  onClick={applyMobileFilters}
+                >
+                  تطبيق الفلاتر
+                </button>
+              </footer>
             </div>
           </div>
 
@@ -612,8 +795,19 @@ export default function ProductsPage({
                       <p className="product-card__price">{priceLine(item)}</p>
                     )}
                     {colorOptions.length > 0 ? (
-                      <div className="product-card__picker" aria-label="اختيار اللون">
-                        <span className="product-card__picker-label">اللون</span>
+                      <div
+                        className="product-card__picker"
+                        aria-label={
+                          colorOptions.length === 1
+                            ? "اللون المتوفر"
+                            : "الألوان المتوفرة"
+                        }
+                      >
+                        <span className="product-card__picker-label">
+                          {colorOptions.length === 1
+                            ? "اللون المتوفر"
+                            : "الألوان المتوفرة"}
+                        </span>
                         <div className="product-card__pills">
                           {colorOptions.map((c) => {
                             const swatch = safeSwatchColor(c.hex);
