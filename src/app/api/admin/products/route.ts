@@ -159,7 +159,6 @@ export async function POST(req: Request) {
   if (!p) {
     return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 400 });
   }
-  const colorIds = p.colorIds ?? [];
   const altBase = p.titleEn?.trim() ? p.titleEn : p.titleAr;
   const imgNorm = normalizeProductImagesForSave(
     p.images,
@@ -203,6 +202,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "لون غير صالح في أحد الصفوف." }, { status: 400 });
   }
 
+  // Single source of truth: store-filter colors are derived from the colors
+  // chosen on the variant rows ("المقاسات والتوفر") — admin never picks twice.
+  const derivedColorIds = Array.from(
+    new Set(
+      variantRows
+        .map((v) => v.colorId)
+        .filter((c): c is string => Boolean(c)),
+    ),
+  );
+
   let resolvedBrandId: string | undefined;
   if (p.brandDesignerId !== undefined && p.brandDesignerId !== null) {
     const link = await resolveBrandDesignerLinkForProduct(p.brandDesignerId);
@@ -232,8 +241,8 @@ export async function POST(req: Request) {
         brandDesignerId: resolvedBrandId,
         sizes: syncedSizes,
         colors:
-          colorIds.length > 0
-            ? { connect: colorIds.map((cid) => ({ id: cid })) }
+          derivedColorIds.length > 0
+            ? { connect: derivedColorIds.map((cid) => ({ id: cid })) }
             : undefined,
         images: {
           create: imgNorm.rows.map((im) => ({

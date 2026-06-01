@@ -88,16 +88,42 @@ function displayVariantsForProduct(item: CollectionItemView): ProductVariantView
   }));
 }
 
-function uniqueVariantColors(item: CollectionItemView): string[] {
-  const set = new Set<string>();
+type ColorChip = { label: string; hex: string | null };
+
+/**
+ * Colors shown on the public card — derived from the product's variant rows
+ * (single source of truth), enriched with each color's hex for the swatch.
+ * Falls back to the product `colors` relation for legacy rows without variants.
+ */
+function uniqueVariantColors(item: CollectionItemView): ColorChip[] {
+  const colorById = new Map(item.colors.map((c) => [c.id, c]));
+  const hexByLabel = new Map(
+    item.colors.map((c) => [c.label.trim(), c.hex] as const),
+  );
+  const out: ColorChip[] = [];
+  const seen = new Set<string>();
   for (const v of displayVariantsForProduct(item)) {
-    const label = v.colorLabel?.trim();
-    if (label) set.add(label);
+    const fromId = v.colorId ? colorById.get(v.colorId) : undefined;
+    const label = (fromId?.label ?? v.colorLabel ?? "").trim();
+    if (!label || seen.has(label)) continue;
+    seen.add(label);
+    out.push({ label, hex: fromId?.hex ?? hexByLabel.get(label) ?? null });
   }
   for (const c of item.colors) {
-    if (c.label.trim()) set.add(c.label.trim());
+    const label = c.label.trim();
+    if (!label || seen.has(label)) continue;
+    seen.add(label);
+    out.push({ label, hex: c.hex });
   }
-  return Array.from(set);
+  return out;
+}
+
+/** Normalize a stored hex to a safe CSS color, or null when unusable. */
+function safeSwatchColor(hex: string | null): string | null {
+  if (!hex) return null;
+  const h = hex.trim().replace(/^#/, "");
+  if (!/^[0-9a-fA-F]{3,8}$/.test(h)) return null;
+  return `#${h.slice(0, 6)}`;
 }
 
 function uniqueVariantSizes(item: CollectionItemView): string[] {
@@ -589,28 +615,40 @@ export default function ProductsPage({
                       <div className="product-card__picker" aria-label="اختيار اللون">
                         <span className="product-card__picker-label">اللون</span>
                         <div className="product-card__pills">
-                          {colorOptions.map((c) => (
-                            <button
-                              key={c}
-                              type="button"
-                              className={`product-choice-pill${
-                                selection?.color === c
-                                  ? " product-choice-pill--selected"
-                                  : ""
-                              }`}
-                              onClick={() =>
-                                setSelectionByProduct((m) => ({
-                                  ...m,
-                                  [item.id]: {
-                                    size: m[item.id]?.size ?? "",
-                                    color: c,
-                                  },
-                                }))
-                              }
-                            >
-                              {c}
-                            </button>
-                          ))}
+                          {colorOptions.map((c) => {
+                            const swatch = safeSwatchColor(c.hex);
+                            return (
+                              <button
+                                key={c.label}
+                                type="button"
+                                className={`product-choice-pill product-choice-pill--color${
+                                  selection?.color === c.label
+                                    ? " product-choice-pill--selected"
+                                    : ""
+                                }`}
+                                onClick={() =>
+                                  setSelectionByProduct((m) => ({
+                                    ...m,
+                                    [item.id]: {
+                                      size: m[item.id]?.size ?? "",
+                                      color: c.label,
+                                    },
+                                  }))
+                                }
+                              >
+                                <span
+                                  className="product-choice-pill__swatch"
+                                  style={
+                                    swatch ? { background: swatch } : undefined
+                                  }
+                                  aria-hidden
+                                />
+                                <span className="product-choice-pill__label">
+                                  {c.label}
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     ) : null}

@@ -2380,6 +2380,28 @@ select:focus-visible {
   border-color: rgba(185, 133, 111, 0.75);
   background: rgba(185, 133, 111, 0.18);
 }
+.product-choice-pill--color {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.product-choice-pill__swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.25),
+      rgba(0, 0, 0, 0.25)
+    );
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35) inset;
+}
+.product-choice-pill__label {
+  line-height: 1;
+}
 .product-card__delivery--intl {
   margin-top: 0.15rem;
   opacity: 0.9;

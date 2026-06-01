@@ -603,9 +603,22 @@ function ProductForm({
   const [variantRows, setVariantRows] = useState<VariantFormRow[]>(() =>
     initialVariantRows(initial),
   );
-  const [colorIds, setColorIds] = useState<Set<string>>(
-    new Set((initial?.colors ?? []).map((c) => c.id)),
-  );
+  // Store-filter colors are derived automatically from the colors chosen on the
+  // variant rows ("المقاسات والتوفر") — the admin never selects a color twice.
+  const derivedStoreColors = useMemo(() => {
+    const byId = new Map(colors.map((c) => [c.id, c]));
+    const out: { id: string; label: string; hex: string | null }[] = [];
+    const seen = new Set<string>();
+    for (const row of variantRows) {
+      const id = row.colorId.trim();
+      if (!id || seen.has(id)) continue;
+      const c = byId.get(id);
+      if (!c) continue;
+      seen.add(id);
+      out.push({ id: c.id, label: c.label, hex: c.hex });
+    }
+    return out;
+  }, [variantRows, colors]);
   const [price, setPrice] = useState(initial?.price ?? "");
   const [currency, setCurrency] = useState(initial?.currency ?? "LYD");
   const [brandDesignerId, setBrandDesignerId] = useState(
@@ -740,7 +753,6 @@ function ProductForm({
       imageUrl: primary.url,
       category,
       isPublished,
-      colorIds: Array.from(colorIds),
       brandDesignerId:
         brandDesignerId.trim() === "" ? null : brandDesignerId.trim(),
       price: price.trim() === "" ? null : price.trim(),
@@ -910,47 +922,45 @@ function ProductForm({
         allowEmptySize={category === "accessories"}
       />
 
-        <AdminField label="ألوان المنتج (فلاتر المتجر)">
-          <div className="admin-color-picker-grid">
-            {colors.map((c) => {
-              const isArchived = Boolean(c.deletedAt);
-              if (isArchived && !colorIds.has(c.id) && !initial) return null;
-              const hex = c.hex?.trim().replace(/^#/, "");
-              const swatch =
-                hex && /^[0-9a-fA-F]{3,8}$/.test(hex)
-                  ? `#${hex.slice(0, 6)}`
-                  : undefined;
-              const on = colorIds.has(c.id);
-              return (
-                <label
-                  key={c.id}
-                  className={`admin-color-picker-chip${on ? " admin-color-picker-chip--on" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    onChange={() => {
-                      setColorIds((s) => {
-                        const n = new Set(s);
-                        if (n.has(c.id)) n.delete(c.id);
-                        else n.add(c.id);
-                        return n;
-                      });
-                    }}
-                  />
+        <AdminField label="الألوان التي ستظهر في المتجر">
+          <p className="admin-hint">
+            يتم توليد هذه الألوان تلقائيًا من ألوان المنتج المحددة في «المقاسات
+            والتوفر».
+          </p>
+          {derivedStoreColors.length > 0 ? (
+            <div
+              className="admin-color-derived-grid"
+              role="list"
+              aria-label="ألوان المتجر المشتقة"
+            >
+              {derivedStoreColors.map((c) => {
+                const hex = c.hex?.trim().replace(/^#/, "");
+                const swatch =
+                  hex && /^[0-9a-fA-F]{3,8}$/.test(hex)
+                    ? `#${hex.slice(0, 6)}`
+                    : undefined;
+                return (
                   <span
-                    className="admin-color-picker-chip__swatch"
-                    style={swatch ? { background: swatch } : undefined}
-                    aria-hidden
-                  />
-                  <span>
-                    {c.label}
-                    {isArchived ? " (مؤرشف)" : ""}
+                    key={c.id}
+                    className="admin-color-derived-chip"
+                    role="listitem"
+                  >
+                    <span
+                      className="admin-color-derived-chip__swatch"
+                      style={swatch ? { background: swatch } : undefined}
+                      aria-hidden
+                    />
+                    <span>{c.label}</span>
                   </span>
-                </label>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="admin-hint admin-color-derived-empty">
+              لم تُحدَّد ألوان بعد — اختاري لونًا في صفوف «المقاسات والتوفر»
+              لتظهر هنا وفي فلاتر المتجر.
+            </p>
+          )}
         </AdminField>
       </AdminCollapsibleSection>
 

@@ -15,7 +15,6 @@ import {
   isValidOptionalTitleEn,
   isValidTitleAr,
   legacySizesFromNormalizedVariants,
-  normalizeColorIds,
   normalizeProductImagesForSave,
   normalizeProductSizes,
   normalizeProductVariantsInput,
@@ -37,7 +36,6 @@ type PatchBody = {
   category?: string;
   isPublished?: boolean;
   sizes?: string[];
-  colorIds?: string[];
   price?: string | null;
   currency?: string;
   images?: unknown;
@@ -63,11 +61,6 @@ function parsePatch(body: unknown): PatchBody | null {
   if (Array.isArray(body.sizes)) {
     out.sizes = (body.sizes as unknown[])
       .map((s) => String(s).trim())
-      .filter(Boolean);
-  }
-  if (Array.isArray(body.colorIds)) {
-    out.colorIds = (body.colorIds as unknown[])
-      .map((c) => String(c).trim())
       .filter(Boolean);
   }
   if (body.price !== undefined) {
@@ -130,13 +123,6 @@ export async function PATCH(req: Request, ctx: Ctx) {
     }
     p.sizes = normalized;
   }
-  if (p.colorIds !== undefined) {
-    const normalized = normalizeColorIds(p.colorIds);
-    if (normalized == null) {
-      return NextResponse.json({ error: "ألوان كثيرة جدًا" }, { status: 400 });
-    }
-    p.colorIds = normalized;
-  }
 
   let variantReplace: NormalizedProductVariantInput[] | null = null;
   if (p.variants !== undefined) {
@@ -180,9 +166,6 @@ export async function PATCH(req: Request, ctx: Ctx) {
     if (p.sizes !== undefined && variantReplace == null) {
       data.sizes = p.sizes;
     }
-    if (p.colorIds !== undefined) {
-      data.colors = { set: p.colorIds.map((i) => ({ id: i })) };
-    }
     if (p.currency !== undefined) {
       data.currency = parseCurrency(p.currency, existing.currency || "LYD");
     }
@@ -207,6 +190,16 @@ export async function PATCH(req: Request, ctx: Ctx) {
           sortOrder: i,
         })),
       };
+      // Single source of truth: keep store-filter colors (M2M) in sync with the
+      // distinct colors chosen on the variant rows.
+      const derivedColorIds = Array.from(
+        new Set(
+          variantReplace
+            .map((v) => v.colorId)
+            .filter((c): c is string => Boolean(c)),
+        ),
+      );
+      data.colors = { set: derivedColorIds.map((cid) => ({ id: cid })) };
     }
 
     const nextTitleAr =
