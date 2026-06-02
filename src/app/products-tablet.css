@@ -49,8 +49,6 @@
 
   .products-page .products-filters {
     position: relative;
-    z-index: 120;
-    isolation: isolate;
     margin-bottom: 24px;
     gap: 10px 12px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -69,7 +67,6 @@
   }
 
   .products-page .products-filters .luxury-dd__list {
-    z-index: 300;
     max-height: min(38vh, 240px);
     overflow-y: auto;
     overflow-x: hidden;
@@ -95,8 +92,6 @@
   }
 
   .products-page .container .products-filters ~ .gallery {
-    position: relative;
-    z-index: 1;
     margin-top: 24px;
   }
 

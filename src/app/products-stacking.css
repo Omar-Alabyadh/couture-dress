@@ -1,0 +1,65 @@
+/* /products page — stacking order (load last among products layers)
+   Navbar must stay above filter sheet, dropdowns, and page content. */
+
+.products-page {
+  --z-navbar: 1000;
+  --z-filter-sheet: 900;
+  --z-dropdown: 800;
+  --z-backdrop: 700;
+}
+
+/* Navbar / header — top layer during normal browsing */
+.products-page .topbar,
+.products-page .products-page__topbar {
+  z-index: var(--z-navbar);
+}
+
+/* Mobile filter drawer — below navbar, above main content */
+.products-page .products-mobile-filter-sheet {
+  z-index: var(--z-filter-sheet);
+}
+
+.products-page .products-mobile-filter-sheet__backdrop {
+  z-index: var(--z-backdrop);
+}
+
+.products-page .products-mobile-filter-sheet__panel {
+  z-index: calc(var(--z-backdrop) + 1);
+}
+
+/* Filter bar — do not create a page-level stacking context above the navbar */
+.products-page .products-filters {
+  z-index: auto;
+  isolation: auto;
+}
+
+/* Dropdown menus — below navbar, above product grid */
+.products-page .products-filters .luxury-dd__list,
+.products-page .products-mobile-filter-sheet__body .luxury-dd__list {
+  z-index: var(--z-dropdown);
+}
+
+.products-page .products-filters .luxury-dd {
+  position: relative;
+  z-index: auto;
+}
+
+/* Product grid — natural document flow */
+.products-page .products-page__main,
+.products-page .products-page__main .container,
+.products-page .container .products-filters ~ .gallery,
+.products-page .gallery {
+  z-index: auto;
+}
+
+.products-page .gallery .item,
+.products-page .gallery .product-card,
+.products-page .gallery > .reveal {
+  z-index: auto;
+}
+
+/* Card media controls — local to each card only (never compete with navbar) */
+.products-page .product-card .item__media--product {
+  z-index: auto;
+}
+

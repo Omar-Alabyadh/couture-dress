@@ -32,7 +32,6 @@
     gap: 0;
     margin-bottom: 12px;
     position: relative;
-    z-index: 8;
   }
 
   .products-page .products-filters__bar {
@@ -121,7 +120,6 @@
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 200;
     pointer-events: none;
   }
 
@@ -242,7 +240,6 @@
     position: absolute;
     top: calc(100% + 6px);
     inset-inline: 0;
-    z-index: 12;
     max-height: min(36vh, 220px);
     overflow-y: auto;
     overflow-x: hidden;
@@ -312,8 +309,6 @@
   }
 
   .products-page .container .products-filters ~ .gallery {
-    position: relative;
-    z-index: 1;
     margin-top: 12px;
   }
 
