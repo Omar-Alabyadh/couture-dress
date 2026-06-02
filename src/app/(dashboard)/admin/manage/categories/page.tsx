@@ -228,7 +228,7 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="admin-page admin-page--catalog" dir="rtl">
+    <div className="admin-page admin-page--catalog admin-page--categories" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="أقسام المتجر"

@@ -3182,6 +3182,83 @@ select.admin-control {
   color: #888;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   Categories management — large / ultra-wide layout
+   (scoped; does not affect mobile cards or global modals)
+   ═══════════════════════════════════════════════════════════ */
+
+@media (min-width: 1440px) {
+  .admin-page--categories.admin-page--catalog {
+    max-width: min(1520px, 96vw);
+    margin-inline: auto;
+  }
+
+  .admin-page--categories .admin-table th,
+  .admin-page--categories .admin-table td {
+    padding: 0.5rem 0.7rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .admin-page--categories.admin-page--catalog {
+    max-width: min(1580px, 94vw);
+  }
+}
+
+@media (min-width: 2560px) {
+  .admin-page--categories.admin-page--catalog {
+    max-width: min(1920px, 90vw);
+  }
+
+  .admin-page--categories .admin-card {
+    padding: 1.1rem 1.35rem;
+  }
+
+  .admin-page--categories .admin-section-header {
+    margin-bottom: 0.85rem;
+  }
+
+  .admin-page--categories .admin-list-toolbar__search {
+    max-width: min(32rem, 42vw);
+  }
+
+  .admin-page--categories .admin-table {
+    font-size: 0.9rem;
+  }
+
+  .admin-page--categories .admin-table th,
+  .admin-page--categories .admin-table td {
+    padding: 0.65rem 1rem;
+  }
+
+  .admin-page--categories .admin-table th:nth-child(3),
+  .admin-page--categories .admin-table td.admin-table__cell--full {
+    min-width: 16rem;
+    width: 38%;
+  }
+
+  .admin-page--categories .admin-table th:nth-child(5),
+  .admin-page--categories .admin-table td.admin-table__cell--actions {
+    white-space: nowrap;
+    width: 1%;
+  }
+}
+
+@media (min-width: 3440px) {
+  .admin-page--categories.admin-page--catalog {
+    max-width: min(2200px, 88vw);
+  }
+
+  .admin-page--categories .admin-card {
+    padding: 1.15rem 1.5rem;
+  }
+
+  .admin-page--categories .admin-table th,
+  .admin-page--categories .admin-table td {
+    padding: 0.7rem 1.1rem;
+  }
+}
+
 .admin-create-panel {
   margin-top: 1rem;
   padding: 1.1rem 1.15rem;
