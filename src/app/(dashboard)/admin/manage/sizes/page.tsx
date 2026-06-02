@@ -21,7 +21,6 @@ import { AdminRowActions } from "@/components/admin/AdminRowActions";
 import {
   AdminButton,
   AdminCard,
-  AdminEmptyState,
   AdminErrorState,
   AdminField,
   AdminInput,
@@ -91,7 +90,7 @@ function SizeForm({
 
   return (
     <form
-      className="admin-form"
+      className="admin-form admin-form--size"
       onSubmit={async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -101,14 +100,17 @@ function SizeForm({
             type,
             sortOrder: sortOrderFromAdminDisplay(sortOrder),
           };
-          const r = await fetch(
-            initial ? `/api/admin/sizes/${initial.id}` : "/api/admin/sizes",
-            {
-              method: initial ? "PATCH" : "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            },
-          );
+          const r = initial
+            ? await adminFetch(`/api/admin/sizes/${initial.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              })
+            : await adminFetch("/api/admin/sizes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              });
           if (!r.ok) {
             pushToast((await readApiErrorMessage(r)) ?? fallbackErrorMessage(r), "error");
             return;
@@ -224,7 +226,7 @@ export default function AdminSizesPage() {
   async function archiveSize(row: SizeRow) {
     const ok = await requestConfirm({
       title: "أرشفة المقاس",
-      message: `هل تريد أرشفة المقاس «${row.label}»؟ لن يظهر عند إضافة منتجات جديدة.`,
+      message: "هل أنت متأكد من أرشفة هذا المقاس؟",
       confirmLabel: "أرشِف",
       cancelLabel: "إلغاء",
       destructive: true,
@@ -244,7 +246,7 @@ export default function AdminSizesPage() {
   }
 
   return (
-    <div className="admin-page admin-page--catalog" dir="rtl">
+    <div className="admin-page admin-page--catalog admin-page--sizes" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="المقاسات"
@@ -267,29 +269,30 @@ export default function AdminSizesPage() {
 
         {loading && list.length === 0 && !loadError ? <AdminLoadingState /> : null}
 
-        <div
-          className="admin-list-toolbar__row"
-          style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 12 }}
-        >
-          <label className="admin-list-toolbar__search" style={{ flex: "1 1 200px" }}>
-            <span className="admin-field__label">بحث</span>
-            <AdminInput
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="بحث بالاسم…"
-            />
-          </label>
-          <label style={{ minWidth: 160 }}>
-            <span className="admin-field__label">النوع</span>
-            <AdminLuxurySelect
-              id="sizes-type-filter"
-              value={typeFilter}
-              options={TYPE_FILTER_OPTIONS}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            />
-          </label>
-        </div>
+        {!loadError && (loading || list.some((s) => !s.archivedAt)) ? (
+          <div className="admin-sizes-panel" aria-label="تصفية المقاسات">
+            <div className="admin-sizes-toolbar">
+              <label className="admin-sizes-toolbar__search admin-field">
+                <span className="admin-field__label">بحث</span>
+                <AdminInput
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="بحث بالاسم…"
+                />
+              </label>
+              <label className="admin-sizes-toolbar__type admin-field" htmlFor="sizes-type-filter">
+                <span className="admin-field__label">النوع</span>
+                <AdminLuxurySelect
+                  id="sizes-type-filter"
+                  value={typeFilter}
+                  options={TYPE_FILTER_OPTIONS}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                />
+              </label>
+            </div>
+          </div>
+        ) : null}
 
         <AdminModal open={creating} title="إضافة مقاس" onClose={() => setCreating(false)}>
           {creating ? (
@@ -323,14 +326,24 @@ export default function AdminSizesPage() {
         </AdminModal>
 
         {!loading && !loadError && list.filter((s) => !s.archivedAt).length === 0 ? (
-          <AdminEmptyState
-            title="لا توجد مقاسات"
-            description='اضغط "إضافة مقاس" أو حدّث الصفحة لتحميل المقاسات الافتراضية.'
-          />
+          <div className="admin-sizes-empty" role="status">
+            <p className="admin-sizes-empty__title">لا توجد مقاسات بعد</p>
+            <p className="admin-sizes-empty__desc admin-hint">
+              ابدأ بإضافة أول مقاس ليظهر في المنتجات والفلاتر.
+            </p>
+            <AdminButton
+              type="button"
+              variant="primary"
+              icon={Plus}
+              onClick={() => setCreating(true)}
+            >
+              إضافة أول مقاس
+            </AdminButton>
+          </div>
         ) : null}
 
         {!loadError && filtered.length > 0 ? (
-          <AdminTable style={{ marginTop: 16 }}>
+          <AdminTable className="admin-sizes-table">
             <thead>
               <tr>
                 <th>الاسم</th>
