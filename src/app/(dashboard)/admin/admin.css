@@ -2669,22 +2669,351 @@ select.admin-control {
   margin-top: 0.25rem;
 }
 
-.admin-landing-form__section {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+/* ═══════════════════════════════════════════════════════════
+   Landing page editor — scoped to admin-page--landing
+   ═══════════════════════════════════════════════════════════ */
+
+.admin-page--landing .admin-section-header {
+  margin-bottom: 0.85rem;
 }
-.admin-landing-form__section h3 {
-  margin: 0 0 0.75rem;
-  font-size: 1rem;
-  color: #e8c4a8;
+
+.admin-page--landing .admin-section-header__desc {
+  margin-top: 0.2rem;
+  color: rgba(215, 201, 194, 0.72);
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
-.admin-landing-form__feature-row {
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
+
+.admin-page--landing .admin-card {
+  padding-bottom: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-landing-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  margin: 0 -0.15rem;
+}
+
+.admin-landing-form__scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.35rem;
+  scrollbar-gutter: stable;
+}
+
+.admin-landing-form__scroll .admin-form-section {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.admin-landing-form__footer {
+  flex-shrink: 0;
+  z-index: 12;
+  margin: 0 -0.15rem;
+  padding: 0.75rem 0.15rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  background: #121218;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.admin-landing-form__footer .admin-btn {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+}
+
+.admin-landing-form__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.admin-landing-form__grid .admin-field {
+  margin: 0;
+  min-width: 0;
+}
+
+.admin-landing-form__media-pick {
+  margin: -0.15rem 0 0.35rem;
+}
+
+.admin-landing-form__media-pick .admin-landing-media-helper {
+  margin-bottom: 0;
+}
+
+.admin-landing-form__advanced-hint {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.03);
+  line-height: 1.5;
+}
+
+.admin-landing-form__advanced-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-landing-form__advanced-actions .admin-btn {
+  flex: 1 1 auto;
+  min-width: min(100%, 14rem);
+  min-height: 44px;
+}
+
+.admin-landing-features {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+  margin-top: 0.15rem;
+}
+
+.admin-landing-feature-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem 0.65rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.admin-landing-feature-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.admin-landing-feature-card__index {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  margin-top: 1.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #e8c4a8;
+  background: rgba(185, 133, 111, 0.18);
+  border: 1px solid rgba(185, 133, 111, 0.35);
+}
+
+.admin-landing-feature-card__fields {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(3.5rem, 0.55fr) 1fr;
+  gap: 0.45rem 0.55rem;
+}
+
+.admin-landing-feature-card__fields .admin-field {
+  margin: 0;
+}
+
+.admin-landing-feature-card .admin-field {
+  margin: 0;
+}
+
+.admin-landing-feature-card .admin-field__label {
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: #9a8b84;
+}
+
+.admin-landing-feature-card .admin-control {
+  min-height: 2.35rem;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.88rem;
+}
+
+.admin-landing-feature-card textarea.admin-control {
+  min-height: 3.5rem;
+}
+
+/* --- Landing: form viewport — pinned save bar --- */
+@media (max-width: 900px) {
+  .admin-page--landing .admin-landing-form {
+    max-height: calc(100dvh - var(--admin-topbar-height, 64px) - 7.5rem);
+    min-height: min(520px, calc(100dvh - var(--admin-topbar-height, 64px) - 7.5rem));
+  }
+}
+
+@media (min-width: 901px) {
+  .admin-page--landing .admin-landing-form {
+    max-height: calc(100dvh - 5.5rem);
+    min-height: min(640px, calc(100dvh - 5.5rem));
+  }
+}
+
+/* --- Landing: mobile ≤425px --- */
+@media (max-width: 425px) {
+  .admin-page--landing .admin-section-header__title {
+    font-size: 1.15rem;
+  }
+
+  .admin-page--landing .admin-section-header__desc {
+    font-size: 0.78rem;
+  }
+
+  .admin-landing-form__scroll {
+    gap: 0.55rem;
+  }
+
+  .admin-landing-form__scroll .admin-form-section__body {
+    gap: 0.75rem;
+    padding: 0.75rem 0.75rem 0.9rem;
+  }
+
+  .admin-landing-form__scroll .admin-form-section__trigger {
+    padding: 0.75rem 0.75rem;
+  }
+
+  .admin-landing-form__scroll .admin-form-section__title {
+    font-size: 0.88rem;
+  }
+
+  .admin-landing-form__scroll .admin-form-section__desc {
+    font-size: 0.72rem;
+  }
+
+  .admin-landing-feature-card {
+    padding: 0.55rem 0.6rem;
+    gap: 0.4rem;
+  }
+
+  .admin-landing-feature-card__head {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .admin-landing-feature-card__index {
+    margin-top: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.68rem;
+  }
+
+  .admin-landing-feature-card__fields {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .admin-landing-form__footer {
+    padding-top: 0.65rem;
+  }
+}
+
+/* --- Landing: narrow mobile ≤359px --- */
+@media (max-width: 359px) {
+  .admin-page--landing .admin-card {
+    padding: 0.75rem 0.65rem 0;
+  }
+
+  .admin-landing-form__scroll .admin-form-section__body {
+    padding: 0.65rem 0.65rem 0.8rem;
+  }
+
+  .admin-landing-feature-card .admin-control {
+    font-size: 0.84rem;
+  }
+}
+
+/* --- Landing: tablet ≥768px — 2-col field grids --- */
+@media (min-width: 768px) {
+  .admin-landing-form__grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem 1rem;
+  }
+
+  .admin-landing-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .admin-landing-form__footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-inline: 0.15rem;
+  }
+
+  .admin-landing-form__footer .admin-btn {
+    width: auto;
+    min-width: 13rem;
+  }
+
+  .admin-landing-form__advanced-actions .admin-btn {
+    flex: 0 1 auto;
+  }
+}
+
+/* --- Landing: laptop ≥1024px --- */
+@media (min-width: 1024px) {
+  .admin-landing-form__scroll {
+    gap: 0.75rem;
+  }
+
+  .admin-landing-form__scroll .admin-form-section__body {
+    padding: 1rem 1.05rem 1.15rem;
+  }
+
+  .admin-landing-feature-card {
+    padding: 0.65rem 0.75rem;
+  }
+}
+
+/* --- Landing: large laptop ≥1440px --- */
+@media (min-width: 1440px) {
+  .admin-page--landing.admin-page--catalog {
+    max-width: min(1200px, 96vw);
+    margin-inline: auto;
+  }
+
+  .admin-page--landing .admin-card {
+    padding: 1.05rem 1.2rem 0;
+  }
+
+  .admin-landing-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+/* --- Landing: ultra-wide ≥2560px --- */
+@media (min-width: 2560px) {
+  .admin-page--landing.admin-page--catalog {
+    max-width: min(1400px, 88vw);
+    margin-inline: auto;
+  }
+
+  .admin-page--landing .admin-card {
+    padding: 1.1rem 1.35rem 0;
+  }
+
+  .admin-landing-features {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+
+  .admin-landing-form__scroll .admin-form-section__title {
+    font-size: 1rem;
+  }
 }
 
 /* —— Phase 8: luxury boutique CMS —— */

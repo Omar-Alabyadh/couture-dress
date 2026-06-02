@@ -47,7 +47,7 @@ export default function AdminLandingPage() {
   }, [load]);
 
   return (
-    <div className="admin-page admin-page--wide" dir="rtl">
+    <div className="admin-page admin-page--catalog admin-page--landing" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="الصفحة الرئيسية"
