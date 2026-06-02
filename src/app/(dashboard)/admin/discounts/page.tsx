@@ -93,19 +93,19 @@ function DiscountCard({
         <div className="admin-discount-card__title-wrap">
           <h3 className="admin-discount-card__title">{row.titleAr}</h3>
           <span className="admin-discount-card__category">{categoryLabel}</span>
-        </div>
-        {row.hasDiscount ? (
-          <span className="admin-discount-card__state admin-discount-card__state--on">
-            <span className="admin-discount-card__state-icon" aria-hidden>
-              ✓
+          {row.hasDiscount ? (
+            <span className="admin-discount-card__state admin-discount-card__state--on">
+              <span className="admin-discount-card__state-icon" aria-hidden>
+                ✓
+              </span>
+              الخصم مفعل
             </span>
-            الخصم مفعل
-          </span>
-        ) : (
-          <span className="admin-discount-card__state admin-discount-card__state--off">
-            الخصم غير مفعل
-          </span>
-        )}
+          ) : (
+            <span className="admin-discount-card__state admin-discount-card__state--off">
+              الخصم غير مفعل
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="admin-discount-card__pricing">
@@ -364,7 +364,7 @@ export default function AdminDiscountsPage() {
   );
 
   return (
-    <div className="admin-page admin-page--catalog" dir="rtl">
+    <div className="admin-page admin-page--catalog admin-page--discounts" dir="rtl">
       <AdminCard>
         <AdminSectionHeader
           title="الخصومات %"
@@ -379,31 +379,32 @@ export default function AdminDiscountsPage() {
 
         {!loadError && rows.length > 0 ? (
           <>
-            <div className="admin-discounts-toolbar" dir="rtl">
-              <label className="admin-field admin-discounts-toolbar__search">
-                <span className="admin-field__label">بحث</span>
-                <AdminInput
-                  type="search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="ابحث باسم المنتج…"
-                  autoComplete="off"
-                />
-              </label>
-              <label className="admin-field admin-discounts-toolbar__filter">
-                <span className="admin-field__label">القسم</span>
-                <AdminLuxurySelect
-                  id="discount-category-filter"
-                  value={categoryFilter}
-                  options={categoryOptions}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                />
-              </label>
+            <div className="admin-discounts-panel" dir="rtl">
+              <div className="admin-discounts-toolbar">
+                <label className="admin-field admin-discounts-toolbar__search">
+                  <span className="admin-field__label">بحث</span>
+                  <AdminInput
+                    type="search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="ابحث باسم المنتج…"
+                    autoComplete="off"
+                  />
+                </label>
+                <label className="admin-field admin-discounts-toolbar__filter">
+                  <span className="admin-field__label">القسم</span>
+                  <AdminLuxurySelect
+                    id="discount-category-filter"
+                    value={categoryFilter}
+                    options={categoryOptions}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                  />
+                </label>
+              </div>
+              <p className="admin-discounts-toolbar__count" aria-live="polite">
+                عدد المنتجات: {visibleRows.length}
+              </p>
             </div>
-
-            <p className="admin-discounts-toolbar__count" aria-live="polite">
-              عدد المنتجات: {visibleRows.length}
-            </p>
 
             {visibleRows.length === 0 ? (
               <AdminEmptyState
