@@ -96,10 +96,15 @@ function DiscountCard({
         </div>
         {row.hasDiscount ? (
           <span className="admin-discount-card__state admin-discount-card__state--on">
-            مفعّل
+            <span className="admin-discount-card__state-icon" aria-hidden>
+              ✓
+            </span>
+            الخصم مفعل
           </span>
         ) : (
-          <span className="admin-discount-card__state">غير مفعّل</span>
+          <span className="admin-discount-card__state admin-discount-card__state--off">
+            الخصم غير مفعل
+          </span>
         )}
       </div>
 
@@ -112,46 +117,63 @@ function DiscountCard({
         </span>
       </div>
 
-      <div className="admin-discount-card__controls">
-        <label className="admin-field admin-discount-card__field" htmlFor={inputId}>
-          <span className="admin-field__label">نسبة الخصم %</span>
-          <AdminInput
-            id={inputId}
-            type="number"
-            min={0}
-            max={100}
-            step={1}
-            inputMode="numeric"
-            value={draft.percent}
-            disabled={!hasPrice}
-            onChange={(e) => {
-              const raw = e.target.value;
-              if (raw === "") {
-                onDraftChange({ ...draft, percent: "" });
-                return;
-              }
-              const n = Number(raw);
-              if (!Number.isFinite(n)) return;
-              onDraftChange({
-                ...draft,
-                percent: String(clampDiscountPercent(n)),
-              });
-            }}
-            placeholder="0"
-          />
-        </label>
-
-        <label className="admin-discount-card__toggle" htmlFor={toggleId}>
+      <div className="admin-discount-card__edit-row">
+        <label
+          className="admin-toggle admin-discount-card__toggle"
+          htmlFor={toggleId}
+        >
           <input
             id={toggleId}
             type="checkbox"
+            className="admin-toggle__input"
             checked={draft.active}
             disabled={!hasPrice}
             onChange={(e) =>
               onDraftChange({ ...draft, active: e.target.checked })
             }
           />
-          <span>تفعيل الخصم</span>
+          <span className="admin-toggle__track" aria-hidden="true">
+            <span className="admin-toggle__thumb" />
+          </span>
+          <span className="admin-toggle__label">تفعيل الخصم</span>
+        </label>
+
+        <label className="admin-field admin-discount-card__field" htmlFor={inputId}>
+          <span className="admin-field__label">نسبة الخصم</span>
+          <div className="admin-discount-card__percent-wrap">
+            <AdminInput
+              id={inputId}
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              inputMode="numeric"
+              className="admin-discount-card__percent-input"
+              value={draft.percent}
+              disabled={!hasPrice}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === "") {
+                  onDraftChange({ ...draft, percent: "" });
+                  return;
+                }
+                const n = Number(raw);
+                if (!Number.isFinite(n)) return;
+                onDraftChange({
+                  ...draft,
+                  percent: String(clampDiscountPercent(n)),
+                });
+              }}
+              placeholder="0"
+              aria-describedby={`${inputId}-hint`}
+            />
+            <span className="admin-discount-card__percent-suffix" aria-hidden>
+              %
+            </span>
+          </div>
+          <span id={`${inputId}-hint`} className="admin-hint admin-discount-card__percent-hint">
+            {percentNum > 0 ? `خصم ${percentNum}%` : "قيمة من 0 إلى 100"}
+          </span>
         </label>
       </div>
 
@@ -180,7 +202,11 @@ function DiscountCard({
         )}
       </div>
 
-      <div className="admin-discount-card__actions">
+      <div
+        className={`admin-discount-card__actions${
+          row.hasDiscount ? "" : " admin-discount-card__actions--solo"
+        }`}
+      >
         <AdminButton
           type="button"
           variant="primary"
@@ -189,14 +215,16 @@ function DiscountCard({
         >
           {saving ? "جارٍ الحفظ…" : "حفظ"}
         </AdminButton>
-        <AdminButton
-          type="button"
-          variant="ghost"
-          disabled={saving || (!row.hasDiscount && !draft.active && percentNum === 0)}
-          onClick={onRemove}
-        >
-          إزالة الخصم
-        </AdminButton>
+        {row.hasDiscount ? (
+          <AdminButton
+            type="button"
+            variant="ghost"
+            disabled={saving}
+            onClick={onRemove}
+          >
+            إزالة الخصم
+          </AdminButton>
+        ) : null}
       </div>
     </article>
   );
@@ -372,6 +400,10 @@ export default function AdminDiscountsPage() {
                 />
               </label>
             </div>
+
+            <p className="admin-discounts-toolbar__count" aria-live="polite">
+              عدد المنتجات: {visibleRows.length}
+            </p>
 
             {visibleRows.length === 0 ? (
               <AdminEmptyState
